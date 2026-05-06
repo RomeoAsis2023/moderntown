@@ -60,7 +60,7 @@
         let players = {}, spriteSheets = {};
         let myStream = null;
 
-        const ROOM = "gather-mesh-v19";
+        const ROOM = "gather-mesh-v20";
 
         window.onload = () => {
             canvas = document.getElementById("canvas");
@@ -76,7 +76,6 @@
             myId = "p-" + Math.random().toString(36).slice(2, 10);
             myProfile.name = "P" + myId.slice(0,4);
 
-            // Initialize webconnect.js mesh
             wc = webconnect({
                 appName: "gather-town",
                 channelName: ROOM,
@@ -85,7 +84,7 @@
             });
 
             wc.onConnect((attr) => {
-                console.log("🔗 Peer joined mesh:", attr.connectId);
+                console.log("🔗 New peer:", attr.connectId);
             });
 
             wc.onReceive((data, attr) => {
@@ -99,7 +98,7 @@
                 }
             });
 
-            console.log("✅ webconnect.js WebRTC Mesh started");
+            console.log("✅ webconnect.js Mesh Ready");
             initMedia();
             setupInput();
             gameLoop();
@@ -110,12 +109,12 @@
                 myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 320, height: 240 } });
                 document.getElementById("selfVideo").srcObject = myStream;
                 document.getElementById("selfVideoContainer").style.display = "block";
-            } catch(e) { console.log("Media access denied"); }
+            } catch(e) { console.log("Media blocked"); }
         }
 
         function syncPosition() {
             if (!wc) return;
-            wc.send({
+            wc.Send({  // ← Capital S
                 type: "position",
                 pos: { x: Math.round(myX), y: Math.round(myY), dir: myDir, frame: Math.floor(myFrame) },
                 sprite: myProfile.spriteDataURL
@@ -239,7 +238,6 @@
             input.value = "";
         }
 
-        // Expose for onclick
         window.startApp = startApp;
         window.uploadSprite = uploadSprite;
         window.toggleCamera = toggleCamera;
