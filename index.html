@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>webConnect.js WASD Video Room</title>
+<title>webConnect.js Sprite Video World</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -20,19 +20,19 @@ body{
   top:12px;
   left:12px;
   z-index:9999;
-  width:340px;
+  width:350px;
   background:rgba(0,0,0,.72);
   padding:14px;
   border-radius:14px;
 }
 
-#ui h1{font-size:19px;margin-bottom:10px}
+#ui h1{font-size:18px;margin-bottom:10px}
 
 #ui input,
 #ui button{
   width:100%;
-  padding:11px;
-  margin-bottom:9px;
+  padding:10px;
+  margin-bottom:8px;
   border:none;
   border-radius:9px;
 }
@@ -44,7 +44,7 @@ body{
   cursor:pointer;
 }
 
-#ui button:disabled{opacity:.55;cursor:not-allowed}
+#ui button:disabled{opacity:.55}
 
 #status{
   font-size:13px;
@@ -60,57 +60,96 @@ body{
   background:
     linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
     linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
-  background-size:48px 48px;
+  background-size:32px 32px;
 }
 
-.videoCard{
+.player{
   position:absolute;
-  width:260px;
-  background:#111827;
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:18px;
-  overflow:hidden;
-  box-shadow:0 18px 45px rgba(0,0,0,.35);
+  width:96px;
+  height:160px;
+  transform-origin:top left;
 }
 
-.videoCard video{
-  width:100%;
-  aspect-ratio:16/10;
-  object-fit:cover;
-  background:#020617;
-  display:block;
-}
-
-.videoName{
+.nameTag{
   position:absolute;
-  top:9px;
-  left:9px;
-  background:rgba(0,0,0,.65);
-  padding:5px 10px;
+  top:-18px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.7);
+  padding:3px 8px;
   border-radius:999px;
   font-size:12px;
+  white-space:nowrap;
+}
+
+.sprite{
+  position:absolute;
+  left:32px;
+  top:0;
+  width:32px;
+  height:32px;
+  image-rendering:pixelated;
+  background-repeat:no-repeat;
+  background-size:96px 128px;
+  transform:scale(2);
+  transform-origin:top left;
+}
+
+.videoStrip{
+  position:absolute;
+  left:50%;
+  top:78px;
+  transform:translateX(-50%);
+  width:170px;
+  background:rgba(0,0,0,.65);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:14px;
+  padding:7px;
+  display:flex;
+  align-items:center;
+  gap:6px;
+  box-shadow:0 14px 35px rgba(0,0,0,.35);
+}
+
+.videoStrip video{
+  width:110px;
+  height:70px;
+  background:#020617;
+  object-fit:cover;
+  border-radius:10px;
+}
+
+.navBtn{
+  width:22px;
+  height:70px;
+  border:none;
+  border-radius:8px;
+  background:rgba(255,255,255,.15);
+  color:white;
+  font-size:18px;
+  cursor:pointer;
 }
 
 .videoControls{
   position:absolute;
   left:50%;
-  bottom:10px;
+  bottom:-34px;
   transform:translateX(-50%);
   display:flex;
-  gap:7px;
-  background:rgba(0,0,0,.6);
-  padding:7px;
+  gap:5px;
+  background:rgba(0,0,0,.68);
+  padding:5px;
   border-radius:999px;
 }
 
 .iconBtn{
-  width:38px;
-  height:38px;
+  width:28px;
+  height:28px;
   border:none;
   border-radius:50%;
   background:rgba(255,255,255,.18);
   color:white;
-  font-size:17px;
+  font-size:13px;
   cursor:pointer;
 }
 
@@ -135,18 +174,19 @@ body{
 <body>
 
 <div id="ui">
-  <h1>webConnect.js Video World</h1>
+  <h1>webConnect.js Sprite Video World</h1>
   <input id="roomInput" value="demo-room" placeholder="Room name" />
+  <input id="spriteUpload" type="file" accept="image/png,image/webp,image/jpeg" />
   <button id="joinBtn">Join Room</button>
   <div id="status">Not connected</div>
 </div>
 
 <div id="help">
   URL name: <b>?name=romeo</b><br>
-  W A S D = Move Video<br>
-  📹 = Camera Toggle<br>
-  🎙️ = Mic Toggle<br>
-  🔊 = Remote Speaker Toggle
+  Upload sprite: <b>96x128px</b><br>
+  Frame: <b>32x32px</b><br>
+  Rows: Down, Left, Right, Up<br>
+  W A S D = Move Sprite
 </div>
 
 <div id="scene"></div>
@@ -158,12 +198,26 @@ const scene = document.getElementById('scene')
 const statusEl = document.getElementById('status')
 const joinBtn = document.getElementById('joinBtn')
 const roomInput = document.getElementById('roomInput')
+const spriteUpload = document.getElementById('spriteUpload')
 
 const urlParams = new URLSearchParams(window.location.search)
 
 const playerName =
   sanitizeName(urlParams.get('name')) ||
   'Guest-' + Math.random().toString(36).substring(2, 6)
+
+const FRAME_W = 32
+const FRAME_H = 32
+const SHEET_W = 96
+const SHEET_H = 128
+const COLS = 3
+
+const DIRECTION_ROW = {
+  down: 0,
+  left: 1,
+  right: 2,
+  up: 3
+}
 
 let connect = null
 let localStream = null
@@ -173,13 +227,17 @@ let movementStarted = false
 
 const connectedPeers = new Set()
 const peerStates = {}
-const peerCards = {}
+const players = {}
 const peerConnections = {}
 const pendingIce = {}
 
 let localState = {
   video: true,
-  mic: true
+  mic: true,
+  sprite: createDefaultSprite(),
+  direction: 'down',
+  frame: 1,
+  moving: false
 }
 
 let myPosition = {
@@ -187,54 +245,86 @@ let myPosition = {
   y: 220
 }
 
+spriteUpload.addEventListener('change', e => {
+  const file = e.target.files[0]
+  if(!file) return
+
+  const img = new Image()
+  const url = URL.createObjectURL(file)
+
+  img.onload = () => {
+    if(img.width !== SHEET_W || img.height !== SHEET_H){
+      alert('Please upload an exact 96x128px sprite sheet. Your file is ' + img.width + 'x' + img.height + 'px.')
+      spriteUpload.value = ''
+      URL.revokeObjectURL(url)
+      return
+    }
+
+    const reader = new FileReader()
+    reader.onload = ev => {
+      localState.sprite = ev.target.result
+
+      if(players.local){
+        players.local.querySelector('.sprite').style.backgroundImage = `url(${localState.sprite})`
+      }
+
+      broadcastState()
+    }
+
+    reader.readAsDataURL(file)
+    URL.revokeObjectURL(url)
+  }
+
+  img.onerror = () => {
+    alert('Invalid image.')
+    URL.revokeObjectURL(url)
+  }
+
+  img.src = url
+})
+
 joinBtn.onclick = async () => {
   joinBtn.disabled = true
   roomName = roomInput.value.trim() || 'demo-room'
 
-  try {
+  try{
     localStream = await navigator.mediaDevices.getUserMedia({
-      video: true,
-      audio: true
+      video:true,
+      audio:true
     })
-  } catch (error) {
+  }catch(error){
     alert('Camera and microphone permission are required.')
     joinBtn.disabled = false
     return
   }
 
-  createVideoCard('local', localStream, playerName, true)
+  createPlayer('local', localStream, playerName, true)
 
   connect = webconnect()
 
   connect.getMyId(attribute => {
     myConnectId = attribute.connectId
-    statusEl.textContent =
-      'Connected as ' + playerName + ' (' + myConnectId + ') · Room: ' + roomName
+    statusEl.textContent = 'Connected as ' + playerName + ' (' + myConnectId + ') · Room: ' + roomName
   })
 
   connect.onConnect(attribute => {
-    const peerId = attribute.connectId
-    sendHello(peerId)
+    sendHello(attribute.connectId)
   })
 
   connect.onDisconnect(attribute => {
-    const peerId = attribute.connectId
-    removePeer(peerId)
-    statusEl.textContent = peerId + ' disconnected'
+    removePeer(attribute.connectId)
   })
 
   connect.onReceive(async (data, attribute) => {
     const peerId = attribute.connectId
-    if (!data || !data.type) return
+    if(!data || !data.type) return
+    if(data.room && data.room !== roomName) return
 
-    if (data.room && data.room !== roomName) return
-
-    if (data.type === 'room-hello') {
+    if(data.type === 'room-hello'){
       await acceptPeer(peerId)
-
       sendHello(peerId)
 
-      if (shouldInitiate(peerId)) {
+      if(shouldInitiate(peerId)){
         await startCall(peerId, true)
       }
 
@@ -242,58 +332,55 @@ joinBtn.onclick = async () => {
       return
     }
 
-    if (data.type === 'state') {
+    if(data.type === 'state'){
       peerStates[peerId] = data.state
-      updateRemoteCard(peerId)
+      updateRemotePlayer(peerId)
       return
     }
 
-    if (data.type === 'webrtc-offer') {
+    if(data.type === 'webrtc-offer'){
       await handleOffer(peerId, data.offer)
       return
     }
 
-    if (data.type === 'webrtc-answer') {
+    if(data.type === 'webrtc-answer'){
       await handleAnswer(peerId, data.answer)
       return
     }
 
-    if (data.type === 'webrtc-ice') {
+    if(data.type === 'webrtc-ice'){
       await handleIce(peerId, data.candidate)
       return
     }
   })
 
-  if (!movementStarted) {
+  if(!movementStarted){
     movementStarted = true
     movementLoop()
   }
 }
 
-function sendHello(peerId) {
-  if (!connect || !peerId) return
-
+function sendHello(peerId){
   sendToPeer(peerId, {
-    type: 'room-hello',
-    room: roomName,
-    name: playerName
+    type:'room-hello',
+    room:roomName,
+    name:playerName
   })
 }
 
-async function acceptPeer(peerId) {
-  if (connectedPeers.has(peerId)) return
-
+async function acceptPeer(peerId){
+  if(connectedPeers.has(peerId)) return
   connectedPeers.add(peerId)
   statusEl.textContent = peerId + ' joined room'
 }
 
-function shouldInitiate(peerId) {
-  if (!myConnectId) return false
+function shouldInitiate(peerId){
+  if(!myConnectId) return false
   return String(myConnectId) < String(peerId)
 }
 
-async function startCall(peerId, shouldCreateOffer) {
-  if (peerConnections[peerId]) return peerConnections[peerId]
+async function startCall(peerId, shouldCreateOffer){
+  if(peerConnections[peerId]) return peerConnections[peerId]
 
   const pc = createPeerConnection(peerId)
 
@@ -301,25 +388,25 @@ async function startCall(peerId, shouldCreateOffer) {
     pc.addTrack(track, localStream)
   })
 
-  if (shouldCreateOffer) {
+  if(shouldCreateOffer){
     const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
 
     sendToPeer(peerId, {
-      type: 'webrtc-offer',
-      room: roomName,
-      offer: pc.localDescription
+      type:'webrtc-offer',
+      room:roomName,
+      offer:pc.localDescription
     })
   }
 
   return pc
 }
 
-function createPeerConnection(peerId) {
+function createPeerConnection(peerId){
   const pc = new RTCPeerConnection({
-    iceServers: [
-      { urls: 'stun:stun.l.google.com:19302' },
-      { urls: 'stun:global.stun.twilio.com:3478' }
+    iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:global.stun.twilio.com:3478'}
     ]
   })
 
@@ -327,11 +414,11 @@ function createPeerConnection(peerId) {
   pendingIce[peerId] = pendingIce[peerId] || []
 
   pc.onicecandidate = event => {
-    if (event.candidate) {
+    if(event.candidate){
       sendToPeer(peerId, {
-        type: 'webrtc-ice',
-        room: roomName,
-        candidate: event.candidate
+        type:'webrtc-ice',
+        room:roomName,
+        candidate:event.candidate
       })
     }
   }
@@ -339,22 +426,22 @@ function createPeerConnection(peerId) {
   pc.ontrack = event => {
     const stream = event.streams[0]
 
-    if (stream) {
+    if(stream){
       const peerName =
         peerStates[peerId]?.name ||
-        'Peer-' + String(peerId).substring(0, 4)
+        'Peer-' + String(peerId).substring(0,4)
 
-      createVideoCard(peerId, stream, peerName, false)
-      updateRemoteCard(peerId)
+      createPlayer(peerId, stream, peerName, false)
+      updateRemotePlayer(peerId)
     }
   }
 
   pc.onconnectionstatechange = () => {
-    if (pc.connectionState === 'connected') {
+    if(pc.connectionState === 'connected'){
       statusEl.textContent = 'Video connected with ' + peerId
     }
 
-    if (['closed','failed','disconnected'].includes(pc.connectionState)) {
+    if(['closed','failed','disconnected'].includes(pc.connectionState)){
       removePeer(peerId)
     }
   }
@@ -362,7 +449,7 @@ function createPeerConnection(peerId) {
   return pc
 }
 
-async function handleOffer(peerId, offer) {
+async function handleOffer(peerId, offer){
   await acceptPeer(peerId)
 
   const pc = await startCall(peerId, false)
@@ -374,102 +461,114 @@ async function handleOffer(peerId, offer) {
   await pc.setLocalDescription(answer)
 
   sendToPeer(peerId, {
-    type: 'webrtc-answer',
-    room: roomName,
-    answer: pc.localDescription
+    type:'webrtc-answer',
+    room:roomName,
+    answer:pc.localDescription
   })
 
   broadcastState(peerId)
 }
 
-async function handleAnswer(peerId, answer) {
+async function handleAnswer(peerId, answer){
   const pc = peerConnections[peerId]
-  if (!pc) return
+  if(!pc) return
 
   await pc.setRemoteDescription(new RTCSessionDescription(answer))
   await flushPendingIce(peerId)
 }
 
-async function handleIce(peerId, candidate) {
-  if (!candidate) return
+async function handleIce(peerId, candidate){
+  if(!candidate) return
 
   const pc = peerConnections[peerId]
 
-  if (!pc || !pc.remoteDescription) {
+  if(!pc || !pc.remoteDescription){
     pendingIce[peerId] = pendingIce[peerId] || []
     pendingIce[peerId].push(candidate)
     return
   }
 
-  try {
+  try{
     await pc.addIceCandidate(new RTCIceCandidate(candidate))
-  } catch (error) {
+  }catch(error){
     console.warn('ICE error:', error)
   }
 }
 
-async function flushPendingIce(peerId) {
+async function flushPendingIce(peerId){
   const pc = peerConnections[peerId]
   const queue = pendingIce[peerId] || []
 
-  while (queue.length) {
+  while(queue.length){
     const candidate = queue.shift()
 
-    try {
+    try{
       await pc.addIceCandidate(new RTCIceCandidate(candidate))
-    } catch (error) {
+    }catch(error){
       console.warn('Queued ICE error:', error)
     }
   }
 }
 
-function createVideoCard(id, stream, name, isLocal) {
-  if (peerCards[id]) {
-    const existingVideo = peerCards[id].querySelector('video')
-    existingVideo.srcObject = stream
-
-    const nameEl = peerCards[id].querySelector('.videoName')
-    if (nameEl && name) nameEl.textContent = name
-
+function createPlayer(id, stream, name, isLocal){
+  if(players[id]){
+    players[id].querySelector('video').srcObject = stream
     return
   }
 
-  const card = document.createElement('div')
-  card.className = 'videoCard'
-  card.id = 'card-' + id
+  const player = document.createElement('div')
+  player.className = 'player'
+  player.id = 'player-' + id
 
-  card.innerHTML = `
-    <video autoplay playsinline ${isLocal ? 'muted' : ''}></video>
-    <div class="videoName">${escapeHTML(name)}</div>
-    <div class="videoControls">
-      <button class="iconBtn videoToggle" title="Video">📹</button>
-      <button class="iconBtn speakerToggle" title="Speaker">🔊</button>
-      <button class="iconBtn micToggle" title="Mic">🎙️</button>
+  player.innerHTML = `
+    <div class="nameTag">${escapeHTML(name)}</div>
+    <div class="sprite"></div>
+
+    <div class="videoStrip">
+      <button class="navBtn prevBtn">‹</button>
+      <video autoplay playsinline ${isLocal ? 'muted' : ''}></video>
+      <button class="navBtn nextBtn">›</button>
+
+      <div class="videoControls">
+        <button class="iconBtn videoToggle" title="Video">📹</button>
+        <button class="iconBtn speakerToggle" title="Speaker">🔊</button>
+        <button class="iconBtn micToggle" title="Mic">🎙️</button>
+      </div>
     </div>
   `
 
-  scene.appendChild(card)
+  scene.appendChild(player)
 
-  const video = card.querySelector('video')
+  const video = player.querySelector('video')
   video.srcObject = stream
   video.play().catch(() => {})
 
-  const videoBtn = card.querySelector('.videoToggle')
-  const speakerBtn = card.querySelector('.speakerToggle')
-  const micBtn = card.querySelector('.micToggle')
+  const sprite = player.querySelector('.sprite')
+  sprite.style.backgroundImage = `url(${isLocal ? localState.sprite : createDefaultSprite()})`
 
-  if (isLocal) {
-    card.style.left = myPosition.x + 'px'
-    card.style.top = myPosition.y + 'px'
+  const videoBtn = player.querySelector('.videoToggle')
+  const speakerBtn = player.querySelector('.speakerToggle')
+  const micBtn = player.querySelector('.micToggle')
+  const prevBtn = player.querySelector('.prevBtn')
+  const nextBtn = player.querySelector('.nextBtn')
+
+  prevBtn.onclick = () => {
+    player.style.zIndex = Number(player.style.zIndex || 1) - 1
+  }
+
+  nextBtn.onclick = () => {
+    player.style.zIndex = Number(player.style.zIndex || 1) + 1
+  }
+
+  if(isLocal){
+    player.style.left = myPosition.x + 'px'
+    player.style.top = myPosition.y + 'px'
 
     speakerBtn.style.display = 'none'
 
     videoBtn.onclick = () => {
       localState.video = !localState.video
-
-      localStream.getVideoTracks().forEach(track => {
-        track.enabled = localState.video
-      })
+      localStream.getVideoTracks().forEach(track => track.enabled = localState.video)
 
       videoBtn.classList.toggle('off', !localState.video)
       videoBtn.textContent = localState.video ? '📹' : '📷'
@@ -479,23 +578,19 @@ function createVideoCard(id, stream, name, isLocal) {
 
     micBtn.onclick = () => {
       localState.mic = !localState.mic
-
-      localStream.getAudioTracks().forEach(track => {
-        track.enabled = localState.mic
-      })
+      localStream.getAudioTracks().forEach(track => track.enabled = localState.mic)
 
       micBtn.classList.toggle('off', !localState.mic)
       micBtn.textContent = localState.mic ? '🎙️' : '🔇'
 
       broadcastState()
     }
-  } else {
-    card.style.left = '300px'
-    card.style.top = '300px'
+  }else{
+    player.style.left = '300px'
+    player.style.top = '300px'
 
     videoBtn.classList.add('remote')
     micBtn.classList.add('remote')
-
     videoBtn.disabled = true
     micBtn.disabled = true
 
@@ -506,24 +601,29 @@ function createVideoCard(id, stream, name, isLocal) {
     }
   }
 
-  peerCards[id] = card
+  players[id] = player
 }
 
-function updateRemoteCard(peerId) {
-  const card = peerCards[peerId]
+function updateRemotePlayer(peerId){
+  const player = players[peerId]
   const state = peerStates[peerId]
+  if(!player || !state) return
 
-  if (!card || !state) return
-
-  if (state.name) {
-    card.querySelector('.videoName').textContent = state.name
+  if(state.name){
+    player.querySelector('.nameTag').textContent = state.name
   }
 
-  if (typeof state.x === 'number') card.style.left = state.x + 'px'
-  if (typeof state.y === 'number') card.style.top = state.y + 'px'
+  if(state.sprite){
+    player.querySelector('.sprite').style.backgroundImage = `url(${state.sprite})`
+  }
 
-  const videoBtn = card.querySelector('.videoToggle')
-  const micBtn = card.querySelector('.micToggle')
+  if(typeof state.x === 'number') player.style.left = state.x + 'px'
+  if(typeof state.y === 'number') player.style.top = state.y + 'px'
+
+  updateSpriteFrame(player, state.direction, state.frame)
+
+  const videoBtn = player.querySelector('.videoToggle')
+  const micBtn = player.querySelector('.micToggle')
 
   videoBtn.classList.toggle('off', !state.video)
   micBtn.classList.toggle('off', !state.mic)
@@ -532,12 +632,21 @@ function updateRemoteCard(peerId) {
   micBtn.textContent = state.mic ? '🎙️' : '🔇'
 }
 
+function updateSpriteFrame(player, direction, frame){
+  const sprite = player.querySelector('.sprite')
+  const row = DIRECTION_ROW[direction] ?? 0
+  const col = Math.floor(frame) % COLS
+
+  sprite.style.backgroundPosition =
+    `-${col * FRAME_W}px -${row * FRAME_H}px`
+}
+
 const keys = {}
 
 window.addEventListener('keydown', e => {
   const key = e.key.toLowerCase()
 
-  if (['w','a','s','d'].includes(key)) {
+  if(['w','a','s','d'].includes(key)){
     e.preventDefault()
   }
 
@@ -550,41 +659,54 @@ window.addEventListener('keyup', e => {
 
 let lastMoveSend = 0
 
-function movementLoop(timestamp = 0) {
-  const speed = 4
+function movementLoop(timestamp = 0){
+  const speed = 3
   let moved = false
 
-  if (keys.w) {
+  if(keys.w){
     myPosition.y -= speed
+    localState.direction = 'up'
     moved = true
   }
 
-  if (keys.s) {
+  if(keys.s){
     myPosition.y += speed
+    localState.direction = 'down'
     moved = true
   }
 
-  if (keys.a) {
+  if(keys.a){
     myPosition.x -= speed
+    localState.direction = 'left'
     moved = true
   }
 
-  if (keys.d) {
+  if(keys.d){
     myPosition.x += speed
+    localState.direction = 'right'
     moved = true
   }
 
-  myPosition.x = Math.max(0, Math.min(window.innerWidth - 260, myPosition.x))
-  myPosition.y = Math.max(0, Math.min(window.innerHeight - 180, myPosition.y))
+  myPosition.x = Math.max(0, Math.min(window.innerWidth - 180, myPosition.x))
+  myPosition.y = Math.max(30, Math.min(window.innerHeight - 190, myPosition.y))
 
-  const myCard = peerCards.local
+  localState.moving = moved
 
-  if (myCard) {
-    myCard.style.left = myPosition.x + 'px'
-    myCard.style.top = myPosition.y + 'px'
+  if(moved){
+    localState.frame += 0.16
+  }else{
+    localState.frame = 1
   }
 
-  if (moved && timestamp - lastMoveSend > 60) {
+  const myPlayer = players.local
+
+  if(myPlayer){
+    myPlayer.style.left = myPosition.x + 'px'
+    myPlayer.style.top = myPosition.y + 'px'
+    updateSpriteFrame(myPlayer, localState.direction, localState.frame)
+  }
+
+  if(moved && timestamp - lastMoveSend > 60){
     broadcastState()
     lastMoveSend = timestamp
   }
@@ -592,21 +714,21 @@ function movementLoop(timestamp = 0) {
   requestAnimationFrame(movementLoop)
 }
 
-function broadcastState(targetPeerId = null) {
-  if (!connect) return
+function broadcastState(targetPeerId = null){
+  if(!connect) return
 
   const payload = {
-    type: 'state',
-    room: roomName,
-    state: {
+    type:'state',
+    room:roomName,
+    state:{
       ...localState,
-      x: myPosition.x,
-      y: myPosition.y,
-      name: playerName
+      x:myPosition.x,
+      y:myPosition.y,
+      name:playerName
     }
   }
 
-  if (targetPeerId) {
+  if(targetPeerId){
     sendToPeer(targetPeerId, payload)
     return
   }
@@ -616,45 +738,39 @@ function broadcastState(targetPeerId = null) {
   })
 }
 
-function sendToPeer(peerId, payload) {
-  if (!connect || !peerId) return
+function sendToPeer(peerId, payload){
+  if(!connect || !peerId) return
 
-  try {
-    connect.Send(payload, {
-      connectId: peerId
-    })
-  } catch (error) {
+  try{
+    connect.Send(payload, {connectId:peerId})
+  }catch(error){
     console.warn('Send failed:', peerId, error)
   }
 }
 
-function removePeer(peerId) {
+function removePeer(peerId){
   connectedPeers.delete(peerId)
 
-  if (peerConnections[peerId]) {
+  if(peerConnections[peerId]){
     peerConnections[peerId].close()
     delete peerConnections[peerId]
   }
 
-  if (peerCards[peerId]) {
-    peerCards[peerId].remove()
-    delete peerCards[peerId]
+  if(players[peerId]){
+    players[peerId].remove()
+    delete players[peerId]
   }
 
   delete peerStates[peerId]
   delete pendingIce[peerId]
 }
 
-function sanitizeName(name) {
-  if (!name) return ''
-
-  return String(name)
-    .trim()
-    .slice(0, 24)
-    .replace(/[<>]/g, '')
+function sanitizeName(name){
+  if(!name) return ''
+  return String(name).trim().slice(0,24).replace(/[<>]/g,'')
 }
 
-function escapeHTML(str) {
+function escapeHTML(str){
   return String(str).replace(/[&<>'"]/g, char => ({
     '&':'&amp;',
     '<':'&lt;',
@@ -662,6 +778,45 @@ function escapeHTML(str) {
     "'":'&#039;',
     '"':'&quot;'
   }[char]))
+}
+
+function createDefaultSprite(){
+  const canvas = document.createElement('canvas')
+  canvas.width = SHEET_W
+  canvas.height = SHEET_H
+
+  const ctx = canvas.getContext('2d')
+  ctx.imageSmoothingEnabled = false
+
+  const shirt = ['#60a5fa','#22c55e','#f97316','#a855f7']
+
+  for(let row = 0; row < 4; row++){
+    for(let col = 0; col < 3; col++){
+      const x = col * FRAME_W
+      const y = row * FRAME_H
+      const step = col === 1 ? 0 : 1
+
+      ctx.clearRect(x,y,FRAME_W,FRAME_H)
+
+      ctx.fillStyle = '#facc15'
+      ctx.fillRect(x+11,y+3+step,10,10)
+
+      ctx.fillStyle = shirt[row]
+      ctx.fillRect(x+9,y+14+step,14,11)
+
+      ctx.fillStyle = '#111827'
+      ctx.fillRect(x+10,y+25,4,5)
+      ctx.fillRect(x+18,y+25,4,5)
+
+      if(row === 0){
+        ctx.fillStyle = '#fff'
+        ctx.fillRect(x+13,y+7+step,2,2)
+        ctx.fillRect(x+18,y+7+step,2,2)
+      }
+    }
+  }
+
+  return canvas.toDataURL('image/png')
 }
 </script>
 
