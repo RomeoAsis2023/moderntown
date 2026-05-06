@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gather Town P2P • Global</title>
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+    <title>Gather Town P2P • GenosDB</title>
+    <script src="https://cdn.jsdelivr.net/npm/genosdb@latest/dist/index.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         body { margin:0; background:#000; font-family:'Press Start 2P',system-ui; overflow:hidden; color:#fff; }
@@ -16,7 +15,6 @@
         #controls { position:absolute; top:12px; left:12px; display:flex; gap:6px; flex-wrap:wrap; }
         button { background:#0f0; color:#000; border:none; padding:8px 12px; font-size:13px; cursor:pointer; }
         button:hover { background:#0ff; }
-        button.red { background:#f44; color:white; }
         #selfVideoContainer { position:absolute; bottom:100px; left:12px; border:4px solid #0ff; box-shadow:0 0 20px #0ff; background:#000; }
         #chat { position:absolute; bottom:12px; right:12px; width:360px; height:280px; }
         #messages { height:200px; overflow-y:auto; background:#111; padding:8px; font-size:11px; }
@@ -28,9 +26,9 @@
 
     <div id="ui">
         <div id="auth" class="panel">
-            <h1 style="color:#0f0;margin:0 0 20px;">GATHER TOWN P2P</h1>
+            <h1 style="color:#0f0;margin:0 0 20px;">GATHER TOWN P2P<br><small style="font-size:12px;color:#0ff;">Powered by GenosDB</small></h1>
             <button onclick="startAuth()" style="width:100%;padding:18px;font-size:16px;">JOIN GLOBAL ROOM</button>
-            <small style="color:#666;display:block;margin-top:10px;">Open multiple tabs/windows to test</small>
+            <small style="color:#0ff;display:block;margin-top:10px;">Works across internet • Open multiple tabs/devices</small>
         </div>
 
         <div id="controls" class="panel" style="display:none;">
@@ -54,7 +52,7 @@
     </div>
 
     <script>
-        let canvas, ctx, gun, myId, myProfile = {name: "Player"};
+        let canvas, ctx, db, myId, myProfile = {name: "Player"};
         let players = {}, objects = {};
         let myX = 512, myY = 384, myDir = 0, myFrame = 0, animTime = 0;
         let keys = {}, lastSync = 0;
@@ -63,7 +61,7 @@
         let isAdmin = false;
         let myStream = null;
 
-        const ROOM = "gather-global-v10";
+        const ROOM = "gather-global-v12";
 
         window.onload = () => {
             canvas = document.getElementById("canvas");
@@ -82,37 +80,33 @@
             myId = "p-" + Math.random().toString(36).slice(2, 10);
             myProfile.name = "P" + myId.slice(0,4);
 
-            initGun();
+            await initGenosDB();
             initMedia();
             setupInput();
             gameLoop();
-            console.log("✅ You joined as", myProfile.name);
         }
 
-        function initGun() {
-            gun = Gun({
-                peers: ["https://gun-manhattan.herokuapp.com/gun", "https://gun-eu.herokuapp.com/gun", "https://relay.peer.ooo/gun"],
-                localStorage: false,
-                radisk: false
+        async function initGenosDB() {
+            // Initialize GenosDB with WebRTC P2P
+            db = await gdb(ROOM, {
+                rtc: true,           // Enable WebRTC for direct P2P
+                autoConnect: true,
+                persist: false       // No localStorage
             });
 
-            const space = gun.get("gather-space").get(ROOM);
+            // Subscribe to players
+            db.on(`room.${ROOM}.players`, (data, id) => {
+                if (id === myId || !data) return;
 
-            // FIXED: Better player listener
-            space.get("players").map().on((data, id) => {
-                if (!data || id === myId) return;
-                
-                // Update player data
                 players[id] = {
-                    x: data.x || 400,
-                    y: data.y || 300,
-                    dir: data.dir || 0,
-                    frame: data.frame || 0,
-                    name: data.name || "Unknown",
+                    x: Number(data.x) || 400,
+                    y: Number(data.y) || 300,
+                    dir: Number(data.dir) || 0,
+                    frame: Number(data.frame) || 0,
+                    name: data.name || "Player",
                     spriteDataURL: data.spriteDataURL
                 };
 
-                // Load sprite if available
                 if (data.spriteDataURL && !spriteSheets[id]) {
                     const img = new Image();
                     img.src = data.spriteDataURL;
@@ -120,19 +114,18 @@
                 }
             });
 
-            space.get("objects").map().on((data, id) => objects[id] = data);
+            console.log("✅ GenosDB connected - Global P2P ready");
         }
 
         function syncMyPlayer() {
-            if (!gun || !myId) return;
-            gun.get("gather-space").get(ROOM).get("players").get(myId).put({
+            if (!db) return;
+            db.put(`room.${ROOM}.players.${myId}`, {
                 x: Math.round(myX),
                 y: Math.round(myY),
                 dir: myDir,
                 frame: Math.floor(myFrame),
                 name: myProfile.name,
-                spriteDataURL: myProfile.spriteDataURL || null,
-                ts: Date.now()
+                spriteDataURL: myProfile.spriteDataURL || null
             });
         }
 
@@ -141,9 +134,10 @@
                 myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 320, height: 240 } });
                 document.getElementById("selfVideo").srcObject = myStream;
                 document.getElementById("selfVideoContainer").style.display = "block";
-            } catch(e) { console.log("Media access denied"); }
+            } catch(e) { console.log("Media blocked"); }
         }
 
+        // Toggle functions (same as before)
         function toggleCamera() {
             if (!myStream) return;
             const track = myStream.getVideoTracks()[0];
@@ -182,7 +176,7 @@
                     const img = new Image();
                     img.src = ev.target.result;
                     img.onload = () => {
-                        if (img.width !== 96 || img.height !== 128) return alert("Must be exactly 96×128!");
+                        if (img.width !== 96 || img.height !== 128) return alert("Must be 96×128!");
                         spriteSheetImg = img;
                         myProfile.spriteDataURL = ev.target.result;
                         syncMyPlayer();
@@ -202,7 +196,7 @@
 
         function setupInput() {
             window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
-            window.addEventListener("keyup",   e => keys[e.key.toLowerCase()] = false);
+            window.addEventListener("keyup", e => keys[e.key.toLowerCase()] = false);
 
             canvas.addEventListener("mousedown", e => {
                 if (!isAdmin) return;
@@ -223,7 +217,7 @@
                 const o = objects[dragId];
                 o.x = e.offsetX - offsetX;
                 o.y = e.offsetY - offsetY;
-                gun.get("gather-space").get(ROOM).get("objects").get(dragId).put(o);
+                db.put(`room.${ROOM}.objects.${dragId}`, o);
             });
 
             canvas.addEventListener("mouseup", () => dragId = null);
@@ -243,22 +237,18 @@
             ctx.fillStyle = "#1a3a1a";
             ctx.fillRect(0, 0, 1024, 768);
 
-            // Grid
             ctx.strokeStyle = "#0a2a0a";
             for (let i = 0; i < 1024; i += 32) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,768); ctx.stroke(); }
             for (let i = 0; i < 768; i += 32) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(1024,i); ctx.stroke(); }
 
-            // Objects
             for (let id in objects) {
                 const o = objects[id];
                 ctx.fillStyle = "#f80";
                 ctx.fillRect(o.x||100, o.y||100, o.w||64, o.h||64);
             }
 
-            // OTHER PLAYERS (this was the main fix)
             for (let id in players) {
                 const p = players[id];
-                if (!p || typeof p.x !== "number") continue;
                 drawSprite(spriteSheets[id], p.x, p.y, p.dir, p.frame);
                 ctx.fillStyle = "#0ff";
                 ctx.font = "11px Press Start 2P";
@@ -266,14 +256,12 @@
                 ctx.fillText(p.name, p.x, p.y - 28);
             }
 
-            // Self
             drawSprite(spriteSheetImg, myX, myY, myDir, Math.floor(myFrame));
             ctx.fillStyle = "#0f0";
             ctx.font = "11px Press Start 2P";
             ctx.textAlign = "center";
             ctx.fillText(myProfile.name, myX, myY - 28);
 
-            // Movement
             let moved = false, speed = 4.2;
             if (keys["w"] || keys["arrowup"])    { myY -= speed; myDir = 3; moved = true; }
             if (keys["s"] || keys["arrowdown"])  { myY += speed; myDir = 0; moved = true; }
@@ -286,7 +274,7 @@
             myX = Math.max(20, Math.min(1004, myX));
             myY = Math.max(20, Math.min(748, myY));
 
-            if (Date.now() - lastSync > 60) {
+            if (Date.now() - lastSync > 80) {
                 syncMyPlayer();
                 lastSync = Date.now();
             }
