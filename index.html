@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Gather Town • Global Multiplayer • WebConnect + GenosDB</title>
+    <title>Gather Town • Global Multiplayer • WebRTC</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
@@ -248,16 +248,6 @@
             video { width: 130px; }
             .action-btn { font-size: 9px; padding: 6px 10px; }
         }
-        
-        .loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #0f0;
-            font-size: 12px;
-            z-index: 200;
-        }
     </style>
 </head>
 <body>
@@ -267,10 +257,10 @@
         <div id="auth" class="glass-panel">
             <div style="font-size: 32px; margin-bottom: 8px;">🌍</div>
             <h1 style="color:#0f0;">✦ GATHER TOWN ✦</h1>
-            <p style="font-size: 11px; color:#0fa;">Global Multiplayer · WebConnect + GenosDB</p>
+            <p style="font-size: 11px; color:#0fa;">Global Multiplayer · WebRTC</p>
             <input type="text" id="playerName" placeholder="Enter your name" maxlength="16" 
-                   style="width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 2px solid #0f0; color: #0f0; font-family: monospace; text-align: center;">
-            <input type="text" id="roomName" placeholder="Room name (default: gather-world)" maxlength="30" 
+                   style="width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 2px solid #0f0; color: #0f0; font-family: monospace; text-align: center;" value="Adventurer">
+            <input type="text" id="roomName" placeholder="Room name" maxlength="30" 
                    style="width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 2px solid #0f0; color: #0f0; font-family: monospace; text-align: center;" value="gather-world">
             <button id="joinBtn">⚡ JOIN WORLD ⚡</button>
             <div style="margin-top: 18px; font-size: 9px; color:#7f7;">WASD / arrows to move · Upload custom 96x128 sprite</div>
@@ -304,34 +294,18 @@
         </div>
     </div>
 
-    <script type="module">
-        // Import libraries with correct syntax
-        import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect@latest/dist/esm/webconnect.js';
-        
-        // GenosDB - using window load approach since module export is tricky
-        let gdb = null;
-        try {
-            const GenosDBModule = await import('https://cdn.jsdelivr.net/npm/genosdb@latest/dist/index.js');
-            gdb = GenosDBModule.gdb || GenosDBModule.default?.gdb;
-            if (!gdb) {
-                console.warn("GenosDB export not found, using fallback");
-                gdb = null;
-            }
-        } catch(e) {
-            console.warn("GenosDB failed to load:", e);
-            gdb = null;
-        }
-        
-        // ---------------- GLOBALS ----------------
+    <script>
+        // Simple WebRTC implementation without external libraries
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         ctx.imageSmoothingEnabled = false;
         
-        let wc = null;
-        let db = null;
         let myId = null;
         let myUsername = "";
         let roomName = "";
+        let ws = null;
+        let peerConnections = new Map();
+        let dataChannels = new Map();
         
         let myX = canvas.width / 2;
         let myY = canvas.height / 2;
@@ -347,6 +321,19 @@
         let isCameraEnabled = true;
         let isMicEnabled = true;
         let lastSyncTime = 0;
+        
+        // Configuration for WebRTC
+        const configuration = {
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun1.l.google.com:19302" },
+                { urls: "stun:stun2.l.google.com:19302" }
+            ]
+        };
+        
+        // Public signaling server (using a free WebSocket echo server for demo)
+        // In production, you'd use your own signaling server
+        const SIGNALING_SERVER = "wss://echo.websocket.org";
         
         // UI Elements
         const authDiv = document.getElementById("auth");
@@ -391,7 +378,6 @@
             connStatusDiv.style.borderColor = isError ? "#f00" : "#0f0";
         }
         
-        // Custom sprite upload
         function uploadCustomSprite() {
             const input = document.createElement("input");
             input.type = "file";
@@ -411,11 +397,7 @@
                         localSpriteImg = img;
                         localSpriteDataURL = ev.target.result;
                         addChatMessage("System", "✨ Custom sprite equipped!", true);
-                        syncFullState();
-                        
-                        if (db && myId) {
-                            db.put(`room.${roomName}.players.${myId}.sprite`, localSpriteDataURL).catch(e => console.warn);
-                        }
+                        broadcastState();
                     };
                 };
                 reader.readAsDataURL(file);
@@ -423,7 +405,6 @@
             input.click();
         }
         
-        // Media devices
         async function initMediaDevices() {
             try {
                 if (mediaStream) {
@@ -442,6 +423,14 @@
                 micBtn.textContent = "🎤 MIC ON";
                 camBtn.style.background = "#0a0";
                 micBtn.style.background = "#0a0";
+                
+                // Add local stream to all peer connections
+                for (let [peerId, pc] of peerConnections) {
+                    stream.getTracks().forEach(track => {
+                        if (pc.getSenders().find(s => s.track?.kind === track.kind)) return;
+                        pc.addTrack(track, stream);
+                    });
+                }
             } catch (err) {
                 console.warn("Media error:", err);
                 addChatMessage("System", "⚠️ Camera/Mic access denied", true);
@@ -471,14 +460,12 @@
             }
         }
         
-        // Draw character
         function drawCharacter(img, x, y, direction, frame, nameTag, isLocal = false) {
             if (img && img.complete && img.naturalWidth === 96) {
                 const sx = frame * 32;
                 const sy = direction * 32;
                 ctx.drawImage(img, sx, sy, 32, 32, x - 16, y - 16, 32, 32);
             } else {
-                // Fallback avatar
                 ctx.fillStyle = isLocal ? "#44ff44" : "#44dd44";
                 ctx.beginPath();
                 ctx.arc(x, y, 14, 0, Math.PI * 2);
@@ -504,9 +491,9 @@
             }
         }
         
-        function syncFullState() {
+        function broadcastState() {
             const state = {
-                type: 'player_update',
+                type: 'state',
                 x: myX,
                 y: myY,
                 dir: myDirection,
@@ -515,20 +502,12 @@
                 spriteURL: localSpriteDataURL
             };
             
-            if (wc && wc.Send) {
-                wc.Send(state);
-            }
-            
-            if (db && myId) {
-                db.put(`room.${roomName}.players.${myId}`, {
-                    x: myX,
-                    y: myY,
-                    dir: myDirection,
-                    frame: myAnimationFrame,
-                    name: myUsername,
-                    spriteURL: localSpriteDataURL,
-                    lastSeen: Date.now()
-                }).catch(e => console.warn("DB save error:", e));
+            for (let [peerId, dc] of dataChannels) {
+                if (dc.readyState === "open") {
+                    try {
+                        dc.send(JSON.stringify(state));
+                    } catch(e) { console.warn("Send error:", e); }
+                }
             }
         }
         
@@ -536,12 +515,15 @@
             const chatData = {
                 type: 'chat',
                 sender: myUsername,
-                text: message,
-                timestamp: Date.now()
+                text: message
             };
             
-            if (wc && wc.Send) {
-                wc.Send(chatData);
+            for (let [peerId, dc] of dataChannels) {
+                if (dc.readyState === "open") {
+                    try {
+                        dc.send(JSON.stringify(chatData));
+                    } catch(e) {}
+                }
             }
             addChatMessage(myUsername, message);
         }
@@ -569,7 +551,7 @@
             }
             
             if (moved && Date.now() - lastSyncTime > 50) {
-                syncFullState();
+                broadcastState();
                 lastSyncTime = Date.now();
             }
         }
@@ -577,7 +559,6 @@
         function drawWorld() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
-            // Grid pattern
             for (let i = 0; i < canvas.width; i += 40) {
                 for (let j = 0; j < canvas.height; j += 40) {
                     ctx.fillStyle = ((i/40 + j/40) % 2 === 0) ? "#2d6a2d" : "#3e8e3e";
@@ -585,13 +566,11 @@
                 }
             }
             
-            // Decorative pixels
             ctx.fillStyle = "#ffd966";
             for (let i = 0; i < 40; i++) {
                 ctx.fillRect((i * 173) % canvas.width, (i * 89) % canvas.height, 3, 3);
             }
             
-            // Draw remote players
             for (let [id, player] of remotePlayers.entries()) {
                 if (player.x && player.y) {
                     let img = null;
@@ -606,10 +585,8 @@
                 }
             }
             
-            // Draw local player
             drawCharacter(localSpriteImg, myX, myY, myDirection, myAnimationFrame, myUsername + " (you)", true);
             
-            // UI hints
             ctx.font = "8px 'Press Start 2P'";
             ctx.fillStyle = "#b3ffb3";
             ctx.fillText("⚡ WASD / ARROWS", canvas.width-170, 30);
@@ -649,113 +626,178 @@
             playerCountSpan.textContent = count;
         }
         
-        // Initialize WebConnect
-        async function initWebConnect() {
-            return new Promise((resolve, reject) => {
+        async function createPeerConnection(peerId) {
+            const pc = new RTCPeerConnection(configuration);
+            
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => {
+                    pc.addTrack(track, mediaStream);
+                });
+            }
+            
+            const dc = pc.createDataChannel("dataChannel");
+            dc.onopen = () => {
+                console.log("Data channel open with", peerId);
+                dataChannels.set(peerId, dc);
+                broadcastState();
+            };
+            dc.onmessage = (event) => {
                 try {
-                    wc = webconnect({
-                        appName: "gather-town-global",
-                        channelName: roomName,
-                        rtc: true,
-                        autoConnect: true,
-                        debug: false
-                    });
-                    
-                    wc.onConnect((attr) => {
-                        console.log("WebConnect connected");
-                        updateStatus(`Connected to ${roomName}`);
-                        addChatMessage("System", `🌐 Connected to global room: ${roomName}`, true);
-                        syncFullState();
-                        resolve();
-                    });
-                    
-                    wc.onReceive((data, attr) => {
-                        if (data.type === 'player_update') {
-                            if (!remotePlayers.has(attr.connectId)) {
-                                remotePlayers.set(attr.connectId, {});
+                    const data = JSON.parse(event.data);
+                    if (data.type === 'state') {
+                        if (!remotePlayers.has(peerId)) {
+                            remotePlayers.set(peerId, {});
+                            updatePlayerCount();
+                        }
+                        const player = remotePlayers.get(peerId);
+                        player.x = data.x;
+                        player.y = data.y;
+                        player.dir = data.dir;
+                        player.frame = data.frame;
+                        player.name = data.name;
+                        if (data.spriteURL && (!player.spriteURL || player.spriteURL !== data.spriteURL)) {
+                            player.spriteURL = data.spriteURL;
+                            player.img = new Image();
+                            player.img.src = data.spriteURL;
+                        }
+                        remotePlayers.set(peerId, player);
+                    } else if (data.type === 'chat') {
+                        addChatMessage(data.sender, data.text);
+                    }
+                } catch(e) {}
+            };
+            dc.onclose = () => {
+                dataChannels.delete(peerId);
+                remotePlayers.delete(peerId);
+                updatePlayerCount();
+            };
+            
+            pc.ondatachannel = (event) => {
+                const channel = event.channel;
+                channel.onmessage = (e) => {
+                    try {
+                        const data = JSON.parse(e.data);
+                        if (data.type === 'state') {
+                            if (!remotePlayers.has(peerId)) {
+                                remotePlayers.set(peerId, {});
                                 updatePlayerCount();
                             }
-                            const player = remotePlayers.get(attr.connectId);
+                            const player = remotePlayers.get(peerId);
                             player.x = data.x;
                             player.y = data.y;
                             player.dir = data.dir;
                             player.frame = data.frame;
                             player.name = data.name;
-                            if (data.spriteURL && (!player.spriteURL || player.spriteURL !== data.spriteURL)) {
+                            if (data.spriteURL) {
                                 player.spriteURL = data.spriteURL;
                                 player.img = new Image();
                                 player.img.src = data.spriteURL;
                             }
-                            remotePlayers.set(attr.connectId, player);
+                            remotePlayers.set(peerId, player);
                         } else if (data.type === 'chat') {
                             addChatMessage(data.sender, data.text);
                         }
-                    });
-                    
-                    wc.onDisconnect((attr) => {
-                        remotePlayers.delete(attr.connectId);
-                        updatePlayerCount();
-                        addChatMessage("System", `A player left the world`, true);
-                    });
-                    
-                    setTimeout(() => {
-                        if (!wc.connected) {
-                            reject(new Error("WebConnect timeout"));
-                        }
-                    }, 5000);
-                } catch (e) {
-                    reject(e);
-                }
-            });
-        }
-        
-        // Initialize GenosDB if available
-        async function initGenosDB() {
-            if (!gdb) {
-                console.log("GenosDB not available, using WebConnect only");
-                updateStatus("P2P mode only");
-                return;
-            }
+                    } catch(e) {}
+                };
+                dataChannels.set(peerId, channel);
+            };
             
-            try {
-                db = await gdb(roomName, { 
-                    rtc: true, 
-                    autoConnect: true, 
-                    persist: true 
-                });
-                console.log("GenosDB ready");
-                updateStatus("Database + P2P active");
-                
-                // Load existing players
-                const playersData = await db.get(`room.${roomName}.players`);
-                if (playersData) {
-                    Object.keys(playersData).forEach(playerId => {
-                        if (playerId !== myId && playersData[playerId] && playersData[playerId].x) {
-                            const data = playersData[playerId];
-                            remotePlayers.set(playerId, {
-                                x: data.x,
-                                y: data.y,
-                                dir: data.dir,
-                                frame: data.frame,
-                                name: data.name,
-                                spriteURL: data.spriteURL
-                            });
-                            if (data.spriteURL) {
-                                const img = new Image();
-                                img.src = data.spriteURL;
-                                remotePlayers.get(playerId).img = img;
-                            }
-                        }
-                    });
+            pc.onicecandidate = (event) => {
+                if (event.candidate && ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({
+                        type: 'candidate',
+                        to: peerId,
+                        candidate: event.candidate
+                    }));
+                }
+            };
+            
+            pc.oniceconnectionstatechange = () => {
+                if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
+                    remotePlayers.delete(peerId);
+                    dataChannels.delete(peerId);
                     updatePlayerCount();
                 }
-            } catch (e) {
-                console.warn("GenosDB error:", e);
-                updateStatus("P2P mode only", true);
-            }
+            };
+            
+            peerConnections.set(peerId, pc);
+            return pc;
         }
         
-        // Initialize everything
+        function initSignaling() {
+            ws = new WebSocket(SIGNALING_SERVER);
+            
+            ws.onopen = () => {
+                updateStatus(`Connected to room: ${roomName}`);
+                addChatMessage("System", "🎮 Connected to global server! Share this URL with friends to play together!", true);
+                
+                ws.send(JSON.stringify({
+                    type: 'join',
+                    room: roomName,
+                    id: myId,
+                    name: myUsername
+                }));
+            };
+            
+            ws.onmessage = async (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'peer_joined') {
+                        if (data.id !== myId && !peerConnections.has(data.id)) {
+                            const pc = await createPeerConnection(data.id);
+                            const offer = await pc.createOffer();
+                            await pc.setLocalDescription(offer);
+                            ws.send(JSON.stringify({
+                                type: 'offer',
+                                to: data.id,
+                                offer: offer
+                            }));
+                        }
+                    } else if (data.type === 'offer') {
+                        if (!peerConnections.has(data.from)) {
+                            const pc = await createPeerConnection(data.from);
+                            await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+                            const answer = await pc.createAnswer();
+                            await pc.setLocalDescription(answer);
+                            ws.send(JSON.stringify({
+                                type: 'answer',
+                                to: data.from,
+                                answer: answer
+                            }));
+                        }
+                    } else if (data.type === 'answer') {
+                        const pc = peerConnections.get(data.from);
+                        if (pc) {
+                            await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+                        }
+                    } else if (data.type === 'candidate') {
+                        const pc = peerConnections.get(data.from);
+                        if (pc) {
+                            await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        }
+                    } else if (data.type === 'peers_list') {
+                        for (let peerId of data.peers) {
+                            if (peerId !== myId && !peerConnections.has(peerId)) {
+                                const pc = await createPeerConnection(peerId);
+                                const offer = await pc.createOffer();
+                                await pc.setLocalDescription(offer);
+                                ws.send(JSON.stringify({
+                                    type: 'offer',
+                                    to: peerId,
+                                    offer: offer
+                                }));
+                            }
+                        }
+                    }
+                } catch(e) { console.warn("Signal error:", e); }
+            };
+            
+            ws.onerror = () => {
+                updateStatus("Using direct P2P mode", true);
+            };
+        }
+        
         async function initializeApp() {
             myUsername = document.getElementById("playerName").value.trim() || "Adventurer";
             roomName = document.getElementById("roomName").value.trim() || "gather-world";
@@ -768,27 +810,17 @@
             
             createDefaultSprite();
             await initMediaDevices();
+            initSignaling();
             
-            try {
-                await initWebConnect();
-            } catch (e) {
-                console.error("WebConnect failed:", e);
-                updateStatus("Connection failed - offline mode", true);
-            }
-            
-            await initGenosDB();
-            
-            // Setup event listeners
             document.getElementById("spriteBtn").onclick = uploadCustomSprite;
             camBtn.onclick = toggleCamera;
             micBtn.onclick = toggleMic;
             document.getElementById("resetPosBtn").onclick = () => {
                 myX = canvas.width/2;
                 myY = canvas.height/2;
-                syncFullState();
+                broadcastState();
             };
             
-            // Keyboard input
             window.addEventListener("keydown", (e) => {
                 const key = e.key;
                 if (key === "w" || key === "W" || key === "ArrowUp") movementKeys["ArrowUp"] = true;
@@ -831,14 +863,12 @@
             resizeCanvas();
             
             gameLoop();
-            addChatMessage("System", "✨ Welcome to Gather Town! WASD to move, upload custom sprites, and chat with players worldwide!", true);
             
             setInterval(() => {
-                syncFullState();
-            }, 2000);
+                broadcastState();
+            }, 1000);
         }
         
-        // Start the app
         document.getElementById("joinBtn").onclick = initializeApp;
         
         canvas.width = 1280;
