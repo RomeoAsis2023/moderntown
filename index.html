@@ -6,7 +6,6 @@
     <title>Gather Town P2P • Global</title>
     <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         body { margin:0; background:#000; font-family:'Press Start 2P',system-ui; overflow:hidden; color:#fff; }
@@ -15,7 +14,7 @@
         .panel { pointer-events:auto; background:rgba(0,0,0,0.92); border:4px solid #0f0; padding:10px; font-size:12px; box-shadow:0 0 20px #0f0; }
         #auth { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:420px; text-align:center; }
         #controls { position:absolute; top:12px; left:12px; display:flex; gap:6px; flex-wrap:wrap; }
-        button { background:#0f0; color:#000; border:none; padding:8px 12px; font-size:13px; cursor:pointer; min-width:44px; }
+        button { background:#0f0; color:#000; border:none; padding:8px 12px; font-size:13px; cursor:pointer; }
         button:hover { background:#0ff; }
         button.red { background:#f44; color:white; }
         #selfVideoContainer { position:absolute; bottom:100px; left:12px; border:4px solid #0ff; box-shadow:0 0 20px #0ff; background:#000; }
@@ -30,11 +29,12 @@
     <div id="ui">
         <div id="auth" class="panel">
             <h1 style="color:#0f0;margin:0 0 20px;">GATHER TOWN P2P</h1>
-            <button onclick="startAuth()">JOIN GLOBAL ROOM</button>
+            <button onclick="startAuth()" style="width:100%;padding:18px;font-size:16px;">JOIN GLOBAL ROOM</button>
+            <small style="color:#666;display:block;margin-top:10px;">Open multiple tabs/windows to test</small>
         </div>
 
         <div id="controls" class="panel" style="display:none;">
-            <button onclick="uploadSprite()">📤 SPRITE</button>
+            <button onclick="uploadSprite()">📤 SPRITE (96×128)</button>
             <button onclick="toggleCamera()" id="camBtn">📹 ON</button>
             <button onclick="toggleMic()" id="micBtn">🎤 ON</button>
             <button onclick="toggleSpeaker()" id="speakerBtn">🔊 ON</button>
@@ -54,7 +54,6 @@
     </div>
 
     <script>
-        // All functions are global so onclick works
         let canvas, ctx, gun, myId, myProfile = {name: "Player"};
         let players = {}, objects = {};
         let myX = 512, myY = 384, myDir = 0, myFrame = 0, animTime = 0;
@@ -64,7 +63,7 @@
         let isAdmin = false;
         let myStream = null;
 
-        const ROOM = "gather-global-v9";
+        const ROOM = "gather-global-v10";
 
         window.onload = () => {
             canvas = document.getElementById("canvas");
@@ -87,24 +86,34 @@
             initMedia();
             setupInput();
             gameLoop();
+            console.log("✅ You joined as", myProfile.name);
         }
 
         function initGun() {
             gun = Gun({
-                peers: [
-                    "https://gun-manhattan.herokuapp.com/gun",
-                    "https://gun-eu.herokuapp.com/gun",
-                    "https://relay.peer.ooo/gun"
-                ],
+                peers: ["https://gun-manhattan.herokuapp.com/gun", "https://gun-eu.herokuapp.com/gun", "https://relay.peer.ooo/gun"],
                 localStorage: false,
                 radisk: false
             });
 
             const space = gun.get("gather-space").get(ROOM);
+
+            // FIXED: Better player listener
             space.get("players").map().on((data, id) => {
-                if (id === myId) return;
-                players[id] = data || {};
-                if (data?.spriteDataURL && !spriteSheets[id]) {
+                if (!data || id === myId) return;
+                
+                // Update player data
+                players[id] = {
+                    x: data.x || 400,
+                    y: data.y || 300,
+                    dir: data.dir || 0,
+                    frame: data.frame || 0,
+                    name: data.name || "Unknown",
+                    spriteDataURL: data.spriteDataURL
+                };
+
+                // Load sprite if available
+                if (data.spriteDataURL && !spriteSheets[id]) {
                     const img = new Image();
                     img.src = data.spriteDataURL;
                     img.onload = () => spriteSheets[id] = img;
@@ -115,25 +124,24 @@
         }
 
         function syncMyPlayer() {
-            if (!gun) return;
+            if (!gun || !myId) return;
             gun.get("gather-space").get(ROOM).get("players").get(myId).put({
-                x: Math.round(myX), y: Math.round(myY), dir: myDir,
-                frame: Math.floor(myFrame), name: myProfile.name,
-                spriteDataURL: myProfile.spriteDataURL || null
+                x: Math.round(myX),
+                y: Math.round(myY),
+                dir: myDir,
+                frame: Math.floor(myFrame),
+                name: myProfile.name,
+                spriteDataURL: myProfile.spriteDataURL || null,
+                ts: Date.now()
             });
         }
 
         async function initMedia() {
             try {
-                myStream = await navigator.mediaDevices.getUserMedia({ 
-                    audio: true, 
-                    video: { width: 320, height: 240 } 
-                });
+                myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 320, height: 240 } });
                 document.getElementById("selfVideo").srcObject = myStream;
                 document.getElementById("selfVideoContainer").style.display = "block";
-            } catch(e) {
-                console.log("Camera/Mic blocked");
-            }
+            } catch(e) { console.log("Media access denied"); }
         }
 
         function toggleCamera() {
@@ -174,10 +182,7 @@
                     const img = new Image();
                     img.src = ev.target.result;
                     img.onload = () => {
-                        if (img.width !== 96 || img.height !== 128) {
-                            alert("Sprite must be 96×128!");
-                            return;
-                        }
+                        if (img.width !== 96 || img.height !== 128) return alert("Must be exactly 96×128!");
                         spriteSheetImg = img;
                         myProfile.spriteDataURL = ev.target.result;
                         syncMyPlayer();
@@ -190,7 +195,7 @@
 
         function toggleAdmin() {
             isAdmin = !isAdmin;
-            alert(isAdmin ? "🛠 ADMIN MODE ON - Drag objects" : "Admin OFF");
+            alert(isAdmin ? "ADMIN ON - Drag objects" : "Admin OFF");
         }
 
         let dragId = null, offsetX = 0, offsetY = 0;
@@ -238,31 +243,37 @@
             ctx.fillStyle = "#1a3a1a";
             ctx.fillRect(0, 0, 1024, 768);
 
+            // Grid
             ctx.strokeStyle = "#0a2a0a";
             for (let i = 0; i < 1024; i += 32) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,768); ctx.stroke(); }
             for (let i = 0; i < 768; i += 32) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(1024,i); ctx.stroke(); }
 
+            // Objects
             for (let id in objects) {
                 const o = objects[id];
                 ctx.fillStyle = "#f80";
                 ctx.fillRect(o.x||100, o.y||100, o.w||64, o.h||64);
             }
 
+            // OTHER PLAYERS (this was the main fix)
             for (let id in players) {
                 const p = players[id];
-                drawSprite(spriteSheets[id], p.x||400, p.y||300, p.dir||0, p.frame||0);
+                if (!p || typeof p.x !== "number") continue;
+                drawSprite(spriteSheets[id], p.x, p.y, p.dir, p.frame);
                 ctx.fillStyle = "#0ff";
                 ctx.font = "11px Press Start 2P";
                 ctx.textAlign = "center";
-                ctx.fillText(p.name||"?", p.x||400, (p.y||300)-28);
+                ctx.fillText(p.name, p.x, p.y - 28);
             }
 
+            // Self
             drawSprite(spriteSheetImg, myX, myY, myDir, Math.floor(myFrame));
             ctx.fillStyle = "#0f0";
             ctx.font = "11px Press Start 2P";
             ctx.textAlign = "center";
-            ctx.fillText(myProfile.name, myX, myY-28);
+            ctx.fillText(myProfile.name, myX, myY - 28);
 
+            // Movement
             let moved = false, speed = 4.2;
             if (keys["w"] || keys["arrowup"])    { myY -= speed; myDir = 3; moved = true; }
             if (keys["s"] || keys["arrowdown"])  { myY += speed; myDir = 0; moved = true; }
@@ -275,7 +286,7 @@
             myX = Math.max(20, Math.min(1004, myX));
             myY = Math.max(20, Math.min(748, myY));
 
-            if (Date.now() - lastSync > 70) {
+            if (Date.now() - lastSync > 60) {
                 syncMyPlayer();
                 lastSync = Date.now();
             }
