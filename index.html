@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Trystero Sprite Video World</title>
+<title>webConnect.js Video Room</title>
 
 <style>
 *{
@@ -13,490 +13,463 @@
 }
 
 body{
-  background:#111827;
+  min-height:100vh;
+  background:#0f172a;
   color:white;
   font-family:Arial, Helvetica, sans-serif;
-  overflow:hidden;
 }
 
-#ui{
-  position:fixed;
-  top:10px;
-  left:10px;
-  z-index:9999;
-  background:rgba(0,0,0,0.72);
-  padding:12px;
-  border-radius:12px;
-  width:330px;
-}
-
-#ui h2{
-  font-size:18px;
-  margin-bottom:10px;
-}
-
-#ui input,
-#ui button{
+#app{
   width:100%;
-  margin-bottom:10px;
-  padding:10px;
-  border:none;
-  border-radius:8px;
+  min-height:100vh;
+  padding:24px;
 }
 
-#ui button{
-  cursor:pointer;
+.header{
+  display:flex;
+  flex-wrap:wrap;
+  gap:12px;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:24px;
+}
+
+.header h1{
+  font-size:24px;
+}
+
+.roomBox{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+.roomBox input{
+  padding:12px 14px;
+  border:none;
+  border-radius:10px;
+  min-width:220px;
+}
+
+.roomBox button{
+  padding:12px 16px;
+  border:none;
+  border-radius:10px;
   background:#2563eb;
   color:white;
   font-weight:bold;
+  cursor:pointer;
 }
 
-#ui small{
-  display:block;
+.roomBox button:disabled{
+  opacity:.55;
+  cursor:not-allowed;
+}
+
+#status{
+  font-size:14px;
   opacity:.8;
-  line-height:1.4;
-  margin-top:-4px;
-  margin-bottom:10px;
+  margin-top:8px;
 }
 
-#scene{
+#videos{
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));
+  gap:22px;
+}
+
+.videoCard{
   position:relative;
-  width:100vw;
-  height:100vh;
+  background:#111827;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:18px;
   overflow:hidden;
-  background:
-    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
-  background-size:32px 32px;
+  box-shadow:0 14px 40px rgba(0,0,0,.25);
 }
 
-.player{
-  position:absolute;
-  width:32px;
-  height:32px;
-  user-select:none;
-  transform:scale(2);
-  transform-origin:top left;
-}
-
-.sprite{
-  width:32px;
-  height:32px;
-  image-rendering:pixelated;
-  background-repeat:no-repeat;
-  background-size:96px 128px;
-}
-
-.nameTag{
-  position:absolute;
-  top:-16px;
-  left:50%;
-  transform:translateX(-50%) scale(.5);
-  transform-origin:center;
-  background:rgba(0,0,0,0.75);
-  padding:2px 7px;
-  border-radius:6px;
-  font-size:12px;
-  white-space:nowrap;
-}
-
-.videoWrap{
-  position:absolute;
-  top:-68px;
-  left:-16px;
-  width:64px;
-  text-align:center;
-  transform:scale(.5);
-  transform-origin:center bottom;
-}
-
-video{
-  width:128px;
-  height:96px;
+.videoCard video{
+  width:100%;
+  aspect-ratio:16/10;
   object-fit:cover;
-  border-radius:10px;
-  border:2px solid white;
-  background:black;
+  background:#020617;
+  display:block;
 }
 
-.status{
-  font-size:11px;
-  margin-top:4px;
-}
-
-#help{
-  position:fixed;
-  bottom:10px;
+.videoName{
+  position:absolute;
+  top:10px;
   left:10px;
-  background:rgba(0,0,0,0.72);
-  padding:10px;
-  border-radius:10px;
-  z-index:9999;
+  background:rgba(0,0,0,.62);
+  backdrop-filter:blur(8px);
+  padding:6px 10px;
+  border-radius:999px;
   font-size:13px;
+}
+
+.videoControls{
+  position:absolute;
+  left:50%;
+  bottom:12px;
+  transform:translateX(-50%);
+  display:flex;
+  gap:8px;
+  background:rgba(0,0,0,.58);
+  backdrop-filter:blur(10px);
+  padding:8px;
+  border-radius:999px;
+}
+
+.iconBtn{
+  width:42px;
+  height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:none;
+  border-radius:50%;
+  background:rgba(255,255,255,.16);
+  color:white;
+  cursor:pointer;
+  font-size:18px;
+}
+
+.iconBtn.off{
+  background:#dc2626;
+}
+
+.iconBtn.remote{
+  cursor:default;
+}
+
+.notice{
+  margin-top:20px;
+  padding:14px;
+  border-radius:14px;
+  background:rgba(255,255,255,.08);
+  font-size:14px;
   line-height:1.5;
+  color:#cbd5e1;
 }
 </style>
 </head>
 <body>
 
-<div id="ui">
-  <h2>Trystero Sprite Video World</h2>
+<div id="app">
+  <div class="header">
+    <div>
+      <h1>webConnect.js P2P Video Room</h1>
+      <div id="status">Not connected</div>
+    </div>
 
-  <input type="text" id="roomInput" placeholder="Room Name" value="demo-room" />
+    <div class="roomBox">
+      <input id="roomInput" value="demo-room" placeholder="Room name" />
+      <button id="joinBtn">Join Room</button>
+    </div>
+  </div>
 
-  <input type="file" id="spriteUpload" accept="image/png,image/webp,image/jpeg" />
-  <small>Upload a 96x128 sprite sheet. Frame size must be 32x32. Layout: 3 columns × 4 rows.</small>
+  <div id="videos"></div>
 
-  <button id="joinBtn">Join Room</button>
-  <button id="camBtn">Toggle Camera</button>
-  <button id="micBtn">Toggle Mic</button>
+  <div class="notice">
+    This is a browser-only P2P prototype using webConnect.js ESM. It can work for small rooms, but large Zoom-style conferencing still needs a real SFU/media server for reliability.
+  </div>
 </div>
-
-<div id="help">
-  W A S D = Move<br>
-  Sprite format: 96x128px<br>
-  Each frame: 32x32px<br>
-  Rows: Down, Left, Right, Up
-</div>
-
-<div id="scene"></div>
 
 <script type="module">
-import {joinRoom} from 'https://cdn.jsdelivr.net/npm/trystero@0.20.1/+esm'
+import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
 
-const config = {
-  appId: 'sprite-video-world'
-}
-
-const scene = document.getElementById('scene')
+const videos = document.getElementById('videos')
+const statusEl = document.getElementById('status')
 const joinBtn = document.getElementById('joinBtn')
-const camBtn = document.getElementById('camBtn')
-const micBtn = document.getElementById('micBtn')
-const spriteUpload = document.getElementById('spriteUpload')
 const roomInput = document.getElementById('roomInput')
 
-let room
-let localStream
-let cameraEnabled = true
-let micEnabled = true
-let sendStateAction = null
-let sendSpriteAction = null
+let connect = null
+let localStream = null
+let myConnectId = null
+let roomName = null
 
-const FRAME_W = 32
-const FRAME_H = 32
-const SHEET_W = 96
-const SHEET_H = 128
-const COLS = 3
-
-const DIRECTION_ROW = {
-  down: 0,
-  left: 1,
-  right: 2,
-  up: 3
+let localState = {
+  video:true,
+  mic:true,
+  speaker:true
 }
 
-const myId = Math.random().toString(36).substring(2, 8)
-const defaultSprite = createDefaultSprite()
-
-const myPlayer = {
-  id: myId,
-  x: 220,
-  y: 220,
-  direction: 'down',
-  frame: 1,
-  moving: false,
-  sprite: defaultSprite,
-  name: 'Player-' + myId,
-  cam: true,
-  mic: true
-}
-
-const players = {}
-
-spriteUpload.addEventListener('change', e => {
-  const file = e.target.files[0]
-  if(!file) return
-
-  const img = new Image()
-  const objectURL = URL.createObjectURL(file)
-
-  img.onload = () => {
-    if(img.width !== SHEET_W || img.height !== SHEET_H){
-      alert('Please upload an exact 96x128px sprite sheet. Your file is ' + img.width + 'x' + img.height + 'px.')
-      URL.revokeObjectURL(objectURL)
-      spriteUpload.value = ''
-      return
-    }
-
-    const reader = new FileReader()
-
-    reader.onload = ev => {
-      myPlayer.sprite = ev.target.result
-
-      if(players[myId]){
-        players[myId].querySelector('.sprite').style.backgroundImage = `url(${myPlayer.sprite})`
-      }
-
-      sendState()
-      sendSprite()
-      URL.revokeObjectURL(objectURL)
-    }
-
-    reader.readAsDataURL(file)
-  }
-
-  img.onerror = () => {
-    alert('Invalid image file.')
-    URL.revokeObjectURL(objectURL)
-    spriteUpload.value = ''
-  }
-
-  img.src = objectURL
-})
+const peerStates = {}
+const peerCards = {}
+const peerConnections = {}
 
 joinBtn.onclick = async () => {
   joinBtn.disabled = true
+  roomName = roomInput.value.trim() || 'demo-room'
 
   try{
     localStream = await navigator.mediaDevices.getUserMedia({
       video:true,
       audio:true
     })
-  }catch(err){
-    alert('Camera/microphone permission is required for video chat.')
+  }catch(error){
+    alert('Camera and microphone permission are required.')
     joinBtn.disabled = false
     return
   }
 
-  room = joinRoom(config, roomInput.value.trim() || 'demo-room')
+  createVideoCard('local', localStream, 'You', true)
 
-  createPlayer(myPlayer, true)
-
-  ;[sendStateAction] = room.makeAction('state')
-  const [, getStateAction] = room.makeAction('state')
-
-  ;[sendSpriteAction] = room.makeAction('sprite')
-  const [, getSpriteAction] = room.makeAction('sprite')
-
-  room.onPeerJoin(peerId => {
-    sendState()
-    sendSprite()
+  connect = webconnect({
+    room: roomName
   })
 
-  room.onPeerLeave(peerId => {
-    if(players[peerId]){
-      players[peerId].remove()
-      delete players[peerId]
-    }
+  connect.getMyId(attribute => {
+    myConnectId = attribute.connectId
+    statusEl.textContent = 'Connected as ' + myConnectId + ' · Room: ' + roomName
+    broadcastState()
   })
 
-  room.addStream(localStream)
+  connect.onConnect(async attribute => {
+    const peerId = attribute.connectId
+    statusEl.textContent = peerId + ' connected'
 
-  room.onPeerStream((stream, peerId) => {
-    if(!players[peerId]){
-      createPlayer({
-        id: peerId,
-        x: 300,
-        y: 300,
-        direction: 'down',
-        frame: 1,
-        sprite: defaultSprite,
-        name: 'Peer-' + peerId,
-        cam: true,
-        mic: true
-      }, false)
+    await startCall(peerId, true)
+    broadcastState(peerId)
+  })
+
+  connect.onDisconnect(attribute => {
+    const peerId = attribute.connectId
+    removePeer(peerId)
+    statusEl.textContent = peerId + ' disconnected'
+  })
+
+  connect.onReceive(async (data, attribute) => {
+    const peerId = attribute.connectId
+
+    if(!data || !data.type) return
+
+    if(data.type === 'state'){
+      peerStates[peerId] = data.state
+      updateRemoteControls(peerId)
+      return
     }
 
-    const video = players[peerId].querySelector('video')
-    video.srcObject = stream
-  })
-
-  getStateAction((data, peerId) => {
-    data.id = peerId
-
-    if(!players[peerId]){
-      createPlayer(data, false)
+    if(data.type === 'webrtc-offer'){
+      await handleOffer(peerId, data.offer)
+      return
     }
 
-    updatePlayer(peerId, data)
-  })
+    if(data.type === 'webrtc-answer'){
+      await handleAnswer(peerId, data.answer)
+      return
+    }
 
-  getSpriteAction((data, peerId) => {
-    if(players[peerId] && data.sprite){
-      players[peerId].querySelector('.sprite').style.backgroundImage = `url(${data.sprite})`
+    if(data.type === 'webrtc-ice'){
+      await handleIce(peerId, data.candidate)
+      return
     }
   })
-
-  setupControls()
-
-  setInterval(() => {
-    sendState()
-  }, 100)
 }
 
-function createPlayer(data, isSelf){
-  const div = document.createElement('div')
-  div.className = 'player'
-  div.id = 'player-' + data.id
+async function startCall(peerId, polite){
+  if(peerConnections[peerId]) return peerConnections[peerId]
 
-  div.innerHTML = `
-    <div class="nameTag">${escapeHTML(data.name || data.id)}</div>
-    <div class="videoWrap">
-      <video autoplay playsinline ${isSelf ? 'muted' : ''}></video>
-      <div class="status">🎥 ${data.cam ? 'on' : 'off'} · 🎙️ ${data.mic ? 'on' : 'off'}</div>
+  const pc = createPeerConnection(peerId)
+
+  localStream.getTracks().forEach(track => {
+    pc.addTrack(track, localStream)
+  })
+
+  if(polite){
+    const offer = await pc.createOffer()
+    await pc.setLocalDescription(offer)
+
+    connect.Send({
+      type:'webrtc-offer',
+      offer:pc.localDescription
+    }, {
+      connectId:peerId
+    })
+  }
+
+  return pc
+}
+
+function createPeerConnection(peerId){
+  const pc = new RTCPeerConnection({
+    iceServers:[
+      {urls:'stun:stun.l.google.com:19302'},
+      {urls:'stun:global.stun.twilio.com:3478'}
+    ]
+  })
+
+  peerConnections[peerId] = pc
+
+  pc.onicecandidate = event => {
+    if(event.candidate){
+      connect.Send({
+        type:'webrtc-ice',
+        candidate:event.candidate
+      }, {
+        connectId:peerId
+      })
+    }
+  }
+
+  pc.ontrack = event => {
+    const stream = event.streams[0]
+    if(stream){
+      createVideoCard(peerId, stream, 'Peer ' + peerId, false)
+      updateRemoteControls(peerId)
+    }
+  }
+
+  pc.onconnectionstatechange = () => {
+    if(['closed','failed','disconnected'].includes(pc.connectionState)){
+      removePeer(peerId)
+    }
+  }
+
+  return pc
+}
+
+async function handleOffer(peerId, offer){
+  const pc = await startCall(peerId, false)
+
+  await pc.setRemoteDescription(new RTCSessionDescription(offer))
+
+  const answer = await pc.createAnswer()
+  await pc.setLocalDescription(answer)
+
+  connect.Send({
+    type:'webrtc-answer',
+    answer:pc.localDescription
+  }, {
+    connectId:peerId
+  })
+}
+
+async function handleAnswer(peerId, answer){
+  const pc = peerConnections[peerId]
+  if(!pc) return
+
+  await pc.setRemoteDescription(new RTCSessionDescription(answer))
+}
+
+async function handleIce(peerId, candidate){
+  const pc = peerConnections[peerId]
+  if(!pc || !candidate) return
+
+  try{
+    await pc.addIceCandidate(new RTCIceCandidate(candidate))
+  }catch(error){
+    console.warn('ICE candidate error', error)
+  }
+}
+
+function createVideoCard(id, stream, name, isLocal){
+  if(peerCards[id]){
+    const existingVideo = peerCards[id].querySelector('video')
+    existingVideo.srcObject = stream
+    return
+  }
+
+  const card = document.createElement('div')
+  card.className = 'videoCard'
+  card.id = 'card-' + id
+
+  card.innerHTML = `
+    <video autoplay playsinline ${isLocal ? 'muted' : ''}></video>
+    <div class="videoName">${escapeHTML(name)}</div>
+    <div class="videoControls">
+      <button class="iconBtn videoToggle" title="Video">📹</button>
+      <button class="iconBtn speakerToggle" title="Speaker">🔊</button>
+      <button class="iconBtn micToggle" title="Mic">🎙️</button>
     </div>
-    <div class="sprite"></div>
   `
 
-  scene.appendChild(div)
+  videos.appendChild(card)
 
-  const sprite = div.querySelector('.sprite')
-  sprite.style.backgroundImage = `url(${data.sprite || defaultSprite})`
+  const video = card.querySelector('video')
+  video.srcObject = stream
 
-  if(isSelf && localStream){
-    div.querySelector('video').srcObject = localStream
+  const videoBtn = card.querySelector('.videoToggle')
+  const speakerBtn = card.querySelector('.speakerToggle')
+  const micBtn = card.querySelector('.micToggle')
+
+  if(isLocal){
+    speakerBtn.style.display = 'none'
+
+    videoBtn.onclick = () => {
+      localState.video = !localState.video
+      localStream.getVideoTracks().forEach(track => track.enabled = localState.video)
+      videoBtn.classList.toggle('off', !localState.video)
+      videoBtn.textContent = localState.video ? '📹' : '📷'
+      broadcastState()
+    }
+
+    micBtn.onclick = () => {
+      localState.mic = !localState.mic
+      localStream.getAudioTracks().forEach(track => track.enabled = localState.mic)
+      micBtn.classList.toggle('off', !localState.mic)
+      micBtn.textContent = localState.mic ? '🎙️' : '🔇'
+      broadcastState()
+    }
+  }else{
+    videoBtn.classList.add('remote')
+    micBtn.classList.add('remote')
+
+    videoBtn.disabled = true
+    micBtn.disabled = true
+
+    speakerBtn.onclick = () => {
+      const muted = !video.muted
+      video.muted = muted
+      speakerBtn.classList.toggle('off', muted)
+      speakerBtn.textContent = muted ? '🔈' : '🔊'
+    }
   }
 
-  players[data.id] = div
-  updatePlayer(data.id, data)
+  peerCards[id] = card
 }
 
-function updatePlayer(id, data){
-  const player = players[id]
-  if(!player) return
+function updateRemoteControls(peerId){
+  const card = peerCards[peerId]
+  const state = peerStates[peerId]
+  if(!card || !state) return
 
-  player.style.left = data.x + 'px'
-  player.style.top = data.y + 'px'
+  const videoBtn = card.querySelector('.videoToggle')
+  const micBtn = card.querySelector('.micToggle')
 
-  if(data.sprite){
-    player.querySelector('.sprite').style.backgroundImage = `url(${data.sprite})`
+  videoBtn.classList.toggle('off', !state.video)
+  micBtn.classList.toggle('off', !state.mic)
+
+  videoBtn.textContent = state.video ? '📹' : '📷'
+  micBtn.textContent = state.mic ? '🎙️' : '🔇'
+}
+
+function broadcastState(targetPeerId = null){
+  if(!connect) return
+
+  const payload = {
+    type:'state',
+    state:{...localState}
   }
 
-  const sprite = player.querySelector('.sprite')
-  const row = DIRECTION_ROW[data.direction] ?? 0
-  const frame = Math.floor(data.frame) % COLS
-
-  sprite.style.backgroundPosition = `-${frame * FRAME_W}px -${row * FRAME_H}px`
-
-  const status = player.querySelector('.status')
-  if(status){
-    status.textContent = `🎥 ${data.cam ? 'on' : 'off'} · 🎙️ ${data.mic ? 'on' : 'off'}`
-  }
-}
-
-function setupControls(){
-  const speed = 2
-  const keys = {}
-  let lastSent = 0
-
-  window.addEventListener('keydown', e => {
-    const key = e.key.toLowerCase()
-    if(['w','a','s','d'].includes(key)) e.preventDefault()
-    keys[key] = true
-  })
-
-  window.addEventListener('keyup', e => {
-    keys[e.key.toLowerCase()] = false
-  })
-
-  function gameLoop(timestamp){
-    let moving = false
-
-    if(keys.w){
-      myPlayer.y -= speed
-      myPlayer.direction = 'up'
-      moving = true
-    }
-
-    if(keys.s){
-      myPlayer.y += speed
-      myPlayer.direction = 'down'
-      moving = true
-    }
-
-    if(keys.a){
-      myPlayer.x -= speed
-      myPlayer.direction = 'left'
-      moving = true
-    }
-
-    if(keys.d){
-      myPlayer.x += speed
-      myPlayer.direction = 'right'
-      moving = true
-    }
-
-    myPlayer.x = Math.max(0, Math.min(window.innerWidth - 64, myPlayer.x))
-    myPlayer.y = Math.max(120, Math.min(window.innerHeight - 64, myPlayer.y))
-
-    if(moving){
-      myPlayer.frame += 0.18
-    }else{
-      myPlayer.frame = 1
-    }
-
-    myPlayer.moving = moving
-    updatePlayer(myId, myPlayer)
-
-    if(timestamp - lastSent > 80){
-      sendState()
-      lastSent = timestamp
-    }
-
-    requestAnimationFrame(gameLoop)
-  }
-
-  requestAnimationFrame(gameLoop)
-}
-
-camBtn.onclick = () => {
-  if(!localStream) return
-
-  cameraEnabled = !cameraEnabled
-  myPlayer.cam = cameraEnabled
-
-  localStream.getVideoTracks().forEach(track => {
-    track.enabled = cameraEnabled
-  })
-
-  sendState()
-}
-
-micBtn.onclick = () => {
-  if(!localStream) return
-
-  micEnabled = !micEnabled
-  myPlayer.mic = micEnabled
-
-  localStream.getAudioTracks().forEach(track => {
-    track.enabled = micEnabled
-  })
-
-  sendState()
-}
-
-function sendState(){
-  if(sendStateAction){
-    sendStateAction({
-      x: myPlayer.x,
-      y: myPlayer.y,
-      direction: myPlayer.direction,
-      frame: myPlayer.frame,
-      moving: myPlayer.moving,
-      sprite: myPlayer.sprite,
-      name: myPlayer.name,
-      cam: myPlayer.cam,
-      mic: myPlayer.mic
-    })
+  if(targetPeerId){
+    connect.Send(payload, {connectId:targetPeerId})
+  }else{
+    connect.Send(payload)
   }
 }
 
-function sendSprite(){
-  if(sendSpriteAction){
-    sendSpriteAction({
-      sprite: myPlayer.sprite
-    })
+function removePeer(peerId){
+  if(peerConnections[peerId]){
+    peerConnections[peerId].close()
+    delete peerConnections[peerId]
   }
+
+  if(peerCards[peerId]){
+    peerCards[peerId].remove()
+    delete peerCards[peerId]
+  }
+
+  delete peerStates[peerId]
 }
 
 function escapeHTML(str){
@@ -507,45 +480,6 @@ function escapeHTML(str){
     "'":'&#039;',
     '"':'&quot;'
   }[char]))
-}
-
-function createDefaultSprite(){
-  const canvas = document.createElement('canvas')
-  canvas.width = SHEET_W
-  canvas.height = SHEET_H
-  const ctx = canvas.getContext('2d')
-  ctx.imageSmoothingEnabled = false
-
-  const colors = ['#60a5fa', '#34d399', '#f59e0b', '#f472b6']
-
-  for(let row = 0; row < 4; row++){
-    for(let col = 0; col < 3; col++){
-      const x = col * FRAME_W
-      const y = row * FRAME_H
-      const bob = col === 1 ? 0 : 1
-
-      ctx.fillStyle = 'transparent'
-      ctx.clearRect(x, y, FRAME_W, FRAME_H)
-
-      ctx.fillStyle = '#facc15'
-      ctx.fillRect(x + 11, y + 3 + bob, 10, 10)
-
-      ctx.fillStyle = colors[row]
-      ctx.fillRect(x + 9, y + 14 + bob, 14, 11)
-
-      ctx.fillStyle = '#111827'
-      ctx.fillRect(x + 10, y + 25, 4, 5)
-      ctx.fillRect(x + 18, y + 25, 4, 5)
-
-      ctx.fillStyle = '#ffffff'
-      if(row === 0){
-        ctx.fillRect(x + 13, y + 7 + bob, 2, 2)
-        ctx.fillRect(x + 18, y + 7 + bob, 2, 2)
-      }
-    }
-  }
-
-  return canvas.toDataURL('image/png')
 }
 </script>
 </body>
