@@ -80,4 +80,343 @@ body{
   top:0;
 }
 
+.nameTag{
+  position:absolute;
+  top:-20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,0.7);
+  padding:2px 6px;
+  border-radius:6px;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.videoWrap{
+  position:absolute;
+  top:-120px;
+  left:-32px;
+  width:128px;
+  text-align:center;
+}
+
+video{
+  width:128px;
+  height:96px;
+  object-fit:cover;
+  border-radius:10px;
+  border:2px solid white;
+  background:black;
+}
+
+.status{
+  font-size:11px;
+  margin-top:4px;
+}
+
+#help{
+  position:fixed;
+  bottom:10px;
+  left:10px;
+  background:rgba(0,0,0,0.7);
+  padding:10px;
+  border-radius:10px;
+  z-index:9999;
+  font-size:13px;
+}
+
+</style>
+</head>
+<body>
+
+<div id="ui">
+  <h2>Trystero Sprite World</h2>
+
+  <input type="text" id="roomInput" placeholder="Room Name" value="demo-room" />
+
+  <input type="file" id="spriteUpload" accept="image/*" />
+
+  <button id="joinBtn">Join Room</button>
+
+  <button id="camBtn">Toggle Camera</button>
+
+  <button id="micBtn">Toggle Mic</button>
+</div>
+
+<div id="help">
+  Controls:<br>
+  W A S D = Move Character<br>
+  Upload 96x128 sprite sheet<br>
+  Each frame should be 32x32
+</div>
+
+<div id="scene"></div>
+
+<script type="module">
+
+import {joinRoom} from 'https://cdn.jsdelivr.net/npm/trystero@0.20.1/+esm'
+
+const config = {
+  appId: 'sprite-video-world'
+}
+
+const scene = document.getElementById('scene')
+const joinBtn = document.getElementById('joinBtn')
+const camBtn = document.getElementById('camBtn')
+const micBtn = document.getElementById('micBtn')
+const spriteUpload = document.getElementById('spriteUpload')
+const roomInput = document.getElementById('roomInput')
+
+let room
+let localStream
+let cameraEnabled = true
+let micEnabled = true
+
+const myId = Math.random().toString(36).substring(2, 8)
+
+let mySpriteURL = 'https://retro-sprite-creator.nihey.org/assets/characters/body/male/light.png'
+
+const players = {}
+
+const myPlayer = {
+  id: myId,
+  x: 200,
+  y: 200,
+  direction: 'down',
+  frame: 0,
+  moving: false,
+  sprite: mySpriteURL,
+  name: 'Player-' + myId
+}
+
+spriteUpload.addEventListener('change', e => {
+  const file = e.target.files[0]
+  if(!file) return
+
+  const reader = new FileReader()
+
+  reader.onload = ev => {
+    mySpriteURL = ev.target.result
+    myPlayer.sprite = mySpriteURL
+
+    if(players[myId]){
+      players[myId].querySelector('.sprite').style.backgroundImage = `url(${mySpriteURL})`
+    }
+
+    sendState()
+  }
+
+  reader.readAsDataURL(file)
+})
+
+joinBtn.onclick = async () => {
+
+  joinBtn.disabled = true
+
+  localStream = await navigator.mediaDevices.getUserMedia({
+    video:true,
+    audio:true
+  })
+
+  room = joinRoom(config, roomInput.value)
+
+  createPlayer(myPlayer, true)
+
+  const [sendStateAction, getStateAction] = room.makeAction('state')
+
+  const [sendSpriteAction, getSpriteAction] = room.makeAction('sprite')
+
+  room.onPeerJoin(peerId => {
+    console.log('Peer joined', peerId)
+  })
+
+  room.onPeerLeave(peerId => {
+    if(players[peerId]){
+      players[peerId].remove()
+      delete players[peerId]
+    }
+  })
+
+  room.addStream(localStream)
+
+  room.onPeerStream((stream, peerId) => {
+
+    if(players[peerId]){
+      const video = players[peerId].querySelector('video')
+      video.srcObject = stream
+    }
+
+  })
+
+  getStateAction((data, peerId) => {
+
+    let p = data
+
+    p.id = peerId
+
+    if(!players[peerId]){
+      createPlayer(p, false)
+    }
+
+    updatePlayer(peerId, p)
+
+  })
+
+  getSpriteAction((data, peerId) => {
+
+    if(players[peerId]){
+      players[peerId].querySelector('.sprite').style.backgroundImage = `url(${data.sprite})`
+    }
+
+  })
+
+  window.sendState = () => {
+    sendStateAction(myPlayer)
+    sendSpriteAction({sprite: mySpriteURL})
+  }
+
+  setInterval(() => {
+    sendState()
+  }, 80)
+
+  setupControls()
+
+}
+
+function createPlayer(data, isSelf){
+
+  const div = document.createElement('div')
+  div.className = 'player'
+  div.id = 'player-' + data.id
+
+  div.innerHTML = `
+    <div class="nameTag">${data.name}</div>
+
+    <div class="videoWrap">
+      <video autoplay playsinline ${isSelf ? 'muted' : ''}></video>
+      <div class="status">🎥 📢</div>
+    </div>
+
+    <div class="sprite"></div>
+  `
+
+  scene.appendChild(div)
+
+  const sprite = div.querySelector('.sprite')
+  sprite.style.backgroundImage = `url(${data.sprite})`
+
+  if(isSelf){
+    div.querySelector('video').srcObject = localStream
+  }
+
+  players[data.id] = div
+
+  updatePlayer(data.id, data)
+
+}
+
+function updatePlayer(id, data){
+
+  const player = players[id]
+  if(!player) return
+
+  player.style.left = data.x + 'px'
+  player.style.top = data.y + 'px'
+
+  const sprite = player.querySelector('.sprite')
+
+  let row = 0
+
+  if(data.direction === 'down') row = 0
+  if(data.direction === 'left') row = 1
+  if(data.direction === 'right') row = 2
+  if(data.direction === 'up') row = 3
+
+  const frame = data.frame % 4
+
+  sprite.style.backgroundPosition = `-${frame * 64}px -${row * 32}px`
+
+}
+
+function setupControls(){
+
+  const speed = 4
+
+  const keys = {}
+
+  window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true
+  })
+
+  window.addEventListener('keyup', e => {
+    keys[e.key.toLowerCase()] = false
+  })
+
+  function gameLoop(){
+
+    let moving = false
+
+    if(keys['w']){
+      myPlayer.y -= speed
+      myPlayer.direction = 'up'
+      moving = true
+    }
+
+    if(keys['s']){
+      myPlayer.y += speed
+      myPlayer.direction = 'down'
+      moving = true
+    }
+
+    if(keys['a']){
+      myPlayer.x -= speed
+      myPlayer.direction = 'left'
+      moving = true
+    }
+
+    if(keys['d']){
+      myPlayer.x += speed
+      myPlayer.direction = 'right'
+      moving = true
+    }
+
+    if(moving){
+      myPlayer.frame += 0.2
+    }
+
+    updatePlayer(myId, myPlayer)
+
+    requestAnimationFrame(gameLoop)
+  }
+
+  gameLoop()
+
+}
+
+camBtn.onclick = () => {
+
+  if(!localStream) return
+
+  cameraEnabled = !cameraEnabled
+
+  localStream.getVideoTracks().forEach(track => {
+    track.enabled = cameraEnabled
+  })
+
+}
+
+micBtn.onclick = () => {
+
+  if(!localStream) return
+
+  micEnabled = !micEnabled
+
+  localStream.getAudioTracks().forEach(track => {
+    track.enabled = micEnabled
+  })
+
+}
+
+</script>
+</body>
 </html>
