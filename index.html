@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gather Town • webconnect.js Mesh</title>
+    <title>Gather Town • webconnect + GenosDB</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         body { margin:0; background:#000; font-family:'Press Start 2P',system-ui; overflow:hidden; color:#fff; }
@@ -26,7 +26,7 @@
     <div id="ui">
         <div id="auth" class="panel">
             <h1 style="color:#0f0;margin:0 0 20px;">GATHER TOWN</h1>
-            <h3 style="color:#0ff;">webconnect.js WebRTC Mesh</h3>
+            <h3 style="color:#0ff;">webconnect.js + GenosDB</h3>
             <button onclick="startApp()" style="width:100%;padding:18px;font-size:16px;">JOIN GLOBAL ROOM</button>
             <small style="color:#666;display:block;margin-top:15px;">WASD Move • 96×128 Sprite</small>
         </div>
@@ -51,8 +51,9 @@
 
     <script type="module">
         import webconnect from "https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js";
+        import { gdb } from "https://cdn.jsdelivr.net/npm/genosdb@latest/dist/index.min.js";
 
-        let canvas, ctx, wc;
+        let canvas, ctx, wc, db;
         let myId, myProfile = {name: "Player"};
         let myX = 512, myY = 384, myDir = 0, myFrame = 0, animTime = 0;
         let keys = {}, lastSync = 0;
@@ -60,7 +61,7 @@
         let players = {}, spriteSheets = {};
         let myStream = null;
 
-        const ROOM = "gather-mesh-v20";
+        const ROOM = "gather-hybrid-v21";
 
         window.onload = () => {
             canvas = document.getElementById("canvas");
@@ -76,6 +77,7 @@
             myId = "p-" + Math.random().toString(36).slice(2, 10);
             myProfile.name = "P" + myId.slice(0,4);
 
+            // 1. webconnect.js for direct WebRTC mesh
             wc = webconnect({
                 appName: "gather-town",
                 channelName: ROOM,
@@ -83,22 +85,35 @@
                 autoConnect: true
             });
 
-            wc.onConnect((attr) => {
-                console.log("🔗 New peer:", attr.connectId);
-            });
-
+            wc.onConnect((attr) => console.log("🔗 Peer joined:", attr.connectId));
             wc.onReceive((data, attr) => {
                 if (data.type === "position") {
                     players[attr.connectId] = data.pos;
-                    if (data.sprite && !spriteSheets[attr.connectId]) {
-                        const img = new Image();
-                        img.src = data.sprite;
-                        img.onload = () => spriteSheets[attr.connectId] = img;
-                    }
                 }
             });
 
-            console.log("✅ webconnect.js Mesh Ready");
+            // 2. GenosDB for shared state (sprites, positions, etc.)
+            db = await gdb(ROOM, { rtc: true, autoConnect: true, persist: false });
+
+            db.get(`room.${ROOM}.players`, (data, key) => {
+                if (key === myId || !data) return;
+                players[key] = {
+                    x: Number(data.x) || 400,
+                    y: Number(data.y) || 300,
+                    dir: Number(data.dir) || 0,
+                    frame: Number(data.frame) || 0,
+                    name: data.name || "Player",
+                    spriteDataURL: data.spriteDataURL
+                };
+
+                if (data.spriteDataURL && !spriteSheets[key]) {
+                    const img = new Image();
+                    img.src = data.spriteDataURL;
+                    img.onload = () => spriteSheets[key] = img;
+                }
+            });
+
+            console.log("✅ Hybrid Mesh + GenosDB Ready");
             initMedia();
             setupInput();
             gameLoop();
@@ -113,12 +128,22 @@
         }
 
         function syncPosition() {
-            if (!wc) return;
-            wc.Send({  // ← Capital S
-                type: "position",
-                pos: { x: Math.round(myX), y: Math.round(myY), dir: myDir, frame: Math.floor(myFrame) },
-                sprite: myProfile.spriteDataURL
-            });
+            if (wc) {
+                wc.Send({
+                    type: "position",
+                    pos: { x: Math.round(myX), y: Math.round(myY), dir: myDir, frame: Math.floor(myFrame) }
+                });
+            }
+            if (db) {
+                db.put(`room.${ROOM}.players.${myId}`, {
+                    x: Math.round(myX),
+                    y: Math.round(myY),
+                    dir: myDir,
+                    frame: Math.floor(myFrame),
+                    name: myProfile.name,
+                    spriteDataURL: myProfile.spriteDataURL
+                });
+            }
         }
 
         function uploadSprite() {
@@ -130,7 +155,7 @@
                     const img = new Image();
                     img.src = ev.target.result;
                     img.onload = () => {
-                        if (img.width !== 96 || img.height !== 128) return alert("Must be exactly 96×128!");
+                        if (img.width !== 96 || img.height !== 128) return alert("Must be 96×128!");
                         spriteSheetImg = img;
                         myProfile.spriteDataURL = ev.target.result;
                     };
@@ -160,13 +185,6 @@
                 btn.textContent = track.enabled ? "🎤 ON" : "🎤 OFF";
                 btn.style.background = track.enabled ? "#0f0" : "#f44";
             }
-        }
-
-        function toggleSpeaker() {
-            const btn = document.getElementById("speakerBtn");
-            const isOn = btn.textContent.includes("ON");
-            btn.textContent = isOn ? "🔇 OFF" : "🔊 ON";
-            btn.style.background = isOn ? "#f44" : "#0f0";
         }
 
         function setupInput() {
@@ -242,7 +260,7 @@
         window.uploadSprite = uploadSprite;
         window.toggleCamera = toggleCamera;
         window.toggleMic = toggleMic;
-        window.toggleSpeaker = toggleSpeaker;
+        window.toggleSpeaker = () => {};
         window.sendChat = sendChat;
     </script>
 </body>
