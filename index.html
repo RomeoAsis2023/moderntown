@@ -3,64 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gather Town • webconnect.js</title>
+    <title>Gather Town • Global Room</title>
+    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        body { margin:0; background:#000; font-family:'Press Start 2P',system-ui; overflow:hidden; color:#fff; }
+        body { margin:0; background:#0a0a0a; font-family:'Press Start 2P',system-ui; overflow:hidden; color:#fff; }
         canvas { display:block; image-rendering:pixelated; background:#1a3a1a; }
-        #ui { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
-        .panel { pointer-events:auto; background:rgba(0,0,0,0.92); border:4px solid #0f0; padding:12px; font-size:12px; box-shadow:0 0 20px #0f0; }
-        #auth { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:440px; text-align:center; }
-        #controls { position:absolute; top:12px; left:12px; display:flex; gap:6px; flex-wrap:wrap; }
-        button { background:#0f0; color:#000; border:none; padding:8px 12px; font-size:13px; cursor:pointer; }
-        button:hover { background:#0ff; }
-        #selfVideoContainer { position:absolute; bottom:100px; left:12px; border:4px solid #0ff; box-shadow:0 0 20px #0ff; background:#000; }
-        #chat { position:absolute; bottom:12px; right:12px; width:360px; height:280px; }
-        #messages { height:200px; overflow-y:auto; background:#111; padding:8px; font-size:11px; }
+        
+        #joinOverlay {
+            position: fixed; top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.95); display:flex; align-items:center; justify-content:center; z-index:10000;
+        }
+        .join-card {
+            background:#111214; border:4px solid #5865f2; border-radius:16px; padding:40px; text-align:center; width:90%; max-width:420px;
+        }
+        button {
+            background:#5865f2; color:white; border:none; padding:14px 32px; font-size:16px; cursor:pointer; border-radius:8px; margin-top:10px; width:100%;
+        }
+        button:hover { background:#4752c4; }
+        
+        #controls {
+            position:absolute; top:12px; left:12px; display:flex; gap:6px; z-index:100;
+        }
+        #selfVideoContainer {
+            position:absolute; bottom:100px; left:12px; border:4px solid #0ff; box-shadow:0 0 20px #0ff; background:#000; display:none;
+        }
         video { width:180px; display:block; }
     </style>
 </head>
 <body>
     <canvas id="canvas" width="1024" height="768"></canvas>
 
-    <div id="ui">
-        <div id="auth" class="panel">
-            <h1 style="color:#0f0;margin:0 0 20px;">GATHER TOWN<br><small>webconnect.js ESM</small></h1>
-            <button onclick="startApp()" style="width:100%;padding:18px;font-size:16px;">JOIN GLOBAL ROOM</button>
-            <small style="color:#0ff;display:block;margin-top:15px;">Pure P2P • No GunDB</small>
-        </div>
-
-        <div id="controls" class="panel" style="display:none;">
-            <button onclick="uploadSprite()">📤 SPRITE (96×128)</button>
-            <button onclick="toggleCamera()" id="camBtn">📹 ON</button>
-            <button onclick="toggleMic()" id="micBtn">🎤 ON</button>
-            <button onclick="toggleSpeaker()" id="speakerBtn">🔊 ON</button>
-        </div>
-
-        <div id="selfVideoContainer" style="display:none;">
-            <video id="selfVideo" autoplay playsinline muted></video>
-        </div>
-
-        <div id="chat" class="panel" style="display:none;">
-            <div id="messages"></div>
-            <input id="chatInput" placeholder="Type + Enter" 
-                   style="width:100%;padding:8px;background:#222;border:2px solid #0f0;color:#fff;"
-                   onkeypress="if(event.key==='Enter') sendChat()">
+    <!-- Join Screen -->
+    <div id="joinOverlay">
+        <div class="join-card">
+            <h1 style="color:#5865f2; margin-bottom:10px;">GATHER TOWN</h1>
+            <p style="margin-bottom:20px; color:#aaa;">Global Room • Sprite Edition</p>
+            <button onclick="joinRoom()">ENTER GLOBAL ROOM</button>
+            <small style="display:block; margin-top:15px; color:#666;">WASD to move • Upload 96×128 sprite</small>
         </div>
     </div>
 
-    <script type="module">
-        import webconnect from "https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js";
+    <!-- Controls -->
+    <div id="controls" style="display:none;">
+        <button onclick="uploadSprite()">📤 SPRITE</button>
+        <button onclick="toggleCamera()" id="camBtn">📹 ON</button>
+        <button onclick="toggleMic()" id="micBtn">🎤 ON</button>
+    </div>
 
-        let canvas, ctx, wc;
-        let myId, myProfile = {name: "Player"};
+    <div id="selfVideoContainer">
+        <video id="selfVideo" autoplay playsinline muted></video>
+    </div>
+
+    <script>
+        let peer, myPeerId, canvas, ctx;
         let myX = 512, myY = 384, myDir = 0, myFrame = 0, animTime = 0;
         let keys = {}, lastSync = 0;
         let spriteSheetImg = null;
         let players = {}, spriteSheets = {};
+        let myProfile = {name: "Player"};
         let myStream = null;
+        let connections = new Map();
 
-        const ROOM = "gather-global-room-v17";
+        const ROOM = "gather-global-v18";
 
         window.onload = () => {
             canvas = document.getElementById("canvas");
@@ -68,41 +73,50 @@
             ctx.imageSmoothingEnabled = false;
         };
 
-        async function startApp() {
-            document.getElementById("auth").style.display = "none";
+        async function joinRoom() {
+            document.getElementById("joinOverlay").style.display = "none";
             document.getElementById("controls").style.display = "flex";
-            document.getElementById("chat").style.display = "block";
 
-            myId = "p-" + Math.random().toString(36).slice(2, 10);
-            myProfile.name = "P" + myId.slice(0,4);
+            myPeerId = "p-" + Math.random().toString(36).slice(2, 10);
+            myProfile.name = "P" + myPeerId.slice(0,4);
 
-            // Initialize webconnect.js
-            wc = webconnect({
-                appName: "gather-town",
-                channelName: ROOM,
-                rtc: true,
-                autoConnect: true
+            peer = new Peer(myPeerId);
+
+            peer.on("open", () => {
+                console.log("✅ Joined global room as", myPeerId);
             });
 
-            wc.onConnect((attr) => {
-                console.log("🔗 Peer connected:", attr.connectId);
+            peer.on("connection", conn => {
+                connections.set(conn.peer, conn);
+                conn.on("open", () => conn.send({type:"profile", name:myProfile.name}));
+                conn.on("data", data => handleData(data, conn.peer));
             });
 
-            wc.onReceive((data, attr) => {
-                if (data.type === "position") {
-                    players[attr.connectId] = data.pos;
-                    if (data.sprite && !spriteSheets[attr.connectId]) {
-                        const img = new Image();
-                        img.src = data.sprite;
-                        img.onload = () => spriteSheets[attr.connectId] = img;
-                    }
-                }
-            });
-
-            console.log("✅ webconnect.js started");
             initMedia();
             setupInput();
             gameLoop();
+        }
+
+        function handleData(data, peerId) {
+            if (data.type === "position") {
+                players[peerId] = data.pos;
+                if (data.sprite && !spriteSheets[peerId]) {
+                    const img = new Image();
+                    img.src = data.sprite;
+                    img.onload = () => spriteSheets[peerId] = img;
+                }
+            }
+        }
+
+        function syncPosition() {
+            const data = {
+                type: "position",
+                pos: { x: Math.round(myX), y: Math.round(myY), dir: myDir, frame: Math.floor(myFrame) },
+                sprite: myProfile.spriteDataURL
+            };
+            connections.forEach(conn => {
+                if (conn.open) conn.send(data);
+            });
         }
 
         async function initMedia() {
@@ -110,16 +124,7 @@
                 myStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: { width: 320, height: 240 } });
                 document.getElementById("selfVideo").srcObject = myStream;
                 document.getElementById("selfVideoContainer").style.display = "block";
-            } catch(e) { console.log("Media blocked"); }
-        }
-
-        function syncPosition() {
-            if (!wc) return;
-            wc.send({
-                type: "position",
-                pos: { x: Math.round(myX), y: Math.round(myY), dir: myDir, frame: Math.floor(myFrame) },
-                sprite: myProfile.spriteDataURL
-            });
+            } catch(e) {}
         }
 
         function uploadSprite() {
@@ -131,7 +136,7 @@
                     const img = new Image();
                     img.src = ev.target.result;
                     img.onload = () => {
-                        if (img.width !== 96 || img.height !== 128) return alert("Must be 96×128!");
+                        if (img.width !== 96 || img.height !== 128) return alert("Must be 96×128 sprite sheet!");
                         spriteSheetImg = img;
                         myProfile.spriteDataURL = ev.target.result;
                     };
@@ -144,30 +149,19 @@
         function toggleCamera() {
             if (!myStream) return;
             const track = myStream.getVideoTracks()[0];
-            if (track) {
-                track.enabled = !track.enabled;
-                const btn = document.getElementById("camBtn");
-                btn.textContent = track.enabled ? "📹 ON" : "📹 OFF";
-                btn.style.background = track.enabled ? "#0f0" : "#f44";
-            }
+            if (track) track.enabled = !track.enabled;
         }
 
         function toggleMic() {
             if (!myStream) return;
             const track = myStream.getAudioTracks()[0];
-            if (track) {
-                track.enabled = !track.enabled;
-                const btn = document.getElementById("micBtn");
-                btn.textContent = track.enabled ? "🎤 ON" : "🎤 OFF";
-                btn.style.background = track.enabled ? "#0f0" : "#f44";
-            }
+            if (track) track.enabled = !track.enabled;
         }
 
         function toggleSpeaker() {
             const btn = document.getElementById("speakerBtn");
             const isOn = btn.textContent.includes("ON");
             btn.textContent = isOn ? "🔇 OFF" : "🔊 ON";
-            btn.style.background = isOn ? "#f44" : "#0f0";
         }
 
         function setupInput() {
@@ -189,10 +183,12 @@
             ctx.fillStyle = "#1a3a1a";
             ctx.fillRect(0, 0, 1024, 768);
 
+            // Grid
             ctx.strokeStyle = "#0a2a0a";
             for (let i = 0; i < 1024; i += 32) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,768); ctx.stroke(); }
             for (let i = 0; i < 768; i += 32) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(1024,i); ctx.stroke(); }
 
+            // Other players
             for (let id in players) {
                 const p = players[id];
                 drawSprite(spriteSheets[id], p.x, p.y, p.dir, p.frame);
@@ -202,12 +198,14 @@
                 ctx.fillText(p.name || "?", p.x, p.y - 28);
             }
 
+            // Self
             drawSprite(spriteSheetImg, myX, myY, myDir, Math.floor(myFrame));
             ctx.fillStyle = "#0f0";
             ctx.font = "11px Press Start 2P";
             ctx.textAlign = "center";
             ctx.fillText(myProfile.name, myX, myY - 28);
 
+            // Movement
             let moved = false, speed = 4.2;
             if (keys["w"] || keys["arrowup"])    { myY -= speed; myDir = 3; moved = true; }
             if (keys["s"] || keys["arrowdown"])  { myY += speed; myDir = 0; moved = true; }
@@ -239,8 +237,7 @@
             input.value = "";
         }
 
-        // Expose functions
-        window.startApp = startApp;
+        window.joinRoom = joinRoom;
         window.uploadSprite = uploadSprite;
         window.toggleCamera = toggleCamera;
         window.toggleMic = toggleMic;
