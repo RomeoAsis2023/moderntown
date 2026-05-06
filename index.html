@@ -3,251 +3,113 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>webConnect.js Sprite Call World</title>
+<title>Sprite P2P Video Chat World</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-
-body{
-  background:#0f172a;
-  color:white;
-  font-family:Arial,Helvetica,sans-serif;
-  overflow:hidden;
-}
+body{background:#0f172a;color:white;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
 
 #ui{
-  position:fixed;
-  top:12px;
-  left:12px;
-  z-index:9999;
-  width:350px;
-  background:rgba(0,0,0,.72);
-  padding:14px;
-  border-radius:14px;
+  position:fixed;top:12px;left:12px;z-index:9999;width:350px;
+  background:rgba(0,0,0,.72);padding:14px;border-radius:14px
 }
-
 #ui h1{font-size:18px;margin-bottom:10px}
-
-#ui input,#ui button{
-  width:100%;
-  padding:10px;
-  margin-bottom:8px;
-  border:none;
-  border-radius:9px;
-}
-
-#ui button{
-  background:#2563eb;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-}
-
+#ui input,#ui button{width:100%;padding:10px;margin-bottom:8px;border:none;border-radius:9px}
+#ui button{background:#2563eb;color:white;font-weight:bold;cursor:pointer}
 #ui button:disabled{opacity:.55}
-
-#status{
-  font-size:13px;
-  color:#cbd5e1;
-  line-height:1.4;
-}
+#status{font-size:13px;color:#cbd5e1;line-height:1.4}
 
 #scene{
-  position:relative;
-  width:100vw;
-  height:100vh;
-  overflow:hidden;
+  position:relative;width:100vw;height:100vh;overflow:hidden;
   background:
     linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
     linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
   background-size:32px 32px;
 }
 
-.player{
-  position:absolute;
-  width:96px;
-  height:96px;
-  cursor:pointer;
-}
-
+.player{position:absolute;width:96px;height:96px;cursor:pointer}
 .nameTag{
-  position:absolute;
-  top:-20px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,.7);
-  padding:3px 8px;
-  border-radius:999px;
-  font-size:12px;
-  white-space:nowrap;
+  position:absolute;top:-20px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.7);padding:3px 8px;border-radius:999px;
+  font-size:12px;white-space:nowrap
 }
-
 .sprite{
-  position:absolute;
-  left:32px;
-  top:8px;
-  width:32px;
-  height:32px;
-  image-rendering:pixelated;
-  background-repeat:no-repeat;
-  background-size:96px 128px;
-  transform:scale(2);
-  transform-origin:top left;
+  position:absolute;left:32px;top:8px;width:32px;height:32px;
+  image-rendering:pixelated;background-repeat:no-repeat;background-size:96px 128px;
+  transform:scale(2);transform-origin:top left
 }
-
 .chatBubble{
-  position:absolute;
-  top:-42px;
-  left:50%;
-  transform:translateX(-50%);
-  width:34px;
-  height:34px;
-  border-radius:50%;
-  border:none;
-  background:#2563eb;
-  color:white;
-  font-size:17px;
-  cursor:pointer;
-  display:none;
-  box-shadow:0 8px 24px rgba(0,0,0,.35);
+  position:absolute;top:-42px;left:50%;transform:translateX(-50%);
+  width:34px;height:34px;border-radius:50%;border:none;background:#2563eb;
+  color:white;font-size:17px;cursor:pointer;display:none;box-shadow:0 8px 24px rgba(0,0,0,.35)
 }
-
-.player:hover .chatBubble{
-  display:block;
-}
-
-.callStrip{
-  position:absolute;
-  left:50%;
-  top:78px;
-  transform:translateX(-50%);
-  width:170px;
-  background:rgba(0,0,0,.72);
-  border:1px solid rgba(255,255,255,.16);
-  border-radius:14px;
-  padding:7px;
-  display:none;
-  align-items:center;
-  gap:6px;
-  box-shadow:0 14px 35px rgba(0,0,0,.35);
-}
-
-.callStrip video{
-  width:150px;
-  height:86px;
-  background:#020617;
-  object-fit:cover;
-  border-radius:10px;
-}
-
-.callControls{
-  position:absolute;
-  left:50%;
-  bottom:-34px;
-  transform:translateX(-50%);
-  display:flex;
-  gap:5px;
-  background:rgba(0,0,0,.68);
-  padding:5px;
-  border-radius:999px;
-}
-
-.iconBtn{
-  width:28px;
-  height:28px;
-  border:none;
-  border-radius:50%;
-  background:rgba(255,255,255,.18);
-  color:white;
-  font-size:13px;
-  cursor:pointer;
-}
-
-.iconBtn.off{background:#dc2626}
+.player:hover .chatBubble{display:block}
 
 #help{
-  position:fixed;
-  bottom:12px;
-  left:12px;
-  z-index:9999;
-  background:rgba(0,0,0,.72);
-  padding:12px;
-  border-radius:12px;
-  font-size:13px;
-  color:#cbd5e1;
-  line-height:1.5;
+  position:fixed;bottom:12px;left:12px;z-index:9999;background:rgba(0,0,0,.72);
+  padding:12px;border-radius:12px;font-size:13px;color:#cbd5e1;line-height:1.5
 }
 
 .modal{
-  position:fixed;
-  inset:0;
-  z-index:99999;
-  background:rgba(0,0,0,.62);
-  display:none;
-  align-items:center;
-  justify-content:center;
+  position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.68);
+  display:none;align-items:center;justify-content:center
 }
-
 .modalBox{
-  width:360px;
-  background:#111827;
-  border:1px solid rgba(255,255,255,.16);
-  border-radius:18px;
-  padding:16px;
-  box-shadow:0 20px 60px rgba(0,0,0,.45);
+  width:420px;background:#111827;border:1px solid rgba(255,255,255,.16);
+  border-radius:18px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.45)
+}
+.modalBox.wide{width:760px}
+.modalBox h2{font-size:19px;margin-bottom:8px}
+.modalBox p{font-size:14px;color:#cbd5e1;line-height:1.5;margin-bottom:12px}
+
+.previewVideo,.remoteVideo{
+  width:100%;background:#020617;object-fit:cover;border-radius:14px
+}
+.previewVideo{height:210px;margin-bottom:12px}
+.remoteVideo{height:360px}
+
+.callGrid{
+  display:grid;grid-template-columns:1fr 210px;gap:12px;margin-bottom:12px
+}
+.sidePanel{display:flex;flex-direction:column;gap:10px}
+.localPreview{
+  width:100%;height:120px;background:#020617;object-fit:cover;border-radius:12px
 }
 
-.modalBox h2{
-  font-size:19px;
-  margin-bottom:8px;
+.modalControls,.callControls{
+  display:flex;justify-content:center;gap:8px;margin-bottom:12px
 }
-
-.modalBox p{
-  font-size:14px;
-  color:#cbd5e1;
-  line-height:1.5;
-  margin-bottom:12px;
+.iconBtn{
+  width:38px;height:38px;border:none;border-radius:50%;background:rgba(255,255,255,.18);
+  color:white;font-size:16px;cursor:pointer
 }
+.iconBtn.off{background:#dc2626}
 
-.previewVideo{
-  width:100%;
-  height:190px;
-  background:#020617;
-  object-fit:cover;
-  border-radius:14px;
-  margin-bottom:12px;
+.modalActions{display:flex;gap:8px}
+.modalActions button,.sendBtn,.endBtn{
+  padding:11px;border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer
 }
-
-.modalControls{
-  display:flex;
-  justify-content:center;
-  gap:8px;
-  margin-bottom:12px;
-}
-
-.modalActions{
-  display:flex;
-  gap:8px;
-}
-
-.modalActions button{
-  flex:1;
-  padding:11px;
-  border:none;
-  border-radius:10px;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-.acceptBtn,.callBtn{background:#16a34a}
+.modalActions button{flex:1}
+.acceptBtn,.callBtn,.sendBtn{background:#16a34a}
 .declineBtn,.cancelBtn,.endBtn{background:#dc2626}
+
+.chatBox{
+  height:185px;background:#020617;border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;padding:10px;overflow:auto;font-size:13px;color:#e5e7eb
+}
+.chatMsg{margin-bottom:8px;line-height:1.35}
+.chatMsg b{color:#93c5fd}
+.chatInputRow{display:flex;gap:8px}
+.chatInputRow input{
+  flex:1;padding:10px;border:none;border-radius:10px;background:#1f2937;color:white
+}
 </style>
 </head>
 
 <body>
 
 <div id="ui">
-  <h1>Sprite Video Call World</h1>
+  <h1>Sprite P2P Video Chat World</h1>
   <input id="roomInput" value="demo-room" placeholder="Room name" />
   <input id="spriteUpload" type="file" accept="image/png,image/webp,image/jpeg" />
   <button id="joinBtn">Join Room</button>
@@ -265,24 +127,50 @@ body{
 
 <div id="scene"></div>
 
-<div id="callModal" class="modal">
+<div id="requestModal" class="modal">
   <div class="modalBox">
-    <h2 id="modalTitle">Video Call</h2>
-    <p id="modalText">Call request</p>
-
-    <video id="modalPreview" class="previewVideo" autoplay playsinline muted></video>
+    <h2 id="requestTitle">Video Call</h2>
+    <p id="requestText">Call request</p>
+    <video id="requestPreview" class="previewVideo" autoplay playsinline muted></video>
 
     <div class="modalControls">
-      <button id="modalVideoBtn" class="iconBtn">📹</button>
-      <button id="modalMicBtn" class="iconBtn">🎙️</button>
-      <button id="modalSpeakerBtn" class="iconBtn">🔊</button>
+      <button id="requestVideoBtn" class="iconBtn">📹</button>
+      <button id="requestMicBtn" class="iconBtn">🎙️</button>
     </div>
 
-    <div id="modalActions" class="modalActions"></div>
+    <div id="requestActions" class="modalActions"></div>
   </div>
 </div>
 
-<div id="scene"></div>
+<div id="callModal" class="modal">
+  <div class="modalBox wide">
+    <h2 id="callTitle">Video Chat</h2>
+
+    <div class="callGrid">
+      <div>
+        <video id="remoteVideo" class="remoteVideo" autoplay playsinline></video>
+      </div>
+
+      <div class="sidePanel">
+        <video id="localPreview" class="localPreview" autoplay playsinline muted></video>
+
+        <div class="callControls">
+          <button id="callVideoBtn" class="iconBtn">📹</button>
+          <button id="callMicBtn" class="iconBtn">🎙️</button>
+          <button id="callSpeakerBtn" class="iconBtn">🔊</button>
+          <button id="callEndBtn" class="iconBtn off">❌</button>
+        </div>
+
+        <div id="chatBox" class="chatBox"></div>
+
+        <div class="chatInputRow">
+          <input id="chatInput" placeholder="Type message..." />
+          <button id="sendChatBtn" class="sendBtn">Send</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 <script type="module">
 import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
@@ -293,33 +181,35 @@ const joinBtn = document.getElementById('joinBtn')
 const roomInput = document.getElementById('roomInput')
 const spriteUpload = document.getElementById('spriteUpload')
 
+const requestModal = document.getElementById('requestModal')
+const requestTitle = document.getElementById('requestTitle')
+const requestText = document.getElementById('requestText')
+const requestPreview = document.getElementById('requestPreview')
+const requestActions = document.getElementById('requestActions')
+const requestVideoBtn = document.getElementById('requestVideoBtn')
+const requestMicBtn = document.getElementById('requestMicBtn')
+
 const callModal = document.getElementById('callModal')
-const modalTitle = document.getElementById('modalTitle')
-const modalText = document.getElementById('modalText')
-const modalPreview = document.getElementById('modalPreview')
-const modalActions = document.getElementById('modalActions')
-const modalVideoBtn = document.getElementById('modalVideoBtn')
-const modalMicBtn = document.getElementById('modalMicBtn')
-const modalSpeakerBtn = document.getElementById('modalSpeakerBtn')
+const callTitle = document.getElementById('callTitle')
+const remoteVideo = document.getElementById('remoteVideo')
+const localPreview = document.getElementById('localPreview')
+const callVideoBtn = document.getElementById('callVideoBtn')
+const callMicBtn = document.getElementById('callMicBtn')
+const callSpeakerBtn = document.getElementById('callSpeakerBtn')
+const callEndBtn = document.getElementById('callEndBtn')
+const chatBox = document.getElementById('chatBox')
+const chatInput = document.getElementById('chatInput')
+const sendChatBtn = document.getElementById('sendChatBtn')
 
 const urlParams = new URLSearchParams(window.location.search)
-
-const playerName =
-  sanitizeName(urlParams.get('name')) ||
-  'Guest-' + Math.random().toString(36).substring(2,6)
+const playerName = sanitizeName(urlParams.get('name')) || 'Guest-' + Math.random().toString(36).substring(2,6)
 
 const FRAME_W = 32
 const FRAME_H = 32
 const SHEET_W = 96
 const SHEET_H = 128
 const COLS = 3
-
-const DIRECTION_ROW = {
-  down:0,
-  left:1,
-  right:2,
-  up:3
-}
+const DIRECTION_ROW = {down:0,left:1,right:2,up:3}
 
 let connect = null
 let localStream = null
@@ -327,7 +217,6 @@ let myConnectId = null
 let roomName = null
 let movementStarted = false
 let activeCallPeer = null
-let pendingCallPeer = null
 
 const connectedPeers = new Set()
 const peerStates = {}
@@ -344,10 +233,7 @@ let localState = {
   moving:false
 }
 
-let myPosition = {
-  x:360,
-  y:220
-}
+let myPosition = {x:360,y:220}
 
 spriteUpload.addEventListener('change', e => {
   const file = e.target.files[0]
@@ -365,14 +251,11 @@ spriteUpload.addEventListener('change', e => {
     }
 
     const reader = new FileReader()
-
     reader.onload = ev => {
       localState.sprite = ev.target.result
-
       if(players.local){
         players.local.querySelector('.sprite').style.backgroundImage = `url(${localState.sprite})`
       }
-
       broadcastState()
     }
 
@@ -393,18 +276,16 @@ joinBtn.onclick = async () => {
   roomName = roomInput.value.trim() || 'demo-room'
 
   try{
-    localStream = await navigator.mediaDevices.getUserMedia({
-      video:true,
-      audio:true
-    })
+    localStream = await navigator.mediaDevices.getUserMedia({video:true,audio:true})
   }catch(error){
     alert('Camera and microphone permission are required.')
     joinBtn.disabled = false
     return
   }
 
-  modalPreview.srcObject = localStream
-  createPlayer('local', null, playerName, true)
+  requestPreview.srcObject = localStream
+  localPreview.srcObject = localStream
+  createPlayer('local', playerName, true)
 
   connect = webconnect()
 
@@ -413,13 +294,9 @@ joinBtn.onclick = async () => {
     statusEl.textContent = 'Connected as ' + playerName + ' (' + myConnectId + ') · Room: ' + roomName
   })
 
-  connect.onConnect(attribute => {
-    sendHello(attribute.connectId)
-  })
+  connect.onConnect(attribute => sendHello(attribute.connectId))
 
-  connect.onDisconnect(attribute => {
-    removePeer(attribute.connectId)
-  })
+  connect.onDisconnect(attribute => removePeer(attribute.connectId))
 
   connect.onReceive(async (data, attribute) => {
     const peerId = attribute.connectId
@@ -435,36 +312,39 @@ joinBtn.onclick = async () => {
 
     if(data.type === 'state'){
       peerStates[peerId] = data.state
-
       if(!players[peerId]){
-        createPlayer(peerId, null, data.state.name || 'Peer-' + peerId.substring(0,4), false)
+        createPlayer(peerId, data.state.name || 'Peer-' + peerId.substring(0,4), false)
       }
-
       updateRemotePlayer(peerId)
       return
     }
 
     if(data.type === 'video-call-request'){
-      showIncomingCallPopup(peerId, data.fromName || 'Someone')
+      showIncomingRequest(peerId, data.fromName || 'Someone')
       return
     }
 
     if(data.type === 'video-call-accept'){
       activeCallPeer = peerId
-      hideCallModal()
-      showCallStrip(peerId)
+      closeRequestModal()
+      openCallModal(peerId)
       await startCall(peerId, shouldInitiate(peerId))
       return
     }
 
     if(data.type === 'video-call-decline'){
-      hideCallModal()
+      closeRequestModal()
       alert((peerStates[peerId]?.name || 'Peer') + ' declined the video call.')
       return
     }
 
     if(data.type === 'video-call-end'){
       endCall(peerId, false)
+      return
+    }
+
+    if(data.type === 'video-chat-message'){
+      addChatMessage(data.fromName || 'Peer', data.message || '', false)
       return
     }
 
@@ -490,10 +370,8 @@ joinBtn.onclick = async () => {
   }
 }
 
-function createPlayer(id, stream, name, isLocal){
-  if(players[id]){
-    return
-  }
+function createPlayer(id, name, isLocal){
+  if(players[id]) return
 
   const player = document.createElement('div')
   player.className = 'player'
@@ -503,17 +381,6 @@ function createPlayer(id, stream, name, isLocal){
     <div class="nameTag">${escapeHTML(name)}</div>
     <button class="chatBubble" title="Video Call">💬</button>
     <div class="sprite"></div>
-
-    <div class="callStrip">
-      <video autoplay playsinline ${isLocal ? 'muted' : ''}></video>
-
-      <div class="callControls">
-        <button class="iconBtn videoToggle" title="Video">📹</button>
-        <button class="iconBtn speakerToggle" title="Speaker">🔊</button>
-        <button class="iconBtn micToggle" title="Mic">🎙️</button>
-        <button class="iconBtn endCallBtn" title="End Call">❌</button>
-      </div>
-    </div>
   `
 
   scene.appendChild(player)
@@ -522,72 +389,37 @@ function createPlayer(id, stream, name, isLocal){
   sprite.style.backgroundImage = `url(${isLocal ? localState.sprite : createDefaultSprite()})`
 
   const chatBubble = player.querySelector('.chatBubble')
-  const video = player.querySelector('video')
-  const videoBtn = player.querySelector('.videoToggle')
-  const speakerBtn = player.querySelector('.speakerToggle')
-  const micBtn = player.querySelector('.micToggle')
-  const endBtn = player.querySelector('.endCallBtn')
-
-  if(stream){
-    video.srcObject = stream
-    video.play().catch(() => {})
-  }
 
   if(isLocal){
     player.style.left = myPosition.x + 'px'
     player.style.top = myPosition.y + 'px'
     chatBubble.style.display = 'none'
-    speakerBtn.style.display = 'none'
-
-    videoBtn.onclick = () => toggleLocalVideo(videoBtn)
-    micBtn.onclick = () => toggleLocalMic(micBtn)
-    endBtn.onclick = () => {
-      if(activeCallPeer) endCall(activeCallPeer, true)
-    }
   }else{
     player.style.left = '300px'
     player.style.top = '300px'
 
     chatBubble.onclick = e => {
       e.stopPropagation()
-      showOutgoingCallPopup(id)
+      showOutgoingRequest(id)
     }
 
     player.onclick = () => {
       chatBubble.style.display = 'block'
-      setTimeout(() => {
-        chatBubble.style.display = ''
-      }, 2500)
+      setTimeout(() => chatBubble.style.display = '', 2500)
     }
-
-    videoBtn.disabled = true
-    micBtn.disabled = true
-
-    videoBtn.classList.add('remote')
-    micBtn.classList.add('remote')
-
-    speakerBtn.onclick = () => {
-      video.muted = !video.muted
-      speakerBtn.classList.toggle('off', video.muted)
-      speakerBtn.textContent = video.muted ? '🔈' : '🔊'
-    }
-
-    endBtn.onclick = () => endCall(id, true)
   }
 
   players[id] = player
 }
 
-function showOutgoingCallPopup(peerId){
-  pendingCallPeer = peerId
+function showOutgoingRequest(peerId){
   const name = peerStates[peerId]?.name || 'Peer'
 
-  modalTitle.textContent = 'Start Video Call'
-  modalText.textContent = 'Do you want to video call ' + name + '?'
-  modalPreview.srcObject = localStream
-  modalSpeakerBtn.style.display = 'none'
+  requestTitle.textContent = 'Start Video Call'
+  requestText.textContent = 'Do you want to video call ' + name + '?'
+  requestPreview.srcObject = localStream
 
-  modalActions.innerHTML = `
+  requestActions.innerHTML = `
     <button class="callBtn" id="callNowBtn">Call</button>
     <button class="cancelBtn" id="cancelCallBtn">Cancel</button>
   `
@@ -599,28 +431,21 @@ function showOutgoingCallPopup(peerId){
       fromName:playerName
     })
 
-    modalText.textContent = 'Calling ' + name + '... waiting for answer.'
-    modalActions.innerHTML = `
-      <button class="cancelBtn" id="cancelCallBtn2">Cancel</button>
-    `
-
-    document.getElementById('cancelCallBtn2').onclick = hideCallModal
+    requestText.textContent = 'Calling ' + name + '... waiting for answer.'
+    requestActions.innerHTML = `<button class="cancelBtn" id="cancelCallBtn2">Cancel</button>`
+    document.getElementById('cancelCallBtn2').onclick = closeRequestModal
   }
 
-  document.getElementById('cancelCallBtn').onclick = hideCallModal
-
-  showCallModal()
+  document.getElementById('cancelCallBtn').onclick = closeRequestModal
+  requestModal.style.display = 'flex'
 }
 
-function showIncomingCallPopup(peerId, fromName){
-  pendingCallPeer = peerId
+function showIncomingRequest(peerId, fromName){
+  requestTitle.textContent = 'Incoming Video Call'
+  requestText.textContent = fromName + ' wants to video call you. Do you want to answer?'
+  requestPreview.srcObject = localStream
 
-  modalTitle.textContent = 'Incoming Video Call'
-  modalText.textContent = fromName + ' wants to video call you. Do you want to answer?'
-  modalPreview.srcObject = localStream
-  modalSpeakerBtn.style.display = 'none'
-
-  modalActions.innerHTML = `
+  requestActions.innerHTML = `
     <button class="acceptBtn" id="acceptCallBtn">Accept</button>
     <button class="declineBtn" id="declineCallBtn">Decline</button>
   `
@@ -633,8 +458,8 @@ function showIncomingCallPopup(peerId, fromName){
       room:roomName
     })
 
-    hideCallModal()
-    showCallStrip(peerId)
+    closeRequestModal()
+    openCallModal(peerId)
     await startCall(peerId, shouldInitiate(peerId))
   }
 
@@ -643,68 +468,97 @@ function showIncomingCallPopup(peerId, fromName){
       type:'video-call-decline',
       room:roomName
     })
-
-    hideCallModal()
+    closeRequestModal()
   }
 
-  showCallModal()
+  requestModal.style.display = 'flex'
 }
 
-function showCallModal(){
+function closeRequestModal(){
+  requestModal.style.display = 'none'
+}
+
+function openCallModal(peerId){
+  const name = peerStates[peerId]?.name || 'Peer'
+  activeCallPeer = peerId
+
+  callTitle.textContent = 'Video Chat with ' + name
+  localPreview.srcObject = localStream
+  chatBox.innerHTML = ''
+  addChatMessage('System', 'Call connected. You can now chat P2P.', false)
+
   callModal.style.display = 'flex'
 }
 
-function hideCallModal(){
+function closeCallModal(){
   callModal.style.display = 'none'
-  pendingCallPeer = null
+  remoteVideo.srcObject = null
 }
 
-function showCallStrip(peerId){
-  if(players.local){
-    const localStrip = players.local.querySelector('.callStrip')
-    const localVideo = players.local.querySelector('video')
-    localVideo.srcObject = localStream
-    localVideo.play().catch(() => {})
-    localStrip.style.display = 'flex'
-  }
+requestVideoBtn.onclick = () => toggleLocalVideo(requestVideoBtn)
+requestMicBtn.onclick = () => toggleLocalMic(requestMicBtn)
+callVideoBtn.onclick = () => toggleLocalVideo(callVideoBtn)
+callMicBtn.onclick = () => toggleLocalMic(callMicBtn)
 
-  if(players[peerId]){
-    players[peerId].querySelector('.callStrip').style.display = 'flex'
-  }
+callSpeakerBtn.onclick = () => {
+  remoteVideo.muted = !remoteVideo.muted
+  callSpeakerBtn.classList.toggle('off', remoteVideo.muted)
+  callSpeakerBtn.textContent = remoteVideo.muted ? '🔈' : '🔊'
 }
 
-function hideCallStrip(peerId){
-  if(players.local){
-    players.local.querySelector('.callStrip').style.display = 'none'
-  }
+callEndBtn.onclick = () => {
+  if(activeCallPeer) endCall(activeCallPeer, true)
+}
 
-  if(players[peerId]){
-    players[peerId].querySelector('.callStrip').style.display = 'none'
-  }
+sendChatBtn.onclick = sendChatMessage
+chatInput.addEventListener('keydown', e => {
+  if(e.key === 'Enter') sendChatMessage()
+})
+
+function sendChatMessage(){
+  const message = chatInput.value.trim()
+  if(!message || !activeCallPeer) return
+
+  addChatMessage(playerName, message, true)
+
+  sendToPeer(activeCallPeer, {
+    type:'video-chat-message',
+    room:roomName,
+    fromName:playerName,
+    message
+  })
+
+  chatInput.value = ''
+}
+
+function addChatMessage(name, message, isMe){
+  const div = document.createElement('div')
+  div.className = 'chatMsg'
+  div.innerHTML = `<b>${escapeHTML(isMe ? 'You' : name)}:</b> ${escapeHTML(message)}`
+  chatBox.appendChild(div)
+  chatBox.scrollTop = chatBox.scrollHeight
 }
 
 function toggleLocalVideo(btn){
   localState.video = !localState.video
+  localStream.getVideoTracks().forEach(track => track.enabled = localState.video)
 
-  localStream.getVideoTracks().forEach(track => {
-    track.enabled = localState.video
-  })
-
-  btn.classList.toggle('off', !localState.video)
-  btn.textContent = localState.video ? '📹' : '📷'
+  requestVideoBtn.classList.toggle('off', !localState.video)
+  callVideoBtn.classList.toggle('off', !localState.video)
+  requestVideoBtn.textContent = localState.video ? '📹' : '📷'
+  callVideoBtn.textContent = localState.video ? '📹' : '📷'
 
   broadcastState()
 }
 
 function toggleLocalMic(btn){
   localState.mic = !localState.mic
+  localStream.getAudioTracks().forEach(track => track.enabled = localState.mic)
 
-  localStream.getAudioTracks().forEach(track => {
-    track.enabled = localState.mic
-  })
-
-  btn.classList.toggle('off', !localState.mic)
-  btn.textContent = localState.mic ? '🎙️' : '🔇'
+  requestMicBtn.classList.toggle('off', !localState.mic)
+  callMicBtn.classList.toggle('off', !localState.mic)
+  requestMicBtn.textContent = localState.mic ? '🎙️' : '🔇'
+  callMicBtn.textContent = localState.mic ? '🎙️' : '🔇'
 
   broadcastState()
 }
@@ -733,9 +587,7 @@ async function startCall(peerId, shouldCreateOffer){
 
   const pc = createPeerConnection(peerId)
 
-  localStream.getTracks().forEach(track => {
-    pc.addTrack(track, localStream)
-  })
+  localStream.getTracks().forEach(track => pc.addTrack(track, localStream))
 
   if(shouldCreateOffer){
     const offer = await pc.createOffer()
@@ -774,16 +626,10 @@ function createPeerConnection(peerId){
 
   pc.ontrack = event => {
     const stream = event.streams[0]
-
     if(stream){
-      if(!players[peerId]){
-        createPlayer(peerId, stream, peerStates[peerId]?.name || 'Peer-' + peerId.substring(0,4), false)
-      }
-
-      const video = players[peerId].querySelector('video')
-      video.srcObject = stream
-      video.play().catch(() => {})
-      showCallStrip(peerId)
+      remoteVideo.srcObject = stream
+      remoteVideo.play().catch(() => {})
+      callModal.style.display = 'flex'
     }
   }
 
@@ -803,6 +649,7 @@ function createPeerConnection(peerId){
 async function handleOffer(peerId, offer){
   await acceptPeer(peerId)
   activeCallPeer = peerId
+  openCallModal(peerId)
 
   const pc = await startCall(peerId, false)
 
@@ -818,7 +665,6 @@ async function handleOffer(peerId, offer){
     answer:pc.localDescription
   })
 
-  showCallStrip(peerId)
   broadcastState(peerId)
 }
 
@@ -854,7 +700,6 @@ async function flushPendingIce(peerId){
 
   while(queue.length){
     const candidate = queue.shift()
-
     try{
       await pc.addIceCandidate(new RTCIceCandidate(candidate))
     }catch(error){
@@ -878,7 +723,7 @@ function endCall(peerId, notify){
 
   delete pendingIce[peerId]
   activeCallPeer = null
-  hideCallStrip(peerId)
+  closeCallModal()
   statusEl.textContent = 'Call ended'
 }
 
@@ -887,47 +732,27 @@ function updateRemotePlayer(peerId){
   const state = peerStates[peerId]
   if(!player || !state) return
 
-  if(state.name){
-    player.querySelector('.nameTag').textContent = state.name
-  }
-
-  if(state.sprite){
-    player.querySelector('.sprite').style.backgroundImage = `url(${state.sprite})`
-  }
+  if(state.name) player.querySelector('.nameTag').textContent = state.name
+  if(state.sprite) player.querySelector('.sprite').style.backgroundImage = `url(${state.sprite})`
 
   if(typeof state.x === 'number') player.style.left = state.x + 'px'
   if(typeof state.y === 'number') player.style.top = state.y + 'px'
 
   updateSpriteFrame(player, state.direction, state.frame)
-
-  const videoBtn = player.querySelector('.videoToggle')
-  const micBtn = player.querySelector('.micToggle')
-
-  videoBtn.classList.toggle('off', !state.video)
-  micBtn.classList.toggle('off', !state.mic)
-
-  videoBtn.textContent = state.video ? '📹' : '📷'
-  micBtn.textContent = state.mic ? '🎙️' : '🔇'
 }
 
 function updateSpriteFrame(player, direction, frame){
   const sprite = player.querySelector('.sprite')
   const row = DIRECTION_ROW[direction] ?? 0
   const col = Math.floor(frame) % COLS
-
-  sprite.style.backgroundPosition =
-    `-${col * FRAME_W}px -${row * FRAME_H}px`
+  sprite.style.backgroundPosition = `-${col * FRAME_W}px -${row * FRAME_H}px`
 }
 
 const keys = {}
 
 window.addEventListener('keydown', e => {
   const key = e.key.toLowerCase()
-
-  if(['w','a','s','d'].includes(key)){
-    e.preventDefault()
-  }
-
+  if(['w','a','s','d'].includes(key)) e.preventDefault()
   keys[key] = true
 })
 
@@ -941,43 +766,18 @@ function movementLoop(timestamp = 0){
   const speed = 3
   let moved = false
 
-  if(keys.w){
-    myPosition.y -= speed
-    localState.direction = 'up'
-    moved = true
-  }
-
-  if(keys.s){
-    myPosition.y += speed
-    localState.direction = 'down'
-    moved = true
-  }
-
-  if(keys.a){
-    myPosition.x -= speed
-    localState.direction = 'left'
-    moved = true
-  }
-
-  if(keys.d){
-    myPosition.x += speed
-    localState.direction = 'right'
-    moved = true
-  }
+  if(keys.w){myPosition.y -= speed; localState.direction = 'up'; moved = true}
+  if(keys.s){myPosition.y += speed; localState.direction = 'down'; moved = true}
+  if(keys.a){myPosition.x -= speed; localState.direction = 'left'; moved = true}
+  if(keys.d){myPosition.x += speed; localState.direction = 'right'; moved = true}
 
   myPosition.x = Math.max(0, Math.min(window.innerWidth - 180, myPosition.x))
   myPosition.y = Math.max(40, Math.min(window.innerHeight - 190, myPosition.y))
 
   localState.moving = moved
-
-  if(moved){
-    localState.frame += 0.16
-  }else{
-    localState.frame = 1
-  }
+  localState.frame = moved ? localState.frame + 0.16 : 1
 
   const myPlayer = players.local
-
   if(myPlayer){
     myPlayer.style.left = myPosition.x + 'px'
     myPlayer.style.top = myPosition.y + 'px'
@@ -1011,14 +811,11 @@ function broadcastState(targetPeerId = null){
     return
   }
 
-  connectedPeers.forEach(peerId => {
-    sendToPeer(peerId, payload)
-  })
+  connectedPeers.forEach(peerId => sendToPeer(peerId, payload))
 }
 
 function sendToPeer(peerId, payload){
   if(!connect || !peerId) return
-
   try{
     connect.Send(payload, {connectId:peerId})
   }catch(error){
@@ -1041,6 +838,11 @@ function removePeer(peerId){
 
   delete peerStates[peerId]
   delete pendingIce[peerId]
+
+  if(activeCallPeer === peerId){
+    activeCallPeer = null
+    closeCallModal()
+  }
 }
 
 function sanitizeName(name){
