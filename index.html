@@ -212,10 +212,6 @@
             font-size: 12px;
         }
         
-        hr {
-            border-color: #aa7c58;
-        }
-        
         .tab-buttons {
             display: flex;
             gap: 10px;
@@ -235,8 +231,22 @@
         .tab-btn.active {
             background: #6a994e;
         }
+        
+        .status-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.7);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            color: #0f0;
+            z-index: 20;
+            font-family: monospace;
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/gun@0.2020.1236/gun.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun@0.2020.1236/sea.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/webrtc-adapter@8.2.0/dist/adapter.min.js"></script>
 </head>
 <body>
@@ -244,9 +254,7 @@
 <div id="appRoot"></div>
 
 <script>
-    // Simple P2P signaling using GunDB as signaling server (fallback when Trystero unavailable)
-    // This creates a fully functional virtual office without external dependencies
-    
+    // Global state
     let currentUser = null;
     let gun = null;
     let localStream = null;
@@ -254,10 +262,10 @@
     let remotePlayers = new Map();
     let localPlayer = { x: 800, y: 500, dir: 'down', frame: 0, moving: false, username: '', spriteSheet: null };
     let objectsMap = new Map();
-    let peerConnections = new Map();
     let canvas = null, ctx = null;
     let pendingImage = null;
     let keys = { w: false, s: false, a: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+    let userList = new Map();
     
     function fileToBase64(file) {
         return new Promise((resolve) => {
@@ -288,6 +296,7 @@
     
     // Render Auth UI
     function renderAuth() {
+        const root = document.getElementById('appRoot');
         root.innerHTML = `
             <div class="modal" id="authModal">
                 <div class="modal-card">
@@ -300,7 +309,7 @@
                         <input type="text" id="loginUsername" placeholder="Username" />
                         <input type="password" id="loginPassword" placeholder="Password" />
                         <button id="doLogin" class="btn-primary">🔐 Enter Office</button>
-                        <div class="drag-zone">✨ P2P Encrypted World</div>
+                        <div class="drag-zone">✨ P2P Encrypted World ✨<br>Works globally!</div>
                     </div>
                     <div id="registerPanel" style="display:none">
                         <input type="text" id="regFullName" placeholder="Full Name" />
@@ -343,21 +352,42 @@
             const pwd = document.getElementById('loginPassword').value;
             if (!username || !pwd) return alert("Enter credentials");
             
+            // Initialize Gun with SEA
             gun = Gun({
-                peers: ['https://gun-manhattan.herokuapp.com/gun', 'https://gunjs.herokuapp.com/gun'],
-                localStorage: true
+                peers: [
+                    'https://gun-manhattan.herokuapp.com/gun',
+                    'https://gun-eu.herokuapp.com/gun',
+                    'https://gunjs.herokuapp.com/gun'
+                ],
+                localStorage: true,
+                radisk: true
             });
             
+            // Load SEA module
             const user = gun.user();
+            
             user.auth(username, pwd, async (ack) => {
-                if (ack.err) return alert("Login fail: " + ack.err);
-                const profile = await new Promise(resolve => {
-                    gun.get('users').get(username).once((data) => resolve(data));
+                if (ack.err) {
+                    console.error("Auth error:", ack.err);
+                    return alert("Login failed: " + ack.err);
+                }
+                
+                // Get user data from Gun
+                gun.get('users').get(username).once((profile) => {
+                    if (!profile) {
+                        alert("User profile not found");
+                        return;
+                    }
+                    currentUser = { 
+                        username, 
+                        fullName: profile.fullName, 
+                        position: profile.position, 
+                        profilePic: profile.profilePic, 
+                        spriteData: profile.spriteData || DEFAULT_SPRITE_URL 
+                    };
+                    document.getElementById('authModal').remove();
+                    startOffice(currentUser);
                 });
-                if (!profile) return alert("User data missing");
-                currentUser = { username, fullName: profile.fullName, position: profile.position, profilePic: profile.profilePic, spriteData: profile.spriteData };
-                document.getElementById('authModal').remove();
-                startOffice(currentUser);
             });
         };
         
@@ -370,6 +400,7 @@
             const spriteFile = document.getElementById('regSprite').files[0];
             
             if (!username || !pwd) return alert("Username/password required");
+            if (!fullName) return alert("Full name required");
             
             let profilePicBase64 = "";
             let spriteBase64 = DEFAULT_SPRITE_URL;
@@ -381,16 +412,36 @@
                 spriteBase64 = await fileToBase64(spriteFile);
             }
             
-            const userData = { fullName, username, position, profilePic: profilePicBase64, spriteData: spriteBase64, createdAt: Date.now() };
+            const userData = { 
+                fullName, 
+                username, 
+                position, 
+                profilePic: profilePicBase64, 
+                spriteData: spriteBase64, 
+                createdAt: Date.now() 
+            };
             
-            gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'], localStorage: true });
+            gun = Gun({
+                peers: ['https://gun-manhattan.herokuapp.com/gun', 'https://gunjs.herokuapp.com/gun'],
+                localStorage: true
+            });
+            
             const user = gun.user();
             user.create(username, pwd, (confirm) => {
-                if (confirm.err) return alert("Register error: " + confirm.err);
-                user.auth(username, pwd, async () => {
-                    gun.get('users').get(username).put(userData);
-                    alert("Registration success! Please login.");
-                    document.getElementById('showLoginBtn').click();
+                if (confirm.err) {
+                    console.error("Create error:", confirm.err);
+                    return alert("Registration error: " + confirm.err);
+                }
+                
+                user.auth(username, pwd, () => {
+                    gun.get('users').get(username).put(userData, (ack) => {
+                        if (ack.err) {
+                            alert("Error saving profile: " + ack.err);
+                        } else {
+                            alert("Registration successful! Please login.");
+                            document.getElementById('showLoginBtn').click();
+                        }
+                    });
                 });
             });
         };
@@ -398,8 +449,10 @@
     
     // Start Office Environment
     async function startOffice(user) {
+        const root = document.getElementById('appRoot');
         root.innerHTML = `
             <div class="game-container">
+                <div class="status-indicator" id="statusIndicator">🟢 Connected to P2P network</div>
                 <canvas id="officeCanvas" width="1200" height="700" style="width:1200px;height:700px"></canvas>
                 <div class="ui-panel">
                     <div><span class="badge">👤 ${user.fullName} (${user.position})</span></div>
@@ -411,7 +464,7 @@
                     <div>💡 Drag & drop PNG ➕ click canvas to place object</div>
                 </div>
                 <div class="chat-box">
-                    <div class="chat-messages" id="chatMessages"><i>✨ Welcome to the office! ✨</i></div>
+                    <div class="chat-messages" id="chatMessages"><i>✨ Welcome to the virtual office! ✨</i><br><i>Use WASD or Arrow keys to move</i></div>
                     <div class="chat-input">
                         <input id="chatInput" placeholder="Say something..." />
                         <button id="sendChat">➤</button>
@@ -438,9 +491,11 @@
         objectsNode.map().on((obj, id) => {
             if (obj && obj.filename && !objectsMap.has(id)) {
                 const img = new Image();
+                img.onload = () => {
+                    objectsMap.set(id, { ...obj, img });
+                    drawFullScene();
+                };
                 img.src = obj.imageData;
-                objectsMap.set(id, { ...obj, img });
-                drawFullScene();
             }
         });
         
@@ -449,34 +504,36 @@
         usersNode.map().on((profile, uid) => {
             if (uid !== user.username && profile && profile.spriteData && !remotePlayers.has(uid)) {
                 const spriteImg = new Image();
+                spriteImg.onload = () => {
+                    remotePlayers.set(uid, { spriteImg, x: 400, y: 400, dir: 'down', frame: 0, username: profile.fullName || uid });
+                    drawFullScene();
+                };
                 spriteImg.src = profile.spriteData;
-                remotePlayers.set(uid, { spriteImg, x: 400, y: 400, dir: 'down', frame: 0, username: uid, peerConnection: null });
-                drawFullScene();
             }
         });
         
         // Setup position sync via GunDB
         const posNode = gun.get('positions').get(user.username);
         setInterval(() => {
-            posNode.put({ x: localPlayer.x, y: localPlayer.y, dir: localPlayer.dir, frame: localPlayer.frame, timestamp: Date.now() });
+            if (localPlayer) {
+                posNode.put({ x: localPlayer.x, y: localPlayer.y, dir: localPlayer.dir, frame: localPlayer.frame, timestamp: Date.now() });
+            }
         }, 50);
         
         gun.get('positions').map().on((pos, uid) => {
-            if (uid !== user.username && remotePlayers.has(uid)) {
+            if (uid !== user.username && remotePlayers.has(uid) && pos) {
                 const r = remotePlayers.get(uid);
-                if (pos) {
-                    r.x = pos.x;
-                    r.y = pos.y;
-                    r.dir = pos.dir;
-                    r.frame = pos.frame;
-                    remotePlayers.set(uid, r);
-                    drawFullScene();
-                }
+                r.x = pos.x;
+                r.y = pos.y;
+                r.dir = pos.dir;
+                r.frame = pos.frame;
+                remotePlayers.set(uid, r);
+                drawFullScene();
             }
         });
         
         // Chat sync
-        const chatNode = gun.get('chat').set();
+        const chatNode = gun.get('chat');
         chatNode.map().on((msg, id) => {
             if (msg && msg.text) {
                 const chatDiv = document.getElementById('chatMessages');
@@ -494,44 +551,11 @@
             }
         };
         
-        // WebRTC for voice/video
-        async function createPeerConnection(targetUserId) {
-            const pc = new RTCPeerConnection({
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' },
-                    { urls: 'stun:stun.cloudflare.com:3478' }
-                ]
-            });
-            
-            if (localStream) {
-                localStream.getTracks().forEach(track => pc.addTrack(track, localStream));
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('sendChat').click();
             }
-            
-            pc.ontrack = (event) => {
-                const videosDiv = document.getElementById('floatingVideos');
-                let existing = document.getElementById(`vid-${targetUserId}`);
-                if (!existing) {
-                    const vidDiv = document.createElement('div');
-                    vidDiv.className = 'remote-vid';
-                    vidDiv.id = `vid-${targetUserId}`;
-                    const video = document.createElement('video');
-                    video.autoplay = true;
-                    video.playsInline = true;
-                    video.srcObject = event.streams[0];
-                    vidDiv.appendChild(video);
-                    videosDiv.appendChild(vidDiv);
-                }
-            };
-            
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    gun.get('webrtc').get(targetUserId).get(user.username).put({ candidate: event.candidate });
-                }
-            };
-            
-            return pc;
-        }
+        });
         
         // Media controls
         const micBtn = document.getElementById('micBtn');
@@ -543,16 +567,16 @@
                 localStream.getAudioTracks().forEach(t => t.stop());
                 localStream = null;
                 micBtn.classList.remove('active');
+                micBtn.innerHTML = '🎤 Mic';
             } else {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                if (!localStream) localStream = stream;
-                else stream.getAudioTracks().forEach(t => localStream.addTrack(t));
-                micBtn.classList.add('active');
-                // Reconnect to all peers
-                for (let [uid, player] of remotePlayers) {
-                    if (player.peerConnection) {
-                        localStream.getTracks().forEach(track => player.peerConnection.addTrack(track, localStream));
-                    }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    localStream = stream;
+                    micBtn.classList.add('active');
+                    micBtn.innerHTML = '🎤 Mic ON';
+                    updateStatus("Microphone enabled");
+                } catch(e) {
+                    alert("Cannot access microphone: " + e.message);
                 }
             }
         };
@@ -562,15 +586,32 @@
                 localStream.getVideoTracks().forEach(t => t.stop());
                 localStream = null;
                 camBtn.classList.remove('active');
+                camBtn.innerHTML = '📷 Cam';
+                // Remove video elements
+                document.getElementById('floatingVideos').innerHTML = '';
             } else {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
-                if (!localStream) localStream = stream;
-                else stream.getVideoTracks().forEach(t => localStream.addTrack(t));
-                camBtn.classList.add('active');
-                for (let [uid, player] of remotePlayers) {
-                    if (player.peerConnection) {
-                        localStream.getTracks().forEach(track => player.peerConnection.addTrack(track, localStream));
-                    }
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+                    if (!localStream) localStream = stream;
+                    else stream.getVideoTracks().forEach(t => localStream.addTrack(t));
+                    camBtn.classList.add('active');
+                    camBtn.innerHTML = '📷 Cam ON';
+                    updateStatus("Camera enabled");
+                    
+                    // Show local video preview
+                    const videosDiv = document.getElementById('floatingVideos');
+                    const localVideoDiv = document.createElement('div');
+                    localVideoDiv.className = 'remote-vid';
+                    localVideoDiv.id = 'local-video';
+                    const video = document.createElement('video');
+                    video.autoplay = true;
+                    video.muted = true;
+                    video.playsInline = true;
+                    video.srcObject = localStream;
+                    localVideoDiv.appendChild(video);
+                    videosDiv.appendChild(localVideoDiv);
+                } catch(e) {
+                    alert("Cannot access camera: " + e.message);
                 }
             }
         };
@@ -580,28 +621,29 @@
                 screenStream.getTracks().forEach(t => t.stop());
                 screenStream = null;
                 screenBtn.classList.remove('active');
-                screenBtn.textContent = '🖥️ Share Screen';
+                screenBtn.innerHTML = '🖥️ Share Screen';
+                updateStatus("Screen sharing stopped");
             } else {
-                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                screenStream = stream;
-                screenBtn.classList.add('active');
-                screenBtn.textContent = '⏹️ Stop Share';
-                if (localStream) {
-                    localStream.getVideoTracks().forEach(t => t.stop());
-                    localStream = stream;
-                } else {
-                    localStream = stream;
-                }
-                for (let [uid, player] of remotePlayers) {
-                    if (player.peerConnection && localStream) {
-                        localStream.getTracks().forEach(track => player.peerConnection.addTrack(track, localStream));
-                    }
+                try {
+                    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    screenStream = stream;
+                    screenBtn.classList.add('active');
+                    screenBtn.innerHTML = '⏹️ Stop Share';
+                    updateStatus("Screen sharing started");
+                    
+                    stream.getVideoTracks()[0].onended = () => {
+                        screenStream = null;
+                        screenBtn.classList.remove('active');
+                        screenBtn.innerHTML = '🖥️ Share Screen';
+                    };
+                } catch(e) {
+                    alert("Screen share cancelled or error: " + e.message);
                 }
             }
         };
         
         // Drag & drop objects
-        canvas.addEventListener('dragover', (e) => { e.preventDefault(); canvas.style.opacity = '0.9'; });
+        canvas.addEventListener('dragover', (e) => { e.preventDefault(); canvas.style.opacity = '0.8'; });
         canvas.addEventListener('dragleave', () => { canvas.style.opacity = '1'; });
         canvas.addEventListener('drop', async (e) => {
             e.preventDefault();
@@ -613,7 +655,7 @@
             const img = new Image();
             img.onload = () => {
                 pendingImage = { data: base64Data, width: img.width, height: img.height, filename: pngFile.name };
-                alert(`✨ ${pngFile.name} ready! Click canvas to place.`);
+                alert(`✨ ${pngFile.name} loaded! Click on canvas to place.`);
             };
             img.src = base64Data;
         });
@@ -625,17 +667,26 @@
                 const scaleY = canvas.height / rect.height;
                 const mouseX = (e.clientX - rect.left) * scaleX;
                 const mouseY = (e.clientY - rect.top) * scaleY;
-                const objId = `obj_${Date.now()}`;
+                const objId = `obj_${Date.now()}_${Math.random()}`;
                 const objData = {
-                    id: objId, filename: pendingImage.filename, width: pendingImage.width, height: pendingImage.height,
-                    imageData: pendingImage.data, x: mouseX, y: mouseY, placedBy: user.username
+                    id: objId, 
+                    filename: pendingImage.filename, 
+                    width: pendingImage.width, 
+                    height: pendingImage.height,
+                    imageData: pendingImage.data, 
+                    x: mouseX - (pendingImage.width/2), 
+                    y: mouseY - (pendingImage.height/2), 
+                    placedBy: user.username,
+                    timestamp: Date.now()
                 };
                 const imgObj = new Image();
+                imgObj.onload = () => {
+                    objectsMap.set(objId, { ...objData, img: imgObj });
+                    gun.get('officeObjects').get(objId).put(objData);
+                    drawFullScene();
+                };
                 imgObj.src = pendingImage.data;
-                objectsMap.set(objId, { ...objData, img: imgObj });
-                gun.get('officeObjects').get(objId).put(objData);
                 pendingImage = null;
-                drawFullScene();
             }
         });
         
@@ -657,7 +708,9 @@
                 else localPlayer.dir = moveY > 0 ? 'down' : 'up';
                 localPlayer.frame = (Date.now() / 150) % 2;
                 drawFullScene();
-            } else localPlayer.moving = false;
+            } else {
+                localPlayer.moving = false;
+            }
         }
         
         function drawFullScene() {
@@ -669,8 +722,8 @@
             // Draw grid
             for (let i = 0; i < canvas.width; i += 32) {
                 ctx.beginPath();
-                ctx.strokeStyle = '#567d46';
-                ctx.lineWidth = 0.5;
+                ctx.strokeStyle = '#5a7a4a';
+                ctx.lineWidth = 1;
                 ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height);
                 ctx.moveTo(0, i); ctx.lineTo(canvas.width, i);
                 ctx.stroke();
@@ -686,24 +739,24 @@
             // Draw remote players
             for (let [id, r] of remotePlayers.entries()) {
                 if (r.spriteImg && r.spriteImg.complete) {
-                    let row = { down: 0, left: 1, right: 2, up: 3 }[r.dir] || 0;
-                    let col = Math.floor(r.frame) % 3;
+                    const row = { down: 0, left: 1, right: 2, up: 3 }[r.dir] || 0;
+                    const col = Math.floor(r.frame) % 3;
                     ctx.drawImage(r.spriteImg, col * 32, row * 32, 32, 32, r.x - 16, r.y - 16, 40, 40);
                     ctx.fillStyle = '#FFE0A3';
                     ctx.font = "bold 12px monospace";
-                    ctx.shadowBlur = 4;
-                    ctx.fillText(r.username, r.x - 20, r.y - 20);
+                    ctx.shadowBlur = 3;
+                    ctx.fillText(r.username, r.x - 25, r.y - 20);
                 }
             }
             
             // Draw local player
-            if (localPlayer.spriteSheet) {
-                let row = { down: 0, left: 1, right: 2, up: 3 }[localPlayer.dir] || 0;
-                let col = localPlayer.moving ? Math.floor(localPlayer.frame) % 3 : 0;
+            if (localPlayer.spriteSheet && localPlayer.spriteSheet.complete) {
+                const row = { down: 0, left: 1, right: 2, up: 3 }[localPlayer.dir] || 0;
+                const col = localPlayer.moving ? Math.floor(localPlayer.frame) % 3 : 0;
                 ctx.drawImage(localPlayer.spriteSheet, col * 32, row * 32, 32, 32, localPlayer.x - 16, localPlayer.y - 16, 40, 40);
                 ctx.fillStyle = '#FFD966';
                 ctx.font = "bold 12px monospace";
-                ctx.fillText(user.fullName, localPlayer.x - 20, localPlayer.y - 20);
+                ctx.fillText(user.fullName, localPlayer.x - 25, localPlayer.y - 20);
             }
             ctx.shadowBlur = 0;
         }
@@ -717,22 +770,36 @@
         // Camera follow
         function followCam() {
             const parent = canvas.parentElement;
-            const offsetX = localPlayer.x - parent.clientWidth/2;
-            const offsetY = localPlayer.y - parent.clientHeight/2;
-            canvas.style.transform = `translate(${-Math.min(Math.max(offsetX,0), canvas.width-parent.clientWidth)}px, ${-Math.min(Math.max(offsetY,0), canvas.height-parent.clientHeight)}px)`;
+            if (parent && localPlayer) {
+                const offsetX = localPlayer.x - parent.clientWidth/2;
+                const offsetY = localPlayer.y - parent.clientHeight/2;
+                canvas.style.transform = `translate(${-Math.min(Math.max(offsetX, 0), canvas.width - parent.clientWidth)}px, ${-Math.min(Math.max(offsetY, 0), canvas.height - parent.clientHeight)}px)`;
+            }
             requestAnimationFrame(followCam);
         }
         followCam();
+        
+        function updateStatus(msg) {
+            const statusDiv = document.getElementById('statusIndicator');
+            if (statusDiv) {
+                statusDiv.innerHTML = `🟢 ${msg}`;
+                setTimeout(() => {
+                    if (statusDiv) statusDiv.innerHTML = '🟢 Connected to P2P network';
+                }, 3000);
+            }
+        }
         
         // Cleanup on page close
         window.addEventListener('beforeunload', () => {
             if (localStream) localStream.getTracks().forEach(t => t.stop());
             if (screenStream) screenStream.getTracks().forEach(t => t.stop());
-            gun.get('positions').get(user.username).put(null);
+            if (gun && user.username) {
+                gun.get('positions').get(user.username).put(null);
+            }
         });
     }
     
-    const root = document.getElementById('appRoot');
+    // Start the app
     renderAuth();
 </script>
 </body>
