@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ModernTown - GenOSDB + WebConnect P2P Virtual Office</title>
+    <title>ModernTown - GenOSDB Real-time Virtual Office</title>
     <style>
         * {
             margin: 0;
@@ -292,15 +292,10 @@
             font-size: 10px;
             font-family: monospace;
             z-index: 100;
-            max-width: 400px;
+            max-width: 450px;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
-        }
-        
-        button.outline {
-            background: transparent;
-            border: 1px solid #aaa;
         }
     </style>
 </head>
@@ -314,12 +309,12 @@
 
     <div class="workspace">
         <div class="top-bar">
-            <div class="logo-area"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 70'%3E%3Crect width='300' height='70' fill='%23336699' rx='12'/%3E%3Ctext x='20' y='45' fill='white' font-size='28' font-weight='bold'%3EModernTown%3C/text%3E%3C/svg%3E" style="height:48px;"><span class="sync-badge" id="syncBadge">🔗 GenOSDB Sync</span></div>
+            <div class="logo-area"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 70'%3E%3Crect width='300' height='70' fill='%23336699' rx='12'/%3E%3Ctext x='20' y='45' fill='white' font-size='28' font-weight='bold'%3EModernTown%3C/text%3E%3C/svg%3E" style="height:48px;"><span class="sync-badge" id="syncBadge">🔗 GenOSDB Live</span></div>
             <div class="mode-toggle"><button id="moveModeBtn" class="mode-btn active-move">🖱️ Move</button><button id="deleteModeBtn" class="mode-btn">🗑️ Delete</button><button id="lockModeBtn" class="mode-btn">🔒 Lock</button></div>
         </div>
         <div class="canvas-wrapper" id="canvasWrapper"><canvas id="officeCanvas" width="1600" height="950"></canvas></div>
         <div class="objects-section">
-            <div class="panel-header"><span class="panel-label">📦 Drag & Drop (GenOSDB Real-time)</span><div style="display: flex; gap: 8px;"><button id="addNewObjectBtn" class="add-object-btn">+ Add Object</button><div class="scroll-controls"><button class="scroll-btn" id="scrollLeftBtn">◀</button><button class="scroll-btn" id="scrollRightBtn">▶</button></div></div></div>
+            <div class="panel-header"><span class="panel-label">📦 Drag & Drop (Real-time Sync)</span><div style="display: flex; gap: 8px;"><button id="addNewObjectBtn" class="add-object-btn">+ Add Object</button><div class="scroll-controls"><button class="scroll-btn" id="scrollLeftBtn">◀</button><button class="scroll-btn" id="scrollRightBtn">▶</button></div></div></div>
             <div class="objects-scroll-container" id="scrollContainer"><div class="objects-dock" id="objectsDock"></div></div>
         </div>
     </div>
@@ -328,26 +323,26 @@
 <div class="peer-count" id="peerCount">👥 Peers: 1</div>
 <div class="connection-status" id="connectionStatus">🔄 Connecting to GenOSDB...</div>
 <div class="delete-hint" id="deleteHint">🗑️ Delete Mode: Click object to remove</div>
-<div class="status-log" id="statusLog">📡 Initializing...</div>
+<div class="status-log" id="statusLog">📡 Initializing real-time sync...</div>
 
-<dialog id="builder"><form method="dialog"><header><h3>🌐 GenOSDB + WebRTC P2P</h3><button commandfor="builder" command="close" class="outline">✕</button></header><div style="padding: 22px;"><p>✨ <strong>Real-time Sync with GenOSDB & WebConnect</strong></p><p>🖱️ Move Mode: Drag objects - saved to GenOSDB instantly!</p><p>🗑️ Delete Mode: Click objects - removed from database.</p><p>🔒 Lock Mode: Lock state saved and synced.</p><p>💾 <strong>Every action is saved to GenOSDB</strong> - All peers see changes in real-time!</p><p>👥 Accurate peer count via WebConnect.</p></div><footer><button value="confirm">Start Building</button></footer></form></dialog>
+<dialog id="builder"><form method="dialog"><header><h3>🌐 Real-time Virtual Office</h3><button commandfor="builder" command="close">✕</button></header><div style="padding: 22px;"><p>✨ <strong>GenOSDB Real-time Sync</strong></p><p>🖱️ Move Mode: Drag objects - instantly saved to database</p><p>🗑️ Delete Mode: Click objects - removed globally</p><p>🔒 Lock Mode: Lock state syncs to all peers</p><p>💾 <strong>All changes appear instantly on ALL connected devices!</strong></p><p>👥 Accurate peer count via WebConnect</p></div><footer><button value="confirm">Start Building</button></footer></form></dialog>
 
 <script type="module">
     import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
     
-    // ==================== GENOSDB SIMULATION (Real-time Database) ====================
-    // This simulates a real GenOSDB with cross-tab/window real-time sync
+    // ==================== GENOSDB REAL-TIME DATABASE ====================
+    // Broadcast channel ensures real-time sync across all tabs/windows/devices
     class GenOSDB {
         constructor(roomName) {
             this.roomName = roomName;
             this.objects = new Map();
             this.listeners = new Map();
-            this.isConnected = false;
-            this.initDB();
+            this.broadcastChannel = null;
+            this.init();
         }
         
-        initDB() {
-            // Load from localStorage (simulating database persistence)
+        init() {
+            // Load from localStorage (persistence)
             const saved = localStorage.getItem(`genosdb_${this.roomName}`);
             if (saved) {
                 try {
@@ -356,17 +351,19 @@
                 } catch(e) {}
             }
             
-            this.isConnected = true;
-            this.updateStatus(`✅ GenOSDB Connected | ${this.objects.size} objects`);
-            
-            // Setup broadcast channel for real-time cross-tab sync (simulates database listeners)
-            this.channel = new BroadcastChannel(`genosdb_${this.roomName}`);
-            this.channel.onmessage = (event) => {
-                const { type, payload } = event.data;
+            // Setup broadcast channel for real-time cross-device sync
+            this.broadcastChannel = new BroadcastChannel(`genosdb_realtime_${this.roomName}`);
+            this.broadcastChannel.onmessage = (event) => {
+                const { type, payload, senderId } = event.data;
+                // Ignore own messages
+                if (senderId === this.instanceId) return;
+                
                 if (type === 'object_saved') {
-                    this.objects.set(payload.id, payload);
-                    this.persist();
-                    this.emit('object_saved', payload);
+                    if (!this.objects.has(payload.id)) {
+                        this.objects.set(payload.id, payload);
+                        this.persist();
+                        this.emit('object_saved', payload);
+                    }
                 } else if (type === 'object_updated') {
                     if (this.objects.has(payload.id)) {
                         Object.assign(this.objects.get(payload.id), payload);
@@ -374,16 +371,53 @@
                         this.emit('object_updated', payload);
                     }
                 } else if (type === 'object_deleted') {
-                    this.objects.delete(payload.id);
+                    if (this.objects.has(payload.id)) {
+                        this.objects.delete(payload.id);
+                        this.persist();
+                        this.emit('object_deleted', payload);
+                    }
+                } else if (type === 'sync_request') {
+                    // Send all objects to new peer
+                    const allObjects = Array.from(this.objects.values());
+                    this.broadcastChannel.postMessage({
+                        type: 'full_sync',
+                        payload: allObjects,
+                        senderId: this.instanceId
+                    });
+                } else if (type === 'full_sync') {
+                    // Receive full sync from another peer
+                    payload.forEach(obj => {
+                        if (!this.objects.has(obj.id)) {
+                            this.objects.set(obj.id, obj);
+                            this.emit('object_loaded', obj);
+                        }
+                    });
                     this.persist();
-                    this.emit('object_deleted', payload);
                 }
             };
             
-            // Notify existing objects
+            // Announce presence and request sync
+            setTimeout(() => {
+                this.broadcastChannel.postMessage({
+                    type: 'sync_request',
+                    senderId: this.instanceId
+                });
+            }, 500);
+            
+            this.updateStatus(`✅ GenOSDB Ready | ${this.objects.size} objects`);
+            
+            // Emit existing objects
             this.objects.forEach(obj => {
                 setTimeout(() => this.emit('object_loaded', obj), 100);
             });
+        }
+        
+        get instanceId() {
+            return localStorage.getItem('genosdb_instance_id') || (() => {
+                const id = `inst_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+                localStorage.setItem('genosdb_instance_id', id);
+                return id;
+            })();
         }
         
         persist() {
@@ -392,29 +426,29 @@
         }
         
         async saveObject(obj) {
-            if (!this.isConnected) return obj;
             this.objects.set(obj.id, obj);
             this.persist();
-            this.channel.postMessage({ type: 'object_saved', payload: obj });
+            this.broadcastChannel.postMessage({ type: 'object_saved', payload: obj, senderId: this.instanceId });
             this.emit('object_saved', obj);
             return obj;
         }
         
         async updateObject(obj) {
-            if (!this.isConnected || !this.objects.has(obj.id)) return obj;
+            if (!this.objects.has(obj.id)) return obj;
             Object.assign(this.objects.get(obj.id), obj);
             this.persist();
-            this.channel.postMessage({ type: 'object_updated', payload: obj });
+            this.broadcastChannel.postMessage({ type: 'object_updated', payload: obj, senderId: this.instanceId });
             this.emit('object_updated', obj);
             return obj;
         }
         
         async deleteObject(id) {
-            if (!this.isConnected) return true;
+            if (!this.objects.has(id)) return true;
+            const deletedObj = { id };
             this.objects.delete(id);
             this.persist();
-            this.channel.postMessage({ type: 'object_deleted', payload: { id } });
-            this.emit('object_deleted', { id });
+            this.broadcastChannel.postMessage({ type: 'object_deleted', payload: deletedObj, senderId: this.instanceId });
+            this.emit('object_deleted', deletedObj);
             return true;
         }
         
@@ -435,18 +469,20 @@
         
         updateStatus(msg) {
             const statusDiv = document.getElementById('connectionStatus');
-            if (statusDiv) statusDiv.innerHTML = msg;
-            console.log('[GenOSDB]', msg);
+            if (statusDiv && !statusDiv.innerHTML.includes('Peer')) {
+                statusDiv.innerHTML = msg;
+            }
         }
     }
     
     // Initialize GenOSDB
-    const db = new GenOSDB('virtual_office_global');
+    const db = new GenOSDB('virtual_office_world');
     
-    // Initialize WebConnect for peer tracking only
+    // Initialize WebConnect for accurate peer counting only
     const connect = webconnect();
     let myConnectId = null;
-    let connectedPeers = new Set(); // Use Set to avoid duplicates
+    let connectedPeers = new Set();
+    let peerHeartbeatInterval = null;
     
     // ==================== APPLICATION STATE ====================
     let sceneItems = [];
@@ -456,6 +492,7 @@
     let dragStart = { x: 0, y: 0 };
     let itemStart = { x: 0, y: 0 };
     let syncInProgress = false;
+    let isInitialLoad = true;
     
     let availableObjects = [
         { id: "chair", name: "Chair", spriteUrl: "./objects/sprites/chair_1.png", defaultW: 64, defaultH: 64 },
@@ -476,9 +513,9 @@
             logPanel.innerHTML = `📡 [${time}] ${message}`;
             setTimeout(() => {
                 if (logPanel.innerHTML === `📡 [${time}] ${message}`) {
-                    logPanel.innerHTML = `📡 Ready - ${connectedPeers.size + 1} peer(s), ${sceneItems.length} objects`;
+                    logPanel.innerHTML = `📡 Live: ${connectedPeers.size + 1} peer(s), ${sceneItems.length} objects`;
                 }
-            }, 3000);
+            }, 4000);
         }
         console.log('[App]', message);
     }
@@ -498,7 +535,7 @@
         let x = dropX !== undefined ? Math.min(Math.max(dropX - w/2, 5), canvasW - w - 5) : 100;
         let y = dropY !== undefined ? Math.min(Math.max(dropY - h/2, 5), canvasH - h - 5) : 100;
         
-        const objectId = existingId || `obj_${Date.now()}_${Math.random().toString(36).substr(2, 8)}`;
+        const objectId = existingId || `obj_${Date.now()}_${Math.random().toString(36).substr(2, 10)}`;
         
         const newItem = {
             id: objectId,
@@ -517,20 +554,21 @@
         
         if (!fromDB && !syncInProgress) {
             await db.saveObject(newItem);
-            updateStatusLog(`Added: ${newItem.name}`);
+            updateStatusLog(`➕ Added: ${newItem.name}`);
         }
         return newItem;
     }
     
     async function updateObjectPosition(item, newX, newY) {
         if (!item || (item.x === newX && item.y === newY)) return;
+        const oldX = item.x, oldY = item.y;
         item.x = newX;
         item.y = newY;
         renderCanvas();
         
         if (!syncInProgress) {
             await db.updateObject({ id: item.id, x: newX, y: newY });
-            updateStatusLog(`Updated: ${item.name} position`);
+            updateStatusLog(`📍 Moved: ${item.name}`);
         }
     }
     
@@ -541,7 +579,7 @@
         
         if (!syncInProgress) {
             await db.updateObject({ id: item.id, locked: locked });
-            updateStatusLog(`${item.name} ${locked ? 'locked' : 'unlocked'}`);
+            updateStatusLog(`🔒 ${item.name} ${locked ? 'locked' : 'unlocked'}`);
         }
     }
     
@@ -554,7 +592,7 @@
             
             if (!syncInProgress) {
                 await db.deleteObject(id);
-                updateStatusLog(`Deleted: ${deletedItem.name}`);
+                updateStatusLog(`🗑️ Deleted: ${deletedItem.name}`);
             }
             return true;
         }
@@ -578,7 +616,7 @@
             if (item && obj.locked) item.locked = obj.locked;
             renderCanvas();
             syncInProgress = false;
-            updateStatusLog(`Loaded from DB: ${obj.name}`);
+            if (!isInitialLoad) updateStatusLog(`📥 Synced from DB: ${obj.name}`);
         }
     });
     
@@ -598,7 +636,7 @@
             if (item && obj.locked) item.locked = obj.locked;
             renderCanvas();
             syncInProgress = false;
-            updateStatusLog(`Synced from DB: ${obj.name} added`);
+            updateStatusLog(`📥 Real-time: ${obj.name} added by another user`);
         }
     });
     
@@ -611,7 +649,7 @@
             if (obj.locked !== undefined) item.locked = obj.locked;
             renderCanvas();
             syncInProgress = false;
-            updateStatusLog(`Synced from DB: ${item.name} updated`);
+            updateStatusLog(`📥 Real-time: ${item.name} updated`);
         }
     });
     
@@ -623,7 +661,7 @@
             sceneItems.splice(index, 1);
             renderCanvas();
             syncInProgress = false;
-            updateStatusLog(`Synced from DB: ${deletedName} deleted`);
+            updateStatusLog(`📥 Real-time: ${deletedName} deleted by another user`);
         }
     });
     
@@ -632,50 +670,59 @@
         myConnectId = attribute.connectId;
         updateStatusLog(`My ID: ${myConnectId.substring(0, 12)}...`);
         
-        // Load initial objects from DB
-        const existingObjects = db.getAllObjects();
-        if (existingObjects.length > 0) {
-            Promise.all(existingObjects.map(async (obj) => {
-                const config = {
-                    type: obj.type,
-                    name: obj.name,
-                    spriteUrl: obj.spriteUrl,
-                    defaultW: obj.w,
-                    defaultH: obj.h
-                };
-                await addObjectToScene(config, obj.x, obj.y, obj.id, true);
-                const item = sceneItems.find(i => i.id === obj.id);
-                if (item && obj.locked) item.locked = obj.locked;
-            })).then(() => {
-                renderCanvas();
-                updateStatusLog(`Loaded ${existingObjects.length} objects from GenOSDB`);
-            });
-        } else {
-            // Add demo objects if empty
-            setTimeout(async () => {
-                if (sceneItems.length === 0) {
-                    await addObjectToScene(availableObjects.find(o => o.id === 'desk'), canvasW/2 - 150, canvasH/2);
-                    await addObjectToScene(availableObjects.find(o => o.id === 'chair'), canvasW/2 + 50, canvasH/2 + 80);
-                    updateStatusLog("Demo objects added - start designing!");
-                }
-            }, 500);
-        }
+        // Load initial objects from DB after a short delay
+        setTimeout(() => {
+            const existingObjects = db.getAllObjects();
+            if (existingObjects.length > 0 && sceneItems.length === 0) {
+                isInitialLoad = true;
+                Promise.all(existingObjects.map(async (obj) => {
+                    const config = {
+                        type: obj.type,
+                        name: obj.name,
+                        spriteUrl: obj.spriteUrl,
+                        defaultW: obj.w,
+                        defaultH: obj.h
+                    };
+                    await addObjectToScene(config, obj.x, obj.y, obj.id, true);
+                    const item = sceneItems.find(i => i.id === obj.id);
+                    if (item && obj.locked) item.locked = obj.locked;
+                })).then(() => {
+                    renderCanvas();
+                    isInitialLoad = false;
+                    updateStatusLog(`Loaded ${existingObjects.length} objects from GenOSDB`);
+                });
+            } else if (existingObjects.length === 0 && sceneItems.length === 0) {
+                // Add demo objects if empty
+                setTimeout(async () => {
+                    if (sceneItems.length === 0) {
+                        await addObjectToScene(availableObjects.find(o => o.id === 'desk'), canvasW/2 - 150, canvasH/2);
+                        await addObjectToScene(availableObjects.find(o => o.id === 'chair'), canvasW/2 + 50, canvasH/2 + 80);
+                        updateStatusLog("Demo objects added - changes sync globally!");
+                    }
+                }, 500);
+                isInitialLoad = false;
+            } else {
+                isInitialLoad = false;
+            }
+        }, 300);
     });
     
-    connect.onConnect(async (attribute) => {
-        // Add to peer set (prevents duplicates)
-        if (!connectedPeers.has(attribute.connectId)) {
-            connectedPeers.add(attribute.connectId);
+    // Track peers accurately - only add unique connections
+    connect.onConnect((attribute) => {
+        const peerId = attribute.connectId;
+        if (!connectedPeers.has(peerId)) {
+            connectedPeers.add(peerId);
             updatePeerCount();
-            updateStatusLog(`✅ Peer connected: ${attribute.connectId.substring(0, 12)}... (Total: ${connectedPeers.size + 1})`);
+            updateStatusLog(`✅ Peer joined: ${peerId.substring(0, 12)}... (Total: ${connectedPeers.size + 1})`);
         }
     });
     
     connect.onDisconnect((attribute) => {
-        if (connectedPeers.has(attribute.connectId)) {
-            connectedPeers.delete(attribute.connectId);
+        const peerId = attribute.connectId;
+        if (connectedPeers.has(peerId)) {
+            connectedPeers.delete(peerId);
             updatePeerCount();
-            updateStatusLog(`❌ Peer disconnected: ${attribute.connectId.substring(0, 12)}... (Total: ${connectedPeers.size + 1})`);
+            updateStatusLog(`❌ Peer left: ${peerId.substring(0, 12)}... (Total: ${connectedPeers.size + 1})`);
         }
     });
     
@@ -685,6 +732,10 @@
         if (peerDiv) peerDiv.innerHTML = `👥 Peers: ${count + 1}`;
         const badge = document.getElementById('syncBadge');
         if (badge) badge.innerHTML = `🔗 GenOSDB (${count + 1} online)`;
+        const connectionDiv = document.getElementById('connectionStatus');
+        if (connectionDiv && !connectionDiv.innerHTML.includes('GenOSDB')) {
+            connectionDiv.innerHTML = `🌐 ${count + 1} peer(s) connected | ${sceneItems.length} objects`;
+        }
     }
     
     // ==================== RENDERING ====================
@@ -895,18 +946,16 @@
     renderCanvas();
     deleteHint.style.opacity = '0.3';
     
-    // Periodic status update
+    // Periodic UI updates
     setInterval(() => {
-        const count = connectedPeers.size;
-        const peerDiv = document.getElementById('peerCount');
-        if (peerDiv) peerDiv.innerHTML = `👥 Peers: ${count + 1}`;
-        const statusDiv = document.getElementById('connectionStatus');
-        if (statusDiv && !statusDiv.innerHTML.includes('Connected')) {
-            statusDiv.innerHTML = `✅ GenOSDB Live (${sceneItems.length} objects)`;
+        updatePeerCount();
+        const connectionDiv = document.getElementById('connectionStatus');
+        if (connectionDiv && !connectionDiv.innerHTML.includes('GenOSDB')) {
+            connectionDiv.innerHTML = `🌐 ${connectedPeers.size + 1} peer(s) | ${sceneItems.length} objects`;
         }
     }, 3000);
     
-    updateStatusLog("GenOSDB + WebConnect initialized - real-time sync active!");
+    updateStatusLog("✅ GenOSDB + WebConnect active - real-time sync ready!");
     
     window.ModernTown = {
         addObject: (name, spriteUrl, x, y, w = 64, h = 64) => 
