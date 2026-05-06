@@ -7,70 +7,306 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0f172a;color:white;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
 
-#ui{position:fixed;top:12px;left:12px;z-index:9999;width:350px;background:rgba(0,0,0,.72);padding:14px;border-radius:14px}
-#ui h1{font-size:18px;margin-bottom:10px}
-#ui input,#ui button{width:100%;padding:10px;margin-bottom:8px;border:none;border-radius:9px}
-#ui button{background:#2563eb;color:white;font-weight:bold;cursor:pointer}
+body{
+  background:#0f172a;
+  color:white;
+  font-family:Arial,Helvetica,sans-serif;
+  overflow:hidden;
+}
+
+#ui{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  width:100%;
+  height:100%;
+  background:rgba(15,23,42,.96);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+#uiInner{
+  width:380px;
+  background:rgba(0,0,0,.72);
+  padding:24px;
+  border-radius:18px;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+
+#ui h1{
+  font-size:20px;
+  margin-bottom:14px;
+  text-align:center;
+}
+
+#ui input,
+#ui button{
+  width:100%;
+  padding:12px;
+  margin-bottom:10px;
+  border:none;
+  border-radius:10px;
+}
+
+#ui button{
+  background:#2563eb;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
 #ui button:disabled{opacity:.55}
-#status{font-size:13px;color:#cbd5e1;line-height:1.4}
 
-#scene{position:relative;width:100vw;height:100vh;overflow:hidden;background:
-linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
-linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:32px 32px}
+#status{
+  font-size:13px;
+  color:#cbd5e1;
+  line-height:1.4;
+  text-align:center;
+}
 
-.player{position:absolute;width:96px;height:96px}
-.nameTag{position:absolute;top:-20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:3px 8px;border-radius:999px;font-size:12px;white-space:nowrap}
-.sprite{position:absolute;left:32px;top:8px;width:32px;height:32px;image-rendering:pixelated;background-repeat:no-repeat;background-size:96px 128px;transform:scale(2);transform-origin:top left}
+#scene{
+  position:relative;
+  width:100vw;
+  height:100vh;
+  overflow:hidden;
+  background:
+    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+  background-size:32px 32px;
+}
 
-.chatBubble{position:absolute;top:-42px;left:50%;transform:translateX(-50%);width:34px;height:34px;border-radius:50%;border:none;background:#2563eb;color:white;font-size:17px;cursor:pointer;display:none;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.player{
+  position:absolute;
+  width:96px;
+  height:96px;
+}
+
+.nameTag{
+  position:absolute;
+  top:-20px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(0,0,0,.7);
+  padding:3px 8px;
+  border-radius:999px;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+.sprite{
+  position:absolute;
+  left:32px;
+  top:8px;
+  width:32px;
+  height:32px;
+  image-rendering:pixelated;
+  background-repeat:no-repeat;
+  background-size:96px 128px;
+  transform:scale(2);
+  transform-origin:top left;
+}
+
+.chatBubble{
+  position:absolute;
+  top:-42px;
+  left:50%;
+  transform:translateX(-50%);
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  border:none;
+  background:#2563eb;
+  color:white;
+  font-size:17px;
+  cursor:pointer;
+  display:none;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+
 .player.nearby .chatBubble{display:block}
 
-#help{position:fixed;bottom:12px;left:12px;z-index:9999;background:rgba(0,0,0,.72);padding:12px;border-radius:12px;font-size:13px;color:#cbd5e1;line-height:1.5}
+#help{
+  position:fixed;
+  bottom:12px;
+  left:12px;
+  z-index:999;
+  background:rgba(0,0,0,.72);
+  padding:12px;
+  border-radius:12px;
+  font-size:13px;
+  color:#cbd5e1;
+  line-height:1.5;
+}
 
-.modal{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.68);display:none;align-items:center;justify-content:center}
-.modalBox{width:420px;background:#111827;border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.modal{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:rgba(0,0,0,.68);
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+
+.modalBox{
+  width:420px;
+  background:#111827;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 20px 60px rgba(0,0,0,.45);
+}
+
 .modalBox.wide{width:760px}
-.modalBox h2{font-size:19px;margin-bottom:8px}
-.modalBox p{font-size:14px;color:#cbd5e1;line-height:1.5;margin-bottom:12px}
 
-.previewVideo,.remoteVideo{width:100%;background:#020617;object-fit:cover;border-radius:14px}
-.previewVideo{height:210px;margin-bottom:12px}
+.modalBox h2{
+  font-size:19px;
+  margin-bottom:8px;
+}
+
+.modalBox p{
+  font-size:14px;
+  color:#cbd5e1;
+  line-height:1.5;
+  margin-bottom:12px;
+}
+
+.previewVideo,
+.remoteVideo{
+  width:100%;
+  background:#020617;
+  object-fit:cover;
+  border-radius:14px;
+}
+
+.previewVideo{
+  height:210px;
+  margin-bottom:12px;
+}
+
 .remoteVideo{height:360px}
 
-.callGrid{display:grid;grid-template-columns:1fr 210px;gap:12px;margin-bottom:12px}
-.sidePanel{display:flex;flex-direction:column;gap:10px}
-.localPreview{width:100%;height:120px;background:#020617;object-fit:cover;border-radius:12px}
+.callGrid{
+  display:grid;
+  grid-template-columns:1fr 210px;
+  gap:12px;
+  margin-bottom:12px;
+}
 
-.modalControls,.callControls{display:flex;justify-content:center;gap:8px;margin-bottom:12px}
-.iconBtn{width:38px;height:38px;border:none;border-radius:50%;background:rgba(255,255,255,.18);color:white;font-size:16px;cursor:pointer}
+.sidePanel{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.localPreview{
+  width:100%;
+  height:120px;
+  background:#020617;
+  object-fit:cover;
+  border-radius:12px;
+}
+
+.modalControls,
+.callControls{
+  display:flex;
+  justify-content:center;
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.iconBtn{
+  width:38px;
+  height:38px;
+  border:none;
+  border-radius:50%;
+  background:rgba(255,255,255,.18);
+  color:white;
+  font-size:16px;
+  cursor:pointer;
+}
+
 .iconBtn.off{background:#dc2626}
 
-.modalActions{display:flex;gap:8px}
-.modalActions button,.sendBtn{padding:11px;border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer}
-.modalActions button{flex:1}
-.acceptBtn,.callBtn,.sendBtn{background:#16a34a}
-.declineBtn,.cancelBtn{background:#dc2626}
+.modalActions{
+  display:flex;
+  gap:8px;
+}
 
-.chatBox{height:185px;background:#020617;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px;overflow:auto;font-size:13px;color:#e5e7eb}
-.chatMsg{margin-bottom:8px;line-height:1.35}
+.modalActions button,
+.sendBtn{
+  padding:11px;
+  border:none;
+  border-radius:10px;
+  color:white;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+.modalActions button{flex:1}
+
+.acceptBtn,
+.callBtn,
+.sendBtn{background:#16a34a}
+
+.declineBtn,
+.cancelBtn{background:#dc2626}
+
+.chatBox{
+  height:185px;
+  background:#020617;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:12px;
+  padding:10px;
+  overflow:auto;
+  font-size:13px;
+  color:#e5e7eb;
+}
+
+.chatMsg{
+  margin-bottom:8px;
+  line-height:1.35;
+}
+
 .chatMsg b{color:#93c5fd}
-.chatInputRow{display:flex;gap:8px}
-.chatInputRow input{flex:1;padding:10px;border:none;border-radius:10px;background:#1f2937;color:white}
+
+.chatInputRow{
+  display:flex;
+  gap:8px;
+}
+
+.chatInputRow input{
+  flex:1;
+  padding:10px;
+  border:none;
+  border-radius:10px;
+  background:#1f2937;
+  color:white;
+}
 </style>
 </head>
 
 <body>
 
 <audio id="ringtoneAudio" src="https://romeoasis2023.github.io/moderntown/newmessage.mp3" loop preload="auto"></audio>
+<audio id="joinBellAudio" src="https://romeoasis2023.github.io/moderntown/bell_ring.mp3" preload="auto"></audio>
 
 <div id="ui">
-  <h1>Sprite P2P Video Chat World</h1>
-  <input id="roomInput" value="demo-room" placeholder="Room name" />
-  <input id="spriteUpload" type="file" accept="image/png,image/webp,image/jpeg" />
-  <button id="joinBtn">Join Room</button>
-  <div id="status">Not connected</div>
+  <div id="uiInner">
+    <h1>Sprite P2P Video Chat World</h1>
+
+    <input id="roomInput" type="hidden" value="demo-room" />
+
+    <input id="nameInput" type="text" placeholder="Enter your name" />
+
+    <input id="spriteUpload" type="file" accept="image/png,image/webp,image/jpeg" />
+
+    <button id="joinBtn">Join Room</button>
+
+    <div id="status">Not connected</div>
+  </div>
 </div>
 
 <div id="help">
@@ -78,7 +314,7 @@ linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size
   Upload sprite: <b>96x128px</b><br>
   W A S D = Move Sprite<br>
   💬 appears only when near another player (80px)<br>
-  Incoming calls play ringtone loop
+  Bell plays when peer joins
 </div>
 
 <div id="scene"></div>
@@ -87,6 +323,7 @@ linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size
   <div class="modalBox">
     <h2 id="requestTitle">Video Call</h2>
     <p id="requestText">Call request</p>
+
     <video id="requestPreview" class="previewVideo" autoplay playsinline muted></video>
 
     <div class="modalControls">
@@ -132,11 +369,14 @@ linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size
 import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
 
 const scene = document.getElementById('scene')
+const ui = document.getElementById('ui')
 const statusEl = document.getElementById('status')
 const joinBtn = document.getElementById('joinBtn')
 const roomInput = document.getElementById('roomInput')
+const nameInput = document.getElementById('nameInput')
 const spriteUpload = document.getElementById('spriteUpload')
 const ringtoneAudio = document.getElementById('ringtoneAudio')
+const joinBellAudio = document.getElementById('joinBellAudio')
 
 const requestModal = document.getElementById('requestModal')
 const requestTitle = document.getElementById('requestTitle')
@@ -159,7 +399,12 @@ const chatInput = document.getElementById('chatInput')
 const sendChatBtn = document.getElementById('sendChatBtn')
 
 const urlParams = new URLSearchParams(window.location.search)
-const playerName = sanitizeName(urlParams.get('name')) || 'Guest-' + Math.random().toString(36).substring(2,6)
+
+let playerName = sanitizeName(urlParams.get('name')) || ''
+
+if(playerName){
+  nameInput.value = playerName
+}
 
 const FRAME_W = 32
 const FRAME_H = 32
@@ -205,15 +450,19 @@ let myPosition = {
 function playRingtone(){
   if(!ringtoneAudio) return
   ringtoneAudio.currentTime = 0
-  ringtoneAudio.play().catch(() => {
-    console.warn('Ringtone blocked until user interacts with the page.')
-  })
+  ringtoneAudio.play().catch(() => {})
 }
 
 function stopRingtone(){
   if(!ringtoneAudio) return
   ringtoneAudio.pause()
   ringtoneAudio.currentTime = 0
+}
+
+function playJoinBell(){
+  if(!joinBellAudio) return
+  joinBellAudio.currentTime = 0
+  joinBellAudio.play().catch(() => {})
 }
 
 spriteUpload.addEventListener('change', e => {
@@ -251,6 +500,14 @@ spriteUpload.addEventListener('change', e => {
 })
 
 joinBtn.onclick = async () => {
+  playerName =
+    sanitizeName(nameInput.value) ||
+    'Guest-' + Math.random().toString(36).substring(2,6)
+
+  const url = new URL(window.location.href)
+  url.searchParams.set('name', playerName)
+  history.replaceState({}, '', url)
+
   joinBtn.disabled = true
   roomName = roomInput.value.trim() || 'demo-room'
 
@@ -269,6 +526,8 @@ joinBtn.onclick = async () => {
   localPreview.srcObject = localStream
 
   createPlayer('local', playerName, true)
+
+  ui.style.display = 'none'
 
   connect = webconnect()
 
@@ -413,8 +672,10 @@ function distanceBetweenPlayers(a, b){
   const ay = parseFloat(a.style.top || 0)
   const bx = parseFloat(b.style.left || 0)
   const by = parseFloat(b.style.top || 0)
+
   const dx = ax - bx
   const dy = ay - by
+
   return Math.sqrt(dx * dx + dy * dy)
 }
 
@@ -462,9 +723,7 @@ function showOutgoingRequest(peerId){
       <button class="cancelBtn" id="cancelCallBtn2">Cancel</button>
     `
 
-    document.getElementById('cancelCallBtn2').onclick = () => {
-      closeRequestModal()
-    }
+    document.getElementById('cancelCallBtn2').onclick = closeRequestModal
   }
 
   document.getElementById('cancelCallBtn').onclick = closeRequestModal
@@ -625,7 +884,11 @@ function sendHello(peerId){
 
 async function acceptPeer(peerId){
   if(connectedPeers.has(peerId)) return
+
   connectedPeers.add(peerId)
+
+  playJoinBell()
+
   statusEl.textContent = peerId + ' joined room'
 }
 
