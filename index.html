@@ -2,805 +2,296 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>P2P Virtual Office - Global Metaverse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gather Town P2P Clone</title>
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webtorrent@latest/webtorrent.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/webconnect/dist/umd/webconnect.js"></script>
     <style>
-        * {
-            box-sizing: border-box;
-            user-select: none;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            background: linear-gradient(145deg, #1a472a 0%, #0e2a1a 100%);
-            font-family: 'Segoe UI', 'Courier New', monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
-
-        .game-container {
-            position: relative;
-            background: #2b4f2f;
-            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
-            border-radius: 24px;
-            overflow: hidden;
-            border: 4px solid #c9a87b;
-        }
-
-        canvas {
-            display: block;
-            cursor: crosshair;
-            background: #7cb57c;
-            background-image: 
-                linear-gradient(rgba(70, 50, 20, 0.2) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(70, 50, 20, 0.2) 1px, transparent 1px);
-            background-size: 32px 32px;
-        }
-
-        .ui-panel {
-            position: absolute;
-            bottom: 20px;
-            left: 20px;
-            right: 20px;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(12px);
-            border-radius: 48px;
-            padding: 8px 20px;
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid #ffdfb0;
-            font-size: 14px;
-            z-index: 20;
-            pointer-events: auto;
-        }
-
-        .media-btn {
-            background: #2c2c2c;
-            border: none;
-            color: white;
-            padding: 8px 20px;
-            border-radius: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-family: monospace;
-            box-shadow: 0 2px 6px black;
-        }
-
-        .media-btn.active {
-            background: #4cae4c;
-            box-shadow: 0 0 8px #0f0;
-        }
-
-        .badge {
-            background: #ffaa33;
-            color: #1e2a1a;
-            border-radius: 30px;
-            padding: 4px 12px;
-            font-weight: bold;
-        }
-
-        .chat-box {
-            position: absolute;
-            bottom: 100px;
-            left: 20px;
-            width: 280px;
-            background: rgba(0,0,0,0.85);
-            border-radius: 16px;
-            backdrop-filter: blur(8px);
-            border: 1px solid #d4a373;
-            z-index: 20;
-            font-size: 12px;
-        }
-
-        .chat-messages {
-            height: 180px;
-            overflow-y: auto;
-            padding: 8px;
-            color: #efe6d7;
-        }
-
-        .chat-input {
-            display: flex;
-            padding: 5px;
-            gap: 5px;
-        }
-
-        .chat-input input {
-            flex: 1;
-            background: #221c15;
-            border: none;
-            color: white;
-            border-radius: 30px;
-            padding: 6px 10px;
-            outline: none;
-        }
-
-        .floating-videos {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-width: 200px;
-            z-index: 25;
-        }
-
-        .remote-vid {
-            background: black;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid #ffcc88;
-            width: 160px;
-            transition: 0.1s;
-            cursor: pointer;
-        }
-
-        video {
-            width: 100%;
-            background: #1a2a1a;
-        }
-
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.95);
-            backdrop-filter: blur(10px);
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-family: monospace;
-        }
-
-        .modal-card {
-            background: #2e241f;
-            padding: 30px;
-            border-radius: 48px;
-            width: 450px;
-            max-width: 90%;
-            color: #ffefcf;
-            border: 2px solid #efb87e;
-            box-shadow: 0 20px 40px black;
-        }
-
-        input, select, button {
-            font-family: monospace;
-        }
-        
-        .modal-card input, .modal-card select {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 60px;
-            border: none;
-            background: #443a2e;
-            color: white;
-        }
-        
-        .btn-primary {
-            background: #6a994e;
-            color: white;
-            padding: 12px;
-            border-radius: 60px;
-            font-weight: bold;
-            width: 100%;
-            margin-top: 10px;
-            cursor: pointer;
-            border: none;
-        }
-        
-        .drag-zone {
-            border: 2px dashed #bc9a6c;
-            border-radius: 20px;
-            padding: 12px;
-            text-align: center;
-            margin: 8px 0;
-            font-size: 12px;
-        }
-        
-        .tab-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .tab-btn {
-            flex: 1;
-            background: #443a2e;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 30px;
-            cursor: pointer;
-        }
-        
-        .tab-btn.active {
-            background: #6a994e;
-        }
-        
-        .status-indicator {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0,0,0,0.7);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 11px;
-            color: #0f0;
-            z-index: 20;
-            font-family: monospace;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        body { margin:0; background:#000; font-family:'Press Start 2P',system-ui; overflow:hidden; color:#fff; }
+        canvas { display:block; image-rendering:pixelated; background:#1a3a1a; }
+        #ui { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; }
+        .panel { pointer-events:auto; background:rgba(0,0,0,0.92); border:4px solid #0f0; padding:10px; font-size:12px; box-shadow:0 0 20px #0f0; }
+        #auth { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); width:420px; text-align:center; }
+        #controls { position:absolute; top:12px; left:12px; display:flex; gap:6px; flex-wrap:wrap; }
+        button { background:#0f0; color:#000; border:none; padding:8px 12px; font-size:13px; cursor:pointer; font-family:inherit; min-width:44px; }
+        button:hover { background:#0ff; }
+        button.red { background:#f44; color:white; }
+        #selfVideoContainer { position:absolute; bottom:90px; left:12px; border:4px solid #0ff; box-shadow:0 0 20px #0ff; background:#000; }
+        #chat { position:absolute; bottom:12px; right:12px; width:360px; height:280px; }
+        #messages { height:200px; overflow-y:auto; background:#111; padding:8px; font-size:11px; }
+        video { width:180px; display:block; }
     </style>
-    <script src="https://cdn.jsdelivr.net/npm/gun@0.2020.1236/gun.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gun@0.2020.1236/sea.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/webrtc-adapter@8.2.0/dist/adapter.min.js"></script>
 </head>
 <body>
+    <canvas id="canvas" width="1024" height="768"></canvas>
 
-<div id="appRoot"></div>
+    <div id="ui">
+        <div id="auth" class="panel">
+            <h1 style="color:#0f0;margin:0 0 20px 0;">GATHER TOWN P2P</h1>
+            <button onclick="startAuth()" style="width:100%;padding:18px;font-size:16px;">JOIN THE ROOM</button>
+            <small style="display:block;margin-top:15px;color:#666;">WASD Move • ?admin for objects</small>
+        </div>
 
-<script>
-    // Global state
-    let currentUser = null;
-    let gun = null;
-    let localStream = null;
-    let screenStream = null;
-    let remotePlayers = new Map();
-    let localPlayer = { x: 800, y: 500, dir: 'down', frame: 0, moving: false, username: '', spriteSheet: null };
-    let objectsMap = new Map();
-    let canvas = null, ctx = null;
-    let pendingImage = null;
-    let keys = { w: false, s: false, a: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
-    let userList = new Map();
-    
-    function fileToBase64(file) {
-        return new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result);
-            reader.readAsDataURL(file);
-        });
-    }
-    
-    async function validateSpriteSheet(file) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve(img.width === 96 && img.height === 128);
-            img.onerror = () => resolve(false);
-            img.src = URL.createObjectURL(file);
-        });
-    }
-    
-    function loadSpriteSheetFromDataURL(dataURL) {
-        return new Promise((resolve) => {
-            const img = new Image();
-            img.onload = () => resolve(img);
-            img.src = dataURL;
-        });
-    }
-    
-    const DEFAULT_SPRITE_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAACACAYAAADUjeTAAAAABmJLR0QA/wD/AP+gvaeTAAAA6UlEQVR4nO3aMQ6AIAwF0E7G4E68gPfwCnoAE3UyMTr5bWmhpTQlb5KXlj5eYyIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgD8mSQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7YpJ3uZ0mSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmS9I8eLLVpCj9JbIEAAAAASUVORK5CYII=";
-    
-    // Render Auth UI
-    function renderAuth() {
-        const root = document.getElementById('appRoot');
-        root.innerHTML = `
-            <div class="modal" id="authModal">
-                <div class="modal-card">
-                    <h2>✨ VIRTUAL OFFICE ✨</h2>
-                    <div class="tab-buttons">
-                        <button class="tab-btn active" id="showLoginBtn">LOGIN</button>
-                        <button class="tab-btn" id="showRegisterBtn">REGISTER</button>
-                    </div>
-                    <div id="loginPanel">
-                        <input type="text" id="loginUsername" placeholder="Username" />
-                        <input type="password" id="loginPassword" placeholder="Password" />
-                        <button id="doLogin" class="btn-primary">🔐 Enter Office</button>
-                        <div class="drag-zone">✨ P2P Encrypted World ✨<br>Works globally!</div>
-                    </div>
-                    <div id="registerPanel" style="display:none">
-                        <input type="text" id="regFullName" placeholder="Full Name" />
-                        <input type="text" id="regUsername" placeholder="Username" />
-                        <input type="password" id="regPassword" placeholder="Password" />
-                        <select id="regPosition">
-                            <option>Engineer</option><option>Designer</option><option>Manager</option><option>Guest</option>
-                        </select>
-                        <label>📸 Profile Picture:</label>
-                        <input type="file" id="regProfilePic" accept="image/*" />
-                        <label>🎨 Sprite Sheet (96x128 PNG):</label>
-                        <input type="file" id="regSprite" accept="image/png" />
-                        <button id="doRegister" class="btn-primary">📝 Register</button>
-                    </div>
-                </div>
-            </div>
-        `;
-        
-        const loginPanel = document.getElementById('loginPanel');
-        const registerPanel = document.getElementById('registerPanel');
-        const loginBtn = document.getElementById('showLoginBtn');
-        const registerBtn = document.getElementById('showRegisterBtn');
-        
-        loginBtn.onclick = () => {
-            loginBtn.classList.add('active');
-            registerBtn.classList.remove('active');
-            loginPanel.style.display = 'block';
-            registerPanel.style.display = 'none';
+        <!-- Floating Controls -->
+        <div id="controls" class="panel" style="display:none;">
+            <button onclick="uploadSprite()">📤 SPRITE</button>
+            <button onclick="toggleCamera()" id="camBtn">📹 ON</button>
+            <button onclick="toggleMic()" id="micBtn">🎤 ON</button>
+            <button onclick="toggleAdmin()" id="adminBtn" style="display:none;background:#f80;">🛠 ADMIN</button>
+        </div>
+
+        <!-- Self Webcam Preview -->
+        <div id="selfVideoContainer" style="display:none;">
+            <video id="selfVideo" autoplay playsinline muted></video>
+        </div>
+
+        <!-- Chat -->
+        <div id="chat" class="panel" style="display:none;">
+            <div id="messages"></div>
+            <input id="chatInput" placeholder="Type + Enter" 
+                   style="width:100%;padding:8px;background:#222;border:2px solid #0f0;color:#fff;"
+                   onkeypress="if(event.key==='Enter') sendChat()">
+        </div>
+    </div>
+
+    <script>
+        let canvas, ctx, gun, myId, myProfile = {name: "Player"};
+        let players = {}, objects = {};
+        let myX = 512, myY = 384, myDir = 0, myFrame = 0, animTime = 0;
+        let keys = {}, lastSync = 0;
+        let spriteSheetImg = null;
+        let spriteSheets = {};
+        let isAdmin = false;
+        let myStream = null;
+        let selfVideo = null;
+
+        const ROOM = "gather-lobby-v5";
+
+        window.onload = () => {
+            canvas = document.getElementById("canvas");
+            ctx = canvas.getContext("2d");
+            ctx.imageSmoothingEnabled = false;
+            selfVideo = document.getElementById("selfVideo");
+
+            isAdmin = location.search.includes("admin");
+            if (isAdmin) document.getElementById("adminBtn").style.display = "inline-block";
         };
-        
-        registerBtn.onclick = () => {
-            registerBtn.classList.add('active');
-            loginBtn.classList.remove('active');
-            loginPanel.style.display = 'none';
-            registerPanel.style.display = 'block';
-        };
-        
-        document.getElementById('doLogin').onclick = async () => {
-            const username = document.getElementById('loginUsername').value;
-            const pwd = document.getElementById('loginPassword').value;
-            if (!username || !pwd) return alert("Enter credentials");
-            
-            // Initialize Gun with SEA
+
+        async function startAuth() {
+            document.getElementById("auth").style.display = "none";
+            document.getElementById("controls").style.display = "flex";
+            document.getElementById("chat").style.display = "block";
+
+            myId = "p-" + Math.random().toString(36).slice(2, 10);
+            myProfile.name = "P" + myId.slice(0,4);
+
+            initGun();
+            initMedia();
+            setupInput();
+            gameLoop();
+        }
+
+        function initGun() {
             gun = Gun({
-                peers: [
-                    'https://gun-manhattan.herokuapp.com/gun',
-                    'https://gun-eu.herokuapp.com/gun',
-                    'https://gunjs.herokuapp.com/gun'
-                ],
-                localStorage: true,
-                radisk: true
-            });
-            
-            // Load SEA module
-            const user = gun.user();
-            
-            user.auth(username, pwd, async (ack) => {
-                if (ack.err) {
-                    console.error("Auth error:", ack.err);
-                    return alert("Login failed: " + ack.err);
-                }
-                
-                // Get user data from Gun
-                gun.get('users').get(username).once((profile) => {
-                    if (!profile) {
-                        alert("User profile not found");
-                        return;
-                    }
-                    currentUser = { 
-                        username, 
-                        fullName: profile.fullName, 
-                        position: profile.position, 
-                        profilePic: profile.profilePic, 
-                        spriteData: profile.spriteData || DEFAULT_SPRITE_URL 
-                    };
-                    document.getElementById('authModal').remove();
-                    startOffice(currentUser);
-                });
-            });
-        };
-        
-        document.getElementById('doRegister').onclick = async () => {
-            const fullName = document.getElementById('regFullName').value;
-            const username = document.getElementById('regUsername').value;
-            const pwd = document.getElementById('regPassword').value;
-            const position = document.getElementById('regPosition').value;
-            const profilePicFile = document.getElementById('regProfilePic').files[0];
-            const spriteFile = document.getElementById('regSprite').files[0];
-            
-            if (!username || !pwd) return alert("Username/password required");
-            if (!fullName) return alert("Full name required");
-            
-            let profilePicBase64 = "";
-            let spriteBase64 = DEFAULT_SPRITE_URL;
-            
-            if (profilePicFile) profilePicBase64 = await fileToBase64(profilePicFile);
-            if (spriteFile) {
-                const valid = await validateSpriteSheet(spriteFile);
-                if (!valid) return alert("Sprite must be 96x128 PNG");
-                spriteBase64 = await fileToBase64(spriteFile);
-            }
-            
-            const userData = { 
-                fullName, 
-                username, 
-                position, 
-                profilePic: profilePicBase64, 
-                spriteData: spriteBase64, 
-                createdAt: Date.now() 
-            };
-            
-            gun = Gun({
-                peers: ['https://gun-manhattan.herokuapp.com/gun', 'https://gunjs.herokuapp.com/gun'],
+                peers: ["https://gun-manhattan.herokuapp.com/gun", "https://gun-eu.herokuapp.com/gun", "https://relay.peer.ooo/gun"],
                 localStorage: true
             });
-            
-            const user = gun.user();
-            user.create(username, pwd, (confirm) => {
-                if (confirm.err) {
-                    console.error("Create error:", confirm.err);
-                    return alert("Registration error: " + confirm.err);
+
+            const space = gun.get("gather-space").get(ROOM);
+            space.get("players").map().on((data, id) => {
+                if (id === myId) return;
+                players[id] = data || {};
+                if (data?.spriteDataURL && !spriteSheets[id]) {
+                    const img = new Image();
+                    img.src = data.spriteDataURL;
+                    img.onload = () => spriteSheets[id] = img;
                 }
-                
-                user.auth(username, pwd, () => {
-                    gun.get('users').get(username).put(userData, (ack) => {
-                        if (ack.err) {
-                            alert("Error saving profile: " + ack.err);
-                        } else {
-                            alert("Registration successful! Please login.");
-                            document.getElementById('showLoginBtn').click();
-                        }
-                    });
-                });
             });
-        };
-    }
-    
-    // Start Office Environment
-    async function startOffice(user) {
-        const root = document.getElementById('appRoot');
-        root.innerHTML = `
-            <div class="game-container">
-                <div class="status-indicator" id="statusIndicator">🟢 Connected to P2P network</div>
-                <canvas id="officeCanvas" width="1200" height="700" style="width:1200px;height:700px"></canvas>
-                <div class="ui-panel">
-                    <div><span class="badge">👤 ${user.fullName} (${user.position})</span></div>
-                    <div>
-                        <button id="micBtn" class="media-btn">🎤 Mic</button>
-                        <button id="camBtn" class="media-btn">📷 Cam</button>
-                        <button id="screenBtn" class="media-btn">🖥️ Share Screen</button>
-                    </div>
-                    <div>💡 Drag & drop PNG ➕ click canvas to place object</div>
-                </div>
-                <div class="chat-box">
-                    <div class="chat-messages" id="chatMessages"><i>✨ Welcome to the virtual office! ✨</i><br><i>Use WASD or Arrow keys to move</i></div>
-                    <div class="chat-input">
-                        <input id="chatInput" placeholder="Say something..." />
-                        <button id="sendChat">➤</button>
-                    </div>
-                </div>
-                <div class="floating-videos" id="floatingVideos"></div>
-            </div>
-        `;
-        
-        canvas = document.getElementById('officeCanvas');
-        ctx = canvas.getContext('2d');
-        canvas.width = 2000;
-        canvas.height = 2000;
-        canvas.style.width = '1200px';
-        canvas.style.height = '700px';
-        
-        localPlayer.username = user.username;
-        localPlayer.spriteSheet = await loadSpriteSheetFromDataURL(user.spriteData);
-        localPlayer.x = 900;
-        localPlayer.y = 900;
-        
-        // Load objects from GunDB
-        const objectsNode = gun.get('officeObjects');
-        objectsNode.map().on((obj, id) => {
-            if (obj && obj.filename && !objectsMap.has(id)) {
-                const img = new Image();
-                img.onload = () => {
-                    objectsMap.set(id, { ...obj, img });
-                    drawFullScene();
-                };
-                img.src = obj.imageData;
+
+            space.get("objects").map().on((data, id) => objects[id] = data);
+        }
+
+        function syncMyPlayer() {
+            if (!gun) return;
+            gun.get("gather-space").get(ROOM).get("players").get(myId).put({
+                x: Math.round(myX), y: Math.round(myY), dir: myDir,
+                frame: Math.floor(myFrame), name: myProfile.name,
+                spriteDataURL: myProfile.spriteDataURL || null
+            });
+        }
+
+        // ====================== MEDIA + WEBCAM PREVIEW ======================
+        async function initMedia() {
+            try {
+                myStream = await navigator.mediaDevices.getUserMedia({
+                    audio: true,
+                    video: { width: 320, height: 240 }
+                });
+                selfVideo.srcObject = myStream;
+                document.getElementById("selfVideoContainer").style.display = "block";
+            } catch(e) {
+                console.log("Camera/mic access denied");
             }
-        });
-        
-        // Listen for other users
-        const usersNode = gun.get('users');
-        usersNode.map().on((profile, uid) => {
-            if (uid !== user.username && profile && profile.spriteData && !remotePlayers.has(uid)) {
-                const spriteImg = new Image();
-                spriteImg.onload = () => {
-                    remotePlayers.set(uid, { spriteImg, x: 400, y: 400, dir: 'down', frame: 0, username: profile.fullName || uid });
-                    drawFullScene();
-                };
-                spriteImg.src = profile.spriteData;
+        }
+
+        function toggleCamera() {
+            if (!myStream) return;
+            const videoTrack = myStream.getVideoTracks()[0];
+            if (videoTrack) {
+                const enabled = !videoTrack.enabled;
+                videoTrack.enabled = enabled;
+                document.getElementById("camBtn").textContent = enabled ? "📹 ON" : "📹 OFF";
+                document.getElementById("camBtn").style.background = enabled ? "#0f0" : "#f44";
+                document.getElementById("selfVideoContainer").style.opacity = enabled ? "1" : "0.3";
             }
-        });
-        
-        // Setup position sync via GunDB
-        const posNode = gun.get('positions').get(user.username);
-        setInterval(() => {
-            if (localPlayer) {
-                posNode.put({ x: localPlayer.x, y: localPlayer.y, dir: localPlayer.dir, frame: localPlayer.frame, timestamp: Date.now() });
+        }
+
+        function toggleMic() {
+            if (!myStream) return;
+            const audioTrack = myStream.getAudioTracks()[0];
+            if (audioTrack) {
+                const enabled = !audioTrack.enabled;
+                audioTrack.enabled = enabled;
+                document.getElementById("micBtn").textContent = enabled ? "🎤 ON" : "🎤 OFF";
+                document.getElementById("micBtn").style.background = enabled ? "#0f0" : "#f44";
             }
-        }, 50);
-        
-        gun.get('positions').map().on((pos, uid) => {
-            if (uid !== user.username && remotePlayers.has(uid) && pos) {
-                const r = remotePlayers.get(uid);
-                r.x = pos.x;
-                r.y = pos.y;
-                r.dir = pos.dir;
-                r.frame = pos.frame;
-                remotePlayers.set(uid, r);
-                drawFullScene();
-            }
-        });
-        
-        // Chat sync
-        const chatNode = gun.get('chat');
-        chatNode.map().on((msg, id) => {
-            if (msg && msg.text) {
-                const chatDiv = document.getElementById('chatMessages');
-                chatDiv.innerHTML += `<div><b>${msg.from}:</b> ${msg.text}</div>`;
-                chatDiv.scrollTop = chatDiv.scrollHeight;
-            }
-        });
-        
-        document.getElementById('sendChat').onclick = () => {
-            const input = document.getElementById('chatInput');
-            if (input.value.trim()) {
-                const msg = { text: input.value, from: user.fullName, timestamp: Date.now() };
-                chatNode.set(msg);
-                input.value = '';
-            }
-        };
-        
-        document.getElementById('chatInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                document.getElementById('sendChat').click();
-            }
-        });
-        
-        // Media controls
-        const micBtn = document.getElementById('micBtn');
-        const camBtn = document.getElementById('camBtn');
-        const screenBtn = document.getElementById('screenBtn');
-        
-        micBtn.onclick = async () => {
-            if (localStream && localStream.getAudioTracks().length) {
-                localStream.getAudioTracks().forEach(t => t.stop());
-                localStream = null;
-                micBtn.classList.remove('active');
-                micBtn.innerHTML = '🎤 Mic';
-            } else {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    localStream = stream;
-                    micBtn.classList.add('active');
-                    micBtn.innerHTML = '🎤 Mic ON';
-                    updateStatus("Microphone enabled");
-                } catch(e) {
-                    alert("Cannot access microphone: " + e.message);
-                }
-            }
-        };
-        
-        camBtn.onclick = async () => {
-            if (localStream && localStream.getVideoTracks().length) {
-                localStream.getVideoTracks().forEach(t => t.stop());
-                localStream = null;
-                camBtn.classList.remove('active');
-                camBtn.innerHTML = '📷 Cam';
-                // Remove video elements
-                document.getElementById('floatingVideos').innerHTML = '';
-            } else {
-                try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
-                    if (!localStream) localStream = stream;
-                    else stream.getVideoTracks().forEach(t => localStream.addTrack(t));
-                    camBtn.classList.add('active');
-                    camBtn.innerHTML = '📷 Cam ON';
-                    updateStatus("Camera enabled");
-                    
-                    // Show local video preview
-                    const videosDiv = document.getElementById('floatingVideos');
-                    const localVideoDiv = document.createElement('div');
-                    localVideoDiv.className = 'remote-vid';
-                    localVideoDiv.id = 'local-video';
-                    const video = document.createElement('video');
-                    video.autoplay = true;
-                    video.muted = true;
-                    video.playsInline = true;
-                    video.srcObject = localStream;
-                    localVideoDiv.appendChild(video);
-                    videosDiv.appendChild(localVideoDiv);
-                } catch(e) {
-                    alert("Cannot access camera: " + e.message);
-                }
-            }
-        };
-        
-        screenBtn.onclick = async () => {
-            if (screenStream) {
-                screenStream.getTracks().forEach(t => t.stop());
-                screenStream = null;
-                screenBtn.classList.remove('active');
-                screenBtn.innerHTML = '🖥️ Share Screen';
-                updateStatus("Screen sharing stopped");
-            } else {
-                try {
-                    const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                    screenStream = stream;
-                    screenBtn.classList.add('active');
-                    screenBtn.innerHTML = '⏹️ Stop Share';
-                    updateStatus("Screen sharing started");
-                    
-                    stream.getVideoTracks()[0].onended = () => {
-                        screenStream = null;
-                        screenBtn.classList.remove('active');
-                        screenBtn.innerHTML = '🖥️ Share Screen';
+        }
+
+        function uploadSprite() {
+            const input = document.createElement("input");
+            input.type = "file"; input.accept = "image/png";
+            input.onchange = e => {
+                const reader = new FileReader();
+                reader.onload = ev => {
+                    const img = new Image();
+                    img.src = ev.target.result;
+                    img.onload = () => {
+                        if (img.width !== 96 || img.height !== 128) return alert("Must be 96×128!");
+                        spriteSheetImg = img;
+                        myProfile.spriteDataURL = ev.target.result;
+                        syncMyPlayer();
                     };
-                } catch(e) {
-                    alert("Screen share cancelled or error: " + e.message);
-                }
-            }
-        };
-        
-        // Drag & drop objects
-        canvas.addEventListener('dragover', (e) => { e.preventDefault(); canvas.style.opacity = '0.8'; });
-        canvas.addEventListener('dragleave', () => { canvas.style.opacity = '1'; });
-        canvas.addEventListener('drop', async (e) => {
-            e.preventDefault();
-            canvas.style.opacity = '1';
-            const files = Array.from(e.dataTransfer.files);
-            const pngFile = files.find(f => f.type === 'image/png');
-            if (!pngFile) return alert("Please drop a PNG file");
-            const base64Data = await fileToBase64(pngFile);
-            const img = new Image();
-            img.onload = () => {
-                pendingImage = { data: base64Data, width: img.width, height: img.height, filename: pngFile.name };
-                alert(`✨ ${pngFile.name} loaded! Click on canvas to place.`);
+                };
+                reader.readAsDataURL(e.target.files[0]);
             };
-            img.src = base64Data;
-        });
-        
-        canvas.addEventListener('click', (e) => {
-            if (pendingImage) {
-                const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
-                const mouseX = (e.clientX - rect.left) * scaleX;
-                const mouseY = (e.clientY - rect.top) * scaleY;
-                const objId = `obj_${Date.now()}_${Math.random()}`;
-                const objData = {
-                    id: objId, 
-                    filename: pendingImage.filename, 
-                    width: pendingImage.width, 
-                    height: pendingImage.height,
-                    imageData: pendingImage.data, 
-                    x: mouseX - (pendingImage.width/2), 
-                    y: mouseY - (pendingImage.height/2), 
-                    placedBy: user.username,
-                    timestamp: Date.now()
-                };
-                const imgObj = new Image();
-                imgObj.onload = () => {
-                    objectsMap.set(objId, { ...objData, img: imgObj });
-                    gun.get('officeObjects').get(objId).put(objData);
-                    drawFullScene();
-                };
-                imgObj.src = pendingImage.data;
-                pendingImage = null;
-            }
-        });
-        
-        // Movement controls
-        window.addEventListener('keydown', (e) => { if (e.key in keys) keys[e.key] = true; });
-        window.addEventListener('keyup', (e) => { if (e.key in keys) keys[e.key] = false; });
-        
-        function movePlayer() {
-            let moveX = 0, moveY = 0;
-            if (keys.w || keys.ArrowUp) moveY -= 5;
-            if (keys.s || keys.ArrowDown) moveY += 5;
-            if (keys.a || keys.ArrowLeft) moveX -= 5;
-            if (keys.d || keys.ArrowRight) moveX += 5;
-            if (moveX !== 0 || moveY !== 0) {
-                localPlayer.moving = true;
-                localPlayer.x = Math.min(1950, Math.max(50, localPlayer.x + moveX));
-                localPlayer.y = Math.min(1950, Math.max(50, localPlayer.y + moveY));
-                if (Math.abs(moveX) > Math.abs(moveY)) localPlayer.dir = moveX > 0 ? 'right' : 'left';
-                else localPlayer.dir = moveY > 0 ? 'down' : 'up';
-                localPlayer.frame = (Date.now() / 150) % 2;
-                drawFullScene();
-            } else {
-                localPlayer.moving = false;
-            }
+            input.click();
         }
-        
-        function drawFullScene() {
-            if (!ctx) return;
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#6f9e6f';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw grid
-            for (let i = 0; i < canvas.width; i += 32) {
-                ctx.beginPath();
-                ctx.strokeStyle = '#5a7a4a';
-                ctx.lineWidth = 1;
-                ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height);
-                ctx.moveTo(0, i); ctx.lineTo(canvas.width, i);
-                ctx.stroke();
-            }
-            
-            // Draw objects
-            for (let obj of objectsMap.values()) {
-                if (obj.img && obj.img.complete) {
-                    ctx.drawImage(obj.img, obj.x, obj.y, obj.width || 48, obj.height || 48);
+
+        function toggleAdmin() {
+            isAdmin = !isAdmin;
+            alert(isAdmin ? "ADMIN ON - Drag objects" : "Admin OFF");
+        }
+
+        // Drag & Drop for objects
+        let dragId = null, offsetX = 0, offsetY = 0;
+
+        function setupInput() {
+            window.addEventListener("keydown", e => keys[e.key.toLowerCase()] = true);
+            window.addEventListener("keyup",   e => keys[e.key.toLowerCase()] = false);
+
+            canvas.addEventListener("mousedown", e => {
+                if (!isAdmin) return;
+                const mx = e.offsetX, my = e.offsetY;
+                for (let id in objects) {
+                    const o = objects[id];
+                    if (mx > (o.x||0) && mx < (o.x||0)+(o.w||64) && my > (o.y||0) && my < (o.y||0)+(o.h||64)) {
+                        dragId = id;
+                        offsetX = mx - (o.x||0);
+                        offsetY = my - (o.y||0);
+                        return;
+                    }
                 }
-            }
-            
-            // Draw remote players
-            for (let [id, r] of remotePlayers.entries()) {
-                if (r.spriteImg && r.spriteImg.complete) {
-                    const row = { down: 0, left: 1, right: 2, up: 3 }[r.dir] || 0;
-                    const col = Math.floor(r.frame) % 3;
-                    ctx.drawImage(r.spriteImg, col * 32, row * 32, 32, 32, r.x - 16, r.y - 16, 40, 40);
-                    ctx.fillStyle = '#FFE0A3';
-                    ctx.font = "bold 12px monospace";
-                    ctx.shadowBlur = 3;
-                    ctx.fillText(r.username, r.x - 25, r.y - 20);
-                }
-            }
-            
-            // Draw local player
-            if (localPlayer.spriteSheet && localPlayer.spriteSheet.complete) {
-                const row = { down: 0, left: 1, right: 2, up: 3 }[localPlayer.dir] || 0;
-                const col = localPlayer.moving ? Math.floor(localPlayer.frame) % 3 : 0;
-                ctx.drawImage(localPlayer.spriteSheet, col * 32, row * 32, 32, 32, localPlayer.x - 16, localPlayer.y - 16, 40, 40);
-                ctx.fillStyle = '#FFD966';
-                ctx.font = "bold 12px monospace";
-                ctx.fillText(user.fullName, localPlayer.x - 25, localPlayer.y - 20);
-            }
-            ctx.shadowBlur = 0;
+            });
+
+            canvas.addEventListener("mousemove", e => {
+                if (!dragId) return;
+                const o = objects[dragId];
+                o.x = e.offsetX - offsetX;
+                o.y = e.offsetY - offsetY;
+                gun.get("gather-space").get(ROOM).get("objects").get(dragId).put(o);
+            });
+
+            canvas.addEventListener("mouseup", () => dragId = null);
         }
-        
-        function animate() {
-            movePlayer();
-            requestAnimationFrame(animate);
-        }
-        animate();
-        
-        // Camera follow
-        function followCam() {
-            const parent = canvas.parentElement;
-            if (parent && localPlayer) {
-                const offsetX = localPlayer.x - parent.clientWidth/2;
-                const offsetY = localPlayer.y - parent.clientHeight/2;
-                canvas.style.transform = `translate(${-Math.min(Math.max(offsetX, 0), canvas.width - parent.clientWidth)}px, ${-Math.min(Math.max(offsetY, 0), canvas.height - parent.clientHeight)}px)`;
+
+        // ====================== GAME LOOP ======================
+        function drawSprite(img, x, y, dir, frame) {
+            if (!img) {
+                ctx.fillStyle = "#0ff";
+                ctx.beginPath(); ctx.arc(x, y, 16, 0, Math.PI*2); ctx.fill();
+                return;
             }
-            requestAnimationFrame(followCam);
+            ctx.drawImage(img, frame*32, dir*32, 32, 32, x-16, y-16, 32, 32);
         }
-        followCam();
-        
-        function updateStatus(msg) {
-            const statusDiv = document.getElementById('statusIndicator');
-            if (statusDiv) {
-                statusDiv.innerHTML = `🟢 ${msg}`;
-                setTimeout(() => {
-                    if (statusDiv) statusDiv.innerHTML = '🟢 Connected to P2P network';
-                }, 3000);
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, 1024, 768);
+            ctx.fillStyle = "#1a3a1a";
+            ctx.fillRect(0, 0, 1024, 768);
+
+            // Grid
+            ctx.strokeStyle = "#0a2a0a";
+            for (let i = 0; i < 1024; i += 32) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,768); ctx.stroke(); }
+            for (let i = 0; i < 768; i += 32) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(1024,i); ctx.stroke(); }
+
+            // Objects
+            for (let id in objects) {
+                const o = objects[id];
+                ctx.fillStyle = "#f80";
+                ctx.fillRect(o.x||100, o.y||100, o.w||64, o.h||64);
             }
+
+            // Other players
+            for (let id in players) {
+                const p = players[id];
+                drawSprite(spriteSheets[id], p.x||400, p.y||300, p.dir||0, p.frame||0);
+                ctx.fillStyle = "#0ff";
+                ctx.font = "11px Press Start 2P";
+                ctx.textAlign = "center";
+                ctx.fillText(p.name||"?", p.x||400, (p.y||300)-28);
+            }
+
+            // Self
+            drawSprite(spriteSheetImg, myX, myY, myDir, Math.floor(myFrame));
+            ctx.fillStyle = "#0f0";
+            ctx.font = "11px Press Start 2P";
+            ctx.textAlign = "center";
+            ctx.fillText(myProfile.name, myX, myY-28);
+
+            // Movement
+            let moved = false, speed = 4.2;
+            if (keys["w"] || keys["arrowup"])    { myY -= speed; myDir = 3; moved = true; }
+            if (keys["s"] || keys["arrowdown"])  { myY += speed; myDir = 0; moved = true; }
+            if (keys["a"] || keys["arrowleft"])  { myX -= speed; myDir = 1; moved = true; }
+            if (keys["d"] || keys["arrowright"]) { myX += speed; myDir = 2; moved = true; }
+
+            if (moved) animTime += 0.22;
+            myFrame = moved ? (animTime % 3) : 0;
+
+            myX = Math.max(20, Math.min(1004, myX));
+            myY = Math.max(20, Math.min(748, myY));
+
+            if (Date.now() - lastSync > 80) {
+                syncMyPlayer();
+                lastSync = Date.now();
+            }
+
+            requestAnimationFrame(gameLoop);
         }
-        
-        // Cleanup on page close
-        window.addEventListener('beforeunload', () => {
-            if (localStream) localStream.getTracks().forEach(t => t.stop());
-            if (screenStream) screenStream.getTracks().forEach(t => t.stop());
-            if (gun && user.username) {
-                gun.get('positions').get(user.username).put(null);
-            }
-        });
-    }
-    
-    // Start the app
-    renderAuth();
-</script>
+
+        function sendChat() {
+            const input = document.getElementById("chatInput");
+            if (!input.value.trim()) return;
+            const div = document.getElementById("messages");
+            const line = document.createElement("div");
+            line.textContent = `${myProfile.name}: ${input.value}`;
+            div.appendChild(line);
+            div.scrollTop = div.scrollHeight;
+            input.value = "";
+        }
+    </script>
 </body>
 </html>
