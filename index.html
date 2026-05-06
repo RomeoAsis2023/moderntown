@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gather Town P2P • Global</title>
-    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/gun/sea.js"></script>
+    <title>Gather Town P2P • GenosDB Global</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         body { margin:0; background:#000; font-family:'Press Start 2P',system-ui; overflow:hidden; color:#fff; }
@@ -27,9 +25,8 @@
 
     <div id="ui">
         <div id="auth" class="panel">
-            <h1 style="color:#0f0;margin:0 0 20px;">GATHER TOWN P2P</h1>
+            <h1 style="color:#0f0;margin:0 0 20px;">GATHER TOWN P2P<br><small>GenosDB Global</small></h1>
             <button onclick="startAuth()" style="width:100%;padding:18px;font-size:16px;">JOIN GLOBAL ROOM</button>
-            <small style="color:#0ff;display:block;margin-top:10px;">Works across different networks • Open multiple tabs/devices</small>
         </div>
 
         <div id="controls" class="panel" style="display:none;">
@@ -64,7 +61,7 @@
         let isAdmin = false;
         let myStream = null;
 
-        const ROOM = "gather-global-v13";
+        const ROOM = "gather-global-v14";
 
         window.onload = () => {
             canvas = document.getElementById("canvas");
@@ -96,10 +93,11 @@
                 persist: false
             });
 
-            db.on(`room.${ROOM}.players`, (data, id) => {
-                if (id === myId || !data) return;
+            // GenosDB reactive subscription (correct way)
+            const unsubscribe = db.subscribe(`room.${ROOM}.players`, (data, key) => {
+                if (key === myId || !data) return;
 
-                players[id] = {
+                players[key] = {
                     x: Number(data.x) || 400,
                     y: Number(data.y) || 300,
                     dir: Number(data.dir) || 0,
@@ -108,14 +106,14 @@
                     spriteDataURL: data.spriteDataURL
                 };
 
-                if (data.spriteDataURL && !spriteSheets[id]) {
+                if (data.spriteDataURL && !spriteSheets[key]) {
                     const img = new Image();
                     img.src = data.spriteDataURL;
-                    img.onload = () => spriteSheets[id] = img;
+                    img.onload = () => spriteSheets[key] = img;
                 }
             });
 
-            console.log("✅ GenosDB Global P2P Connected");
+            console.log("✅ GenosDB connected globally");
         }
 
         function syncMyPlayer() {
@@ -293,7 +291,7 @@
             input.value = "";
         }
 
-        // Make functions globally available for onclick handlers
+        // Expose to global scope for onclick
         window.startAuth = startAuth;
         window.toggleCamera = toggleCamera;
         window.toggleMic = toggleMic;
