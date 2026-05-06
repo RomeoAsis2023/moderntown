@@ -3,325 +3,732 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ModernTown • P2P Virtual Office</title>
+    <title>P2P Virtual Office - Gather-like Metaverse</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-        * { margin:0; padding:0; box-sizing:border-box; user-select:none; }
-        body { background:#0f172a; font-family:'Inter',sans-serif; overflow:hidden; height:100vh; color:#e2e8f0; }
-        .app-container { display:flex; height:100vh; }
-        .sidebar { width:85px; background:rgba(15,23,42,0.98); backdrop-filter:blur(12px); display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:24px 0; border-right:1px solid rgba(148,163,184,0.1); }
-        .workspace { flex:1; display:flex; flex-direction:column; padding:16px 20px; gap:16px; background:#1e2937; }
-        .top-bar { display:flex; justify-content:space-between; align-items:center; background:#334155; padding:10px 28px; border-radius:9999px; }
-        .canvas-wrapper { flex:1; background:#1e2937; border-radius:28px; border:4px solid #334155; overflow:hidden; position:relative; }
-        canvas { display:block; background:#0f172a; cursor:grab; }
-        .bottom-panel { background:#334155; border-radius:24px; padding:12px 20px; display:flex; gap:16px; align-items:center; }
-        .tab { padding:8px 20px; border-radius:9999px; cursor:pointer; font-weight:500; }
-        .tab.active { background:#0ea5e9; color:white; }
-        .peer-count, .connection-status, .status-log { position:fixed; z-index:100; padding:6px 18px; border-radius:9999px; font-family:monospace; font-size:13px; }
-        .peer-count { top:24px; right:280px; background:rgba(16,185,129,0.9); color:white; }
-        .connection-status { top:24px; right:24px; background:rgba(15,23,42,0.95); color:#67e8f9; }
-        .status-log { bottom:24px; left:120px; background:rgba(15,23,42,0.95); color:#67e8f9; max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .media-controls { position:fixed; top:80px; right:24px; background:#1e2937; padding:12px; border-radius:16px; display:flex; flex-direction:column; gap:8px; z-index:110; box-shadow:0 10px 15px rgba(0,0,0,0.3); }
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(145deg, #1a472a 0%, #0e2a1a 100%);
+            font-family: 'Segoe UI', 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        /* main game container */
+        .game-container {
+            position: relative;
+            background: #2b4f2f;
+            box-shadow: 0 20px 35px rgba(0,0,0,0.5);
+            border-radius: 24px;
+            overflow: hidden;
+            border: 4px solid #c9a87b;
+        }
+
+        canvas {
+            display: block;
+            cursor: crosshair;
+            background: #7cb57c;
+            background-image: 
+                linear-gradient(rgba(70, 50, 20, 0.2) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(70, 50, 20, 0.2) 1px, transparent 1px);
+            background-size: 32px 32px;
+        }
+
+        /* UI panels */
+        .ui-panel {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(12px);
+            border-radius: 48px;
+            padding: 8px 20px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ffdfb0;
+            font-size: 14px;
+            z-index: 20;
+            pointer-events: auto;
+        }
+
+        .media-btn {
+            background: #2c2c2c;
+            border: none;
+            color: white;
+            padding: 8px 20px;
+            border-radius: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: monospace;
+            box-shadow: 0 2px 6px black;
+        }
+
+        .media-btn.active {
+            background: #4cae4c;
+            box-shadow: 0 0 8px #0f0;
+        }
+
+        .media-btn.danger {
+            background: #aa3e3e;
+        }
+
+        .badge {
+            background: #ffaa33;
+            color: #1e2a1a;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-weight: bold;
+        }
+
+        .chat-box {
+            position: absolute;
+            bottom: 100px;
+            left: 20px;
+            width: 260px;
+            background: rgba(0,0,0,0.8);
+            border-radius: 16px;
+            backdrop-filter: blur(8px);
+            border: 1px solid #d4a373;
+            z-index: 20;
+            font-size: 12px;
+        }
+
+        .chat-messages {
+            height: 180px;
+            overflow-y: auto;
+            padding: 8px;
+            color: #efe6d7;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 5px;
+            gap: 5px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            background: #221c15;
+            border: none;
+            color: white;
+            border-radius: 30px;
+            padding: 6px 10px;
+            outline: none;
+        }
+
+        .floating-videos {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-width: 200px;
+            z-index: 25;
+        }
+
+        .remote-vid {
+            background: black;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid #ffcc88;
+            width: 160px;
+            transition: 0.1s;
+            cursor: pointer;
+        }
+
+        video {
+            width: 100%;
+            background: #1a2a1a;
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: monospace;
+        }
+
+        .modal-card {
+            background: #2e241f;
+            padding: 30px;
+            border-radius: 48px;
+            width: 420px;
+            max-width: 90%;
+            color: #ffefcf;
+            border: 2px solid #efb87e;
+            box-shadow: 0 20px 40px black;
+        }
+
+        input, select, button {
+            font-family: monospace;
+        }
+        .modal-card input, .modal-card select {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 60px;
+            border: none;
+            background: #443a2e;
+            color: white;
+        }
+        .btn-primary {
+            background: #6a994e;
+            color: white;
+            padding: 12px;
+            border-radius: 60px;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .drag-zone {
+            border: 2px dashed #bc9a6c;
+            border-radius: 20px;
+            padding: 12px;
+            text-align: center;
+            margin: 8px 0;
+            font-size: 12px;
+        }
+        hr {
+            border-color: #aa7c58;
+        }
     </style>
+    <!-- Import Trystero (webconnect) and GunDB -->
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "trystero": "https://cdn.jsdelivr.net/npm/trystero@0.28.0/dist/trystero.mjs"
+            }
+        }
+    </script>
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar">
-            <div style="margin-bottom:24px;"><img width="52" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E"></div>
-            <footer>
-                <button onclick="toggleMediaPanel()" style="background:rgba(255,255,255,0.08);width:52px;height:52px;border-radius:18px;border:none;color:white;font-size:24px;">🎤📹</button>
-            </footer>
-        </aside>
 
-        <div class="workspace">
-            <div class="top-bar">
-                <div style="display:flex;align-items:center;gap:12px;">
-                    <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 70'%3E%3Crect width='300' height='70' fill='%233b82f6' rx='12'/%3E%3Ctext x='24' y='48' fill='white' font-size='32' font-weight='700'%3EModernTown%3C/text%3E%3C/svg%3E" style="height:42px;">
-                    <span id="syncBadge" style="background:linear-gradient(90deg,#22c55e,#10b981);color:white;padding:4px 16px;border-radius:9999px;font-size:13px;font-weight:600;">🔴 LIVE P2P</span>
-                </div>
-                <div id="myNameDisplay" style="background:#1e2937;padding:6px 18px;border-radius:9999px;font-weight:600;"></div>
-            </div>
+<div id="appRoot"></div>
 
-            <div class="canvas-wrapper">
-                <canvas id="officeCanvas" width="1600" height="950"></canvas>
-            </div>
-
-            <div class="bottom-panel">
-                <div onclick="switchTab(0)" id="tab0" class="tab active">📦 Objects</div>
-                <div onclick="switchTab(1)" id="tab1" class="tab">💬 Chat</div>
-                <div id="objectsDock" style="flex:1;display:flex;gap:12px;overflow-x:auto;padding:4px;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Media Panel -->
-    <div id="mediaPanel" class="media-controls" style="display:none;">
-        <button onclick="toggleMic()" id="micBtn" style="background:#10b981;color:white;padding:12px 24px;border:none;border-radius:9999px;width:100%;">🎤 Mic ON</button>
-        <button onclick="toggleCamera()" id="camBtn" style="background:#10b981;color:white;padding:12px 24px;border:none;border-radius:9999px;width:100%;">📹 Camera ON</button>
-        <div id="localPreview" style="width:180px;height:135px;background:#000;border-radius:12px;overflow:hidden;margin-top:8px;display:none;"></div>
-    </div>
-
-    <div class="peer-count" id="peerCount">👥 1 online</div>
-    <div class="connection-status" id="connectionStatus">🟢 Initializing GenoSDB...</div>
-    <div class="status-log" id="statusLog">Loading sprites...</div>
-
-    <!-- Onboarding -->
-    <dialog id="onboardingModal" style="border:none;border-radius:24px;background:#1e2937;color:#e2e8f0;width:480px;padding:0;">
-        <div style="padding:24px 32px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;align-items:center;">
-            <h2>Welcome to ModernTown 👋</h2>
-            <button onclick="this.closest('dialog').close()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;">✕</button>
-        </div>
-        <div style="padding:32px;">
-            <input id="profileName" placeholder="Your Name" style="width:100%;padding:14px;margin-bottom:16px;border-radius:12px;background:#334155;border:none;color:white;font-size:16px;">
-            <button onclick="saveProfileAndStart()" style="width:100%;padding:16px;background:#0ea5e9;color:white;border:none;border-radius:9999px;font-size:17px;font-weight:600;">Enter the Office</button>
-        </div>
-    </dialog>
-
-    <script type="module">
-        import { gdb } from "https://cdn.jsdelivr.net/npm/genosdb@latest/dist/index.min.js";
-
-        let db;
-        let sceneItems = [];
-        let selfAvatar = null;
-        let peerAvatars = new Map();
-        let profile = null;
-        let connectedPeers = new Set();
-
-        const canvas = document.getElementById('officeCanvas');
-        const ctx = canvas.getContext('2d');
-        const W = 1600, H = 950;
-        canvas.width = W; canvas.height = H;
-
-        let keys = {};
-        let lastBroadcast = 0;
-
-        let FRAME_COLS = 4, FRAME_ROWS = 4, FRAME_W = 64, FRAME_H = 64;
-
-        let availableObjects = [
-            { id: "chair", name: "Chair", spriteUrl: "./objects/sprites/chair_1.png", defaultW: 21, defaultH: 35 },
-            { id: "desk", name: "Desk", spriteUrl: "./objects/sprites/desk_1.png", defaultW: 56, defaultH: 55 },
-            { id: "workspace", name: "Workspace", spriteUrl: "./objects/sprites/workspace.png", defaultW: 500, defaultH: 300 }
-        ];
-
-        let localStream = null;
-        let micOn = true, camOn = true;
-
-        // ==================== PROFILE ====================
-        function loadProfile() {
-            const saved = localStorage.getItem('modernTownProfile');
-            if (saved) {
-                profile = JSON.parse(saved);
-                document.getElementById('myNameDisplay').textContent = profile.name;
-                return true;
-            }
-            return false;
-        }
-
-        window.saveProfileAndStart = function() {
-            const name = (document.getElementById('profileName').value || "Player").trim();
-            profile = { name, spriteUrl: "./objects/sprites/character_sprite.png" };
-            localStorage.setItem('modernTownProfile', JSON.stringify(profile));
-            document.getElementById('onboardingModal').close();
-            document.getElementById('myNameDisplay').textContent = profile.name;
-            createSelfAvatar();
-            initApp();
-        };
-
-        // ==================== AVATAR ====================
-        function createSelfAvatar() {
-            selfAvatar = {
-                id: 'self',
-                name: profile.name,
-                x: W/2 - 32,
-                y: H/2 - 32,
-                w: 64, h: 64,
-                spriteUrl: profile.spriteUrl,
-                spriteImg: null,
-                direction: 0,
-                frame: 0,
-                speed: 5.2
-            };
+<script type="module">
+    // ------------------- GLOBAL IMPORTS -------------------
+    import { joinRoom } from 'trystero';
+    
+    // ------------------- DOM Elements -------------------
+    const root = document.getElementById('appRoot');
+    
+    // App state
+    let currentUser = null;
+    let gun = null;
+    let room = null;
+    let localStream = null;
+    let screenStream = null;
+    let remotePlayers = new Map();      // peerId -> { spriteImg, x, y, dir, frame, videoElement, stream }
+    let localPlayer = { x: 800, y: 500, dir: 'down', frame: 0, moving: false, username: '', spriteSheet: null };
+    let objectsMap = new Map();          // objectId -> { img, x, y, w, h, filename }
+    let animationFrame = null;
+    let lastMoveSend = 0;
+    let keys = { w: false, s: false, a: false, d: false, ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false };
+    let canvas = null, ctx = null;
+    let dragDropActive = false;
+    let pendingImage = null;
+    
+    // sprite sheet helper
+    function loadSpriteSheetFromDataURL(dataURL) {
+        return new Promise((resolve) => {
             const img = new Image();
-            img.onload = () => {
-                selfAvatar.spriteImg = img;
-                FRAME_W = img.width / FRAME_COLS;
-                FRAME_H = img.height / FRAME_ROWS;
-            };
-            img.src = selfAvatar.spriteUrl;
+            img.onload = () => resolve(img);
+            img.src = dataURL;
+        });
+    }
+    
+    // default sprite (fallback 96x128 pixel grid)
+    const DEFAULT_SPRITE_URL = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGAAAACACAYAAADUjeTAAAAABmJLR0QA/wD/AP+gvaeTAAAA6UlEQVR4nO3aMQ6AIAwF0E7G4E68gPfwCnoAE3UyMTr5bWmhpTQlb5KXlj5eYyIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgD8mSQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP7YpJ3uZ0mSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmSJEmS9I8eLLVpCj9JbIEAAAAASUVORK5CYII="; // minimal placeholder
+    
+    // ------------------- GUNDB + TRYSTERO SETUP (global) -------------------
+    function initGunAndTrystero() {
+        gun = Gun({
+            peers: [
+                'https://gun-manhattan.herokuapp.com/gun',
+                'https://gun-eu.herokuapp.com/gun',
+                'https://gunjs.herokuapp.com/gun',
+                'https://relay.gundb.io/gun'
+            ],
+            localStorage: true,
+            retry: 3000
+        });
+        
+        const trysteroConfig = {
+            appId: 'virtual-office-p2p-gather-2025',
+            password: 'global-sync-secure',
+            relayUrls: [
+                'wss://relay.damus.io',
+                'wss://nos.lol',
+                'wss://relay.nostr.band',
+                'wss://relay.snort.social'
+            ],
+            turnConfig: [
+                { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+                { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' }
+            ],
+            rtcConfig: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }
+        };
+        room = joinRoom(trysteroConfig, 'main-office-room');
+        console.log("Trystero room initialized");
+        return { gun, room };
+    }
+    
+    // ------------------- REGISTRATION / LOGIN UI -------------------
+    function renderAuth() {
+        root.innerHTML = `
+            <div class="modal" id="authModal">
+                <div class="modal-card">
+                    <h2>✨ VIRTUAL OFFICE ✨</h2>
+                    <div id="authTabs">
+                        <button id="showLoginBtn" class="media-btn" style="width:45%">LOGIN</button>
+                        <button id="showRegisterBtn" class="media-btn" style="width:45%">REGISTER</button>
+                    </div>
+                    <div id="loginPanel">
+                        <input type="text" id="loginUsername" placeholder="Username" />
+                        <input type="password" id="loginPassword" placeholder="Password" />
+                        <button id="doLogin" class="btn-primary">🔐 Enter Office</button>
+                        <div class="drag-zone">✨ WebAuthn ready (optional)</div>
+                    </div>
+                    <div id="registerPanel" style="display:none">
+                        <input type="text" id="regFullName" placeholder="Full Name" />
+                        <input type="text" id="regUsername" placeholder="Username" />
+                        <input type="password" id="regPassword" placeholder="Password" />
+                        <select id="regPosition">
+                            <option>Engineer</option><option>Designer</option><option>Manager</option><option>Guest</option>
+                        </select>
+                        <label>📸 Profile Picture:</label>
+                        <input type="file" id="regProfilePic" accept="image/*" />
+                        <label>🎨 Sprite Sheet (96x128 PNG):</label>
+                        <input type="file" id="regSprite" accept="image/png" />
+                        <button id="doRegister" class="btn-primary">📝 Register</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        const loginPanel = document.getElementById('loginPanel');
+        const registerPanel = document.getElementById('registerPanel');
+        document.getElementById('showLoginBtn').onclick = () => { loginPanel.style.display = 'block'; registerPanel.style.display = 'none'; };
+        document.getElementById('showRegisterBtn').onclick = () => { loginPanel.style.display = 'none'; registerPanel.style.display = 'block'; };
+        
+        document.getElementById('doLogin').onclick = async () => {
+            const username = document.getElementById('loginUsername').value;
+            const pwd = document.getElementById('loginPassword').value;
+            if (!username || !pwd) return alert("Enter credentials");
+            // authenticate via Gun SEA
+            const userAuth = gun.user();
+            userAuth.auth(username, pwd, async (ack) => {
+                if (ack.err) return alert("Login fail: " + ack.err);
+                const profile = await gun.get('users').get(username).once();
+                if (!profile) return alert("User data missing");
+                currentUser = { username, fullName: profile.fullName, position: profile.position, profilePic: profile.profilePic, spriteData: profile.spriteData };
+                document.getElementById('authModal').remove();
+                startOffice(currentUser);
+            });
+        };
+        
+        document.getElementById('doRegister').onclick = async () => {
+            const fullName = document.getElementById('regFullName').value;
+            const username = document.getElementById('regUsername').value;
+            const pwd = document.getElementById('regPassword').value;
+            const position = document.getElementById('regPosition').value;
+            const profilePicFile = document.getElementById('regProfilePic').files[0];
+            const spriteFile = document.getElementById('regSprite').files[0];
+            if (!username || !pwd) return alert("Username/password required");
+            let profilePicBase64 = "";
+            let spriteBase64 = DEFAULT_SPRITE_URL;
+            if (profilePicFile) profilePicBase64 = await fileToBase64(profilePicFile);
+            if (spriteFile) {
+                const valid = await validateSpriteSheet(spriteFile);
+                if (!valid) return alert("Sprite must be 96x128 PNG");
+                spriteBase64 = await fileToBase64(spriteFile);
+            }
+            const userData = { fullName, username, position, profilePic: profilePicBase64, spriteData: spriteBase64, createdAt: Date.now() };
+            const user = gun.user();
+            user.create(username, pwd, (confirm) => {
+                if (confirm.err) return alert("Register error: " + confirm.err);
+                user.auth(username, pwd, async () => {
+                    await gun.get('users').get(username).put(userData);
+                    alert("Registration success! Please login.");
+                    document.getElementById('showLoginBtn').click();
+                });
+            });
+        };
+    }
+    
+    function fileToBase64(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    async function validateSpriteSheet(file) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve(img.width === 96 && img.height === 128);
+            img.onerror = () => resolve(false);
+            img.src = URL.createObjectURL(file);
+        });
+    }
+    
+    // ------------------- MAIN OFFICE START -------------------
+    async function startOffice(user) {
+        const { gun: db, room: p2pRoom } = initGunAndTrystero();
+        // load existing objects from gun
+        const objectsNode = db.get('officeObjects');
+        objectsNode.map().on((obj, id) => {
+            if (obj && obj.filename) {
+                const img = new Image();
+                img.src = obj.imageData;
+                objectsMap.set(id, { ...obj, img });
+                renderObjectsOnCanvas();
+            }
+        });
+        
+        // load other users from gun
+        const usersNode = db.get('users');
+        usersNode.map().on((profile, uid) => {
+            if (uid !== user.username && profile && profile.spriteData) {
+                if (!remotePlayers.has(uid)) {
+                    const spriteImg = new Image();
+                    spriteImg.src = profile.spriteData;
+                    remotePlayers.set(uid, { spriteImg, x: 400, y: 400, dir: 'down', frame: 0, username: uid, videoEl: null, stream: null });
+                }
+            }
+        });
+        
+        // Build canvas world
+        root.innerHTML = `
+            <div class="game-container">
+                <canvas id="officeCanvas" width="1200" height="700" style="width:1200px;height:700px"></canvas>
+                <div class="ui-panel">
+                    <div><span class="badge">👤 ${user.fullName} (${user.position})</span></div>
+                    <div>
+                        <button id="micBtn" class="media-btn">🎤 Mic</button>
+                        <button id="camBtn" class="media-btn">📷 Cam</button>
+                        <button id="screenBtn" class="media-btn">🖥️ Share Screen</button>
+                    </div>
+                    <div>💡 Drag & drop PNG from desktop ➕ click canvas to place object</div>
+                </div>
+                <div class="chat-box">
+                    <div class="chat-messages" id="chatMessages"></div>
+                    <div class="chat-input">
+                        <input id="chatInput" placeholder="Say something..." />
+                        <button id="sendChat">➤</button>
+                    </div>
+                </div>
+                <div class="floating-videos" id="floatingVideos"></div>
+            </div>
+        `;
+        canvas = document.getElementById('officeCanvas');
+        ctx = canvas.getContext('2d');
+        canvas.width = 2000;  // world size
+        canvas.height = 2000;
+        canvas.style.width = '1200px';
+        canvas.style.height = '700px';
+        
+        localPlayer.username = user.username;
+        localPlayer.spriteSheet = await loadSpriteSheetFromDataURL(user.spriteData);
+        localPlayer.x = 900;
+        localPlayer.y = 900;
+        
+        // ------------------- Trystero Actions realtime -------------------
+        const [sendMove, onMove] = p2pRoom.makeAction('move');
+        const [sendObjectPlaced, onObjectPlaced] = p2pRoom.makeAction('newObject');
+        const [sendChatMsg, onChatMsg] = p2pRoom.makeAction('chat');
+        
+        onMove((data, peerId) => {
+            if (remotePlayers.has(peerId)) {
+                const r = remotePlayers.get(peerId);
+                r.x = data.x;
+                r.y = data.y;
+                r.dir = data.dir;
+                r.frame = data.frame;
+                remotePlayers.set(peerId, r);
+            }
+        });
+        
+        onObjectPlaced(async (objData, peerId) => {
+            if (!objectsMap.has(objData.id)) {
+                const img = new Image();
+                img.src = objData.imageData;
+                objectsMap.set(objData.id, { ...objData, img });
+                // also persist to gun for late joiners
+                db.get('officeObjects').get(objData.id).put(objData);
+                renderObjectsOnCanvas();
+            }
+        });
+        
+        onChatMsg((msg, peerId) => {
+            const chatDiv = document.getElementById('chatMessages');
+            const from = remotePlayers.has(peerId) ? remotePlayers.get(peerId).username : peerId;
+            chatDiv.innerHTML += `<div><b>${from}:</b> ${msg.text}</div>`;
+            chatDiv.scrollTop = chatDiv.scrollHeight;
+        });
+        
+        // broadcast position every 40ms
+        setInterval(() => {
+            if (localPlayer.moving || true) {
+                sendMove({ x: localPlayer.x, y: localPlayer.y, dir: localPlayer.dir, frame: localPlayer.frame, ts: Date.now() });
+            }
+        }, 50);
+        
+        // ------------------- Media + ScreenShare with Trystero ----------
+        let localMicActive = false, localCamActive = false;
+        const micBtn = document.getElementById('micBtn');
+        const camBtn = document.getElementById('camBtn');
+        const screenBtn = document.getElementById('screenBtn');
+        
+        async function enableMic() {
+            if (localStream) localStream.getAudioTracks().forEach(t => t.stop());
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            if (!localStream) localStream = stream;
+            else stream.getAudioTracks().forEach(t => localStream.addTrack(t));
+            p2pRoom.addStream(stream, '*');
+            micBtn.classList.add('active');
+            localMicActive = true;
         }
-
-        function renderAvatar(av) {
-            if (!av.spriteImg) {
-                ctx.fillStyle = av.id === 'self' ? '#22c55e' : '#3b82f6';
-                ctx.fillRect(av.x, av.y, av.w, av.h);
+        
+        async function enableCam() {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 } });
+            if (!localStream) localStream = stream;
+            else stream.getVideoTracks().forEach(t => localStream.addTrack(t));
+            p2pRoom.addStream(localStream, '*');
+            camBtn.classList.add('active');
+            localCamActive = true;
+        }
+        
+        micBtn.onclick = () => enableMic().catch(e => alert("Mic error"));
+        camBtn.onclick = () => enableCam().catch(e => alert("Camera error"));
+        
+        screenBtn.onclick = async () => {
+            if (screenStream) {
+                screenStream.getTracks().forEach(t => t.stop());
+                screenStream = null;
+                screenBtn.classList.remove('active');
+                screenBtn.textContent = '🖥️ Share Screen';
+                if (localStream) p2pRoom.addStream(localStream, '*'); // restore camera if needed
                 return;
             }
-            const sx = av.frame * FRAME_W;
-            const sy = av.direction * FRAME_H;
-            ctx.drawImage(av.spriteImg, sx, sy, FRAME_W, FRAME_H, av.x, av.y, av.w, av.h);
-        }
-
-        // ==================== MOVEMENT & RENDER ====================
-        function updateMovement() {
-            if (!selfAvatar) return;
-            let vx = 0, vy = 0;
-            if (keys['w'] || keys['arrowup']) vy -= selfAvatar.speed;
-            if (keys['s'] || keys['arrowdown']) vy += selfAvatar.speed;
-            if (keys['a'] || keys['arrowleft']) vx -= selfAvatar.speed;
-            if (keys['d'] || keys['arrowright']) vx += selfAvatar.speed;
-
-            const moving = vx !== 0 || vy !== 0;
-            if (moving) {
-                if (vx && vy) { const l = Math.hypot(vx, vy); vx = (vx / l) * selfAvatar.speed; vy = (vy / l) * selfAvatar.speed; }
-                selfAvatar.x = Math.max(10, Math.min(W - 74, selfAvatar.x + vx));
-                selfAvatar.y = Math.max(10, Math.min(H - 74, selfAvatar.y + vy));
-                selfAvatar.direction = Math.abs(vy) > Math.abs(vx) ? (vy > 0 ? 0 : 3) : (vx > 0 ? 2 : 1);
-                selfAvatar.frame = (selfAvatar.frame + 1) % 4;
-            } else {
-                selfAvatar.frame = 0;
-            }
-        }
-
-        function render() {
-            ctx.clearRect(0, 0, W, H);
-            ctx.fillStyle = '#0f172a';
-            ctx.fillRect(0, 0, W, H);
-
-            ctx.strokeStyle = '#334155';
-            for (let i = 0; i < W; i += 50) { ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, H); ctx.stroke(); }
-            for (let i = 0; i < H; i += 50) { ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke(); }
-
-            sceneItems.forEach(item => {
-                ctx.fillStyle = '#64748b';
-                ctx.fillRect(item.x || 100, item.y || 100, item.defaultW || 64, item.defaultH || 64);
-            });
-
-            peerAvatars.forEach(av => renderAvatar(av));
-            if (selfAvatar) renderAvatar(selfAvatar);
-        }
-
-        function gameLoop() {
-            updateMovement();
-            render();
-            requestAnimationFrame(gameLoop);
-        }
-
-        // ==================== GENOSDB (Correct API) ====================
-        async function initApp() {
             try {
-                db = await gdb("moderntown-office", { rtc: true });
-                console.log('✅ GenoSDB + GenosRTC initialized');
-
-                // Real-time listeners using map()
-                const unsubscribeObjects = await db.map({ realtime: true }, ({ id, value, action }) => {
-                    if (action === 'initial' || action === 'added' || action === 'updated') {
-                        const idx = sceneItems.findIndex(i => i.id === id);
-                        if (idx >= 0) sceneItems[idx] = value;
-                        else sceneItems.push(value);
-                    } else if (action === 'removed') {
-                        sceneItems = sceneItems.filter(i => i.id !== id);
-                    }
-                    render();
-                });
-
-                const unsubscribeAvatars = await db.map({ realtime: true }, ({ id, value, action }) => {
-                    if (id === 'self') return;
-                    if (action === 'removed') {
-                        peerAvatars.delete(id);
-                    } else {
-                        let peer = peerAvatars.get(id);
-                        if (!peer) {
-                            peer = { ...value };
-                            const img = new Image();
-                            img.src = "./objects/sprites/character_sprite.png";
-                            img.onload = () => peer.spriteImg = img;
-                            peerAvatars.set(id, peer);
-                        } else {
-                            Object.assign(peer, value);
-                        }
-                    }
-                    render();
-                });
-
-                document.getElementById('connectionStatus').innerHTML = '🟢 GenoSDB P2P LIVE';
-                document.getElementById('statusLog').innerHTML = '✅ Realtime sync active – drag objects, WASD move';
-
-                // Objects panel
-                const dock = document.getElementById('objectsDock');
-                availableObjects.forEach(obj => {
-                    const div = document.createElement('div');
-                    div.style.cssText = 'background:#1e2937;border-radius:12px;padding:8px;text-align:center;cursor:grab;min-width:80px;';
-                    div.innerHTML = `<img src="${obj.spriteUrl}" style="width:48px;height:48px;"><div style="font-size:12px;margin-top:4px;">${obj.name}</div>`;
-                    div.draggable = true;
-                    div.ondragstart = e => e.dataTransfer.setData('application/json', JSON.stringify(obj));
-                    dock.appendChild(div);
-                });
-
-                canvas.ondragover = e => e.preventDefault();
-                canvas.ondrop = async (e) => {
-                    e.preventDefault();
-                    const config = JSON.parse(e.dataTransfer.getData('application/json'));
-                    const rect = canvas.getBoundingClientRect();
-                    const x = (e.clientX - rect.left) * (W / rect.width) - (config.defaultW || 32);
-                    const y = (e.clientY - rect.top) * (H / rect.height) - (config.defaultH || 32);
-                    const newObj = { id: 'obj_' + Date.now(), ...config, x, y };
-                    await db.put(newObj, newObj.id);
+                const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+                screenStream = stream;
+                screenBtn.classList.add('active');
+                screenBtn.textContent = '⏹️ Stop Share';
+                p2pRoom.addStream(stream, '*');
+                stream.getVideoTracks()[0].onended = () => {
+                    screenStream = null;
+                    screenBtn.classList.remove('active');
+                    screenBtn.textContent = '🖥️ Share Screen';
                 };
-
-                // Keyboard
-                window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-                window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
-                gameLoop();
-                setInterval(() => document.getElementById('peerCount').innerHTML = `👥 ${connectedPeers.size + 1} online`, 2000);
-
-            } catch (e) {
-                console.error(e);
-                document.getElementById('statusLog').innerHTML = '❌ Failed to init GenoSDB';
-            }
-        }
-
-        // ==================== MEDIA ====================
-        window.toggleMic = async function() {
-            micOn = !micOn;
-            const btn = document.getElementById('micBtn');
-            btn.textContent = micOn ? '🎤 Mic ON' : '🎤 Mic OFF';
-            btn.style.background = micOn ? '#10b981' : '#ef4444';
+            } catch(e) { alert("Screen share cancelled/error"); }
         };
-
-        window.toggleCamera = async function() {
-            camOn = !camOn;
-            const btn = document.getElementById('camBtn');
-            btn.textContent = camOn ? '📹 Camera ON' : '📹 Camera OFF';
-            btn.style.background = camOn ? '#10b981' : '#ef4444';
-            const prev = document.getElementById('localPreview');
-            if (camOn) {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        
+        // handle remote streams: attach video elements
+        p2pRoom.onPeerStream((stream, peerId) => {
+            const videosDiv = document.getElementById('floatingVideos');
+            let existing = document.getElementById(`vid-${peerId}`);
+            if (!existing) {
+                const vidDiv = document.createElement('div');
+                vidDiv.className = 'remote-vid';
+                vidDiv.id = `vid-${peerId}`;
                 const video = document.createElement('video');
-                video.autoplay = true; video.muted = true; video.srcObject = stream;
-                prev.innerHTML = ''; prev.appendChild(video); prev.style.display = 'block';
+                video.autoplay = true;
+                video.playsInline = true;
+                video.srcObject = stream;
+                video.muted = false;
+                vidDiv.appendChild(video);
+                videosDiv.appendChild(vidDiv);
+                if (remotePlayers.has(peerId)) {
+                    const r = remotePlayers.get(peerId);
+                    r.videoEl = video;
+                    remotePlayers.set(peerId, r);
+                }
             } else {
-                prev.style.display = 'none';
+                existing.querySelector('video').srcObject = stream;
+            }
+        });
+        
+        p2pRoom.onPeerLeave((peerId) => {
+            const vidEl = document.getElementById(`vid-${peerId}`);
+            if (vidEl) vidEl.remove();
+            remotePlayers.delete(peerId);
+        });
+        
+        // ---------- Drag & Drop from OS ----------
+        canvas.addEventListener('dragover', (e) => { e.preventDefault(); dragDropActive = true; canvas.style.opacity = '0.9'; });
+        canvas.addEventListener('dragleave', () => { dragDropActive = false; canvas.style.opacity = '1'; });
+        canvas.addEventListener('drop', async (e) => {
+            e.preventDefault();
+            canvas.style.opacity = '1';
+            const files = Array.from(e.dataTransfer.files);
+            const pngFile = files.find(f => f.type === 'image/png');
+            if (!pngFile) return alert("Please drop a PNG file");
+            const base64Data = await fileToBase64(pngFile);
+            const img = new Image();
+            img.onload = () => {
+                pendingImage = { data: base64Data, width: img.width, height: img.height, filename: pngFile.name };
+                alert(`✨ ${pngFile.name} loaded! Click on canvas to place object.`);
+            };
+            img.src = base64Data;
+        });
+        
+        canvas.addEventListener('click', (e) => {
+            if (pendingImage) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+                const mouseX = (e.clientX - rect.left) * scaleX;
+                const mouseY = (e.clientY - rect.top) * scaleY;
+                const objId = `obj_${Date.now()}_${Math.random()}`;
+                const objData = {
+                    id: objId, filename: pendingImage.filename, width: pendingImage.width, height: pendingImage.height,
+                    imageData: pendingImage.data, x: mouseX, y: mouseY, placedBy: currentUser.username, ts: Date.now()
+                };
+                const imgObj = new Image();
+                imgObj.src = pendingImage.data;
+                objectsMap.set(objId, { ...objData, img: imgObj });
+                db.get('officeObjects').get(objId).put(objData);
+                sendObjectPlaced(objData);
+                pendingImage = null;
+                renderObjectsOnCanvas();
+            }
+        });
+        
+        // chat 
+        document.getElementById('sendChat').onclick = () => {
+            const input = document.getElementById('chatInput');
+            if (input.value.trim()) {
+                const msg = { text: input.value, from: currentUser.username, timestamp: Date.now() };
+                sendChatMsg(msg);
+                const chatDiv = document.getElementById('chatMessages');
+                chatDiv.innerHTML += `<div><b>Me:</b> ${msg.text}</div>`;
+                input.value = '';
             }
         };
-
-        window.toggleMediaPanel = () => {
-            const p = document.getElementById('mediaPanel');
-            p.style.display = p.style.display === 'none' ? 'flex' : 'none';
-        };
-
-        window.switchTab = function(n) {
-            document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===n));
-        };
-
-        window.onload = () => {
-            if (!loadProfile()) {
-                document.getElementById('onboardingModal').showModal();
-            } else {
-                createSelfAvatar();
-                initApp();
+        
+        // ------------------- Game Loop + movement--------------------
+        window.addEventListener('keydown', (e) => { if (e.key in keys) keys[e.key] = true; });
+        window.addEventListener('keyup', (e) => { if (e.key in keys) keys[e.key] = false; });
+        
+        function movePlayer() {
+            let moveX = 0, moveY = 0;
+            if (keys.w || keys.ArrowUp) moveY -= 5;
+            if (keys.s || keys.ArrowDown) moveY += 5;
+            if (keys.a || keys.ArrowLeft) moveX -= 5;
+            if (keys.d || keys.ArrowRight) moveX += 5;
+            if (moveX !== 0 || moveY !== 0) {
+                localPlayer.moving = true;
+                localPlayer.x = Math.min(1950, Math.max(50, localPlayer.x + moveX));
+                localPlayer.y = Math.min(1950, Math.max(50, localPlayer.y + moveY));
+                if (Math.abs(moveX) > Math.abs(moveY)) localPlayer.dir = moveX > 0 ? 'right' : 'left';
+                else localPlayer.dir = moveY > 0 ? 'down' : 'up';
+                localPlayer.frame = (Date.now() / 150) % 2;
+            } else localPlayer.moving = false;
+        }
+        
+        function renderObjectsOnCanvas() {
+            if (!ctx) return;
+            // re-draw everything
+            drawFullScene();
+        }
+        
+        function drawFullScene() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // background grid
+            ctx.fillStyle = '#6f9e6f';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < canvas.width; i += 32) {
+                ctx.beginPath();
+                ctx.strokeStyle = '#567d46';
+                ctx.lineWidth = 0.5;
+                ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height);
+                ctx.moveTo(0, i); ctx.lineTo(canvas.width, i);
+                ctx.stroke();
             }
+            // objects
+            for (let obj of objectsMap.values()) {
+                if (obj.img && obj.img.complete) {
+                    ctx.drawImage(obj.img, obj.x, obj.y, obj.width || 48, obj.height || 48);
+                } else if (obj.img) {
+                    ctx.fillStyle = '#aaa';
+                    ctx.fillRect(obj.x, obj.y, 48, 48);
+                }
+            }
+            // remote sprites
+            for (let [id, r] of remotePlayers.entries()) {
+                if (r.spriteImg && r.spriteImg.complete) {
+                    let row = { down: 0, left: 1, right: 2, up: 3 }[r.dir] || 0;
+                    let col = Math.floor(r.frame) % 3;
+                    ctx.drawImage(r.spriteImg, col * 32, row * 32, 32, 32, r.x - 16, r.y - 16, 40, 40);
+                    ctx.fillStyle = 'white';
+                    ctx.font = "bold 12px monospace";
+                    ctx.shadowBlur = 4;
+                    ctx.fillText(r.username, r.x - 20, r.y - 20);
+                }
+            }
+            // local
+            if (localPlayer.spriteSheet) {
+                let row = { down: 0, left: 1, right: 2, up: 3 }[localPlayer.dir] || 0;
+                let col = localPlayer.moving ? Math.floor(localPlayer.frame) % 3 : 0;
+                ctx.drawImage(localPlayer.spriteSheet, col * 32, row * 32, 32, 32, localPlayer.x - 16, localPlayer.y - 16, 40, 40);
+                ctx.fillStyle = '#FFD966';
+                ctx.font = "bold 12px monospace";
+                ctx.fillText(currentUser.fullName, localPlayer.x - 20, localPlayer.y - 20);
+            }
+            ctx.shadowBlur = 0;
+        }
+        
+        function animate() {
+            movePlayer();
+            drawFullScene();
+            requestAnimationFrame(animate);
+        }
+        animate();
+        
+        // sync local camera view
+        const followCam = () => {
+            const parent = canvas.parentElement;
+            const offsetX = localPlayer.x - parent.clientWidth/2;
+            const offsetY = localPlayer.y - parent.clientHeight/2;
+            canvas.style.transform = `translate(${-Math.min(Math.max(offsetX,0), canvas.width-parent.clientWidth)}px, ${-Math.min(Math.max(offsetY,0), canvas.height-parent.clientHeight)}px)`;
+            requestAnimationFrame(followCam);
         };
-    </script>
+        followCam();
+        
+        // initial broadcast of position on join
+        setTimeout(() => sendMove({ x: localPlayer.x, y: localPlayer.y, dir: localPlayer.dir, frame: 0 }), 500);
+    }
+    
+    // bootstrap
+    renderAuth();
+</script>
 </body>
 </html>
