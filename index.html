@@ -95,6 +95,21 @@ body{
   white-space:nowrap;
 }
 
+.busyLabel{
+  position:absolute;
+  top:-44px;
+  left:50%;
+  transform:translateX(-50%);
+  background:#dc2626;
+  color:white;
+  font-size:11px;
+  padding:4px 8px;
+  border-radius:999px;
+  display:none;
+  white-space:nowrap;
+  box-shadow:0 8px 24px rgba(0,0,0,.35);
+}
+
 .sprite{
   position:absolute;
   left:32px;
@@ -314,7 +329,7 @@ body{
   Upload sprite: <b>96x128px</b><br>
   W A S D = Move Sprite<br>
   💬 appears only when near another player (80px)<br>
-  Bell plays when peer joins
+  1-on-1 call only
 </div>
 
 <div id="scene"></div>
@@ -425,7 +440,10 @@ let localStream = null
 let myConnectId = null
 let roomName = null
 let movementStarted = false
+
 let activeCallPeer = null
+let pendingOutgoingCallPeer = null
+let pendingIncomingCallPeer = null
 
 const connectedPeers = new Set()
 const peerStates = {}
@@ -445,6 +463,10 @@ let localState = {
 let myPosition = {
   x:360,
   y:220
+}
+
+function isBusy(){
+  return !!activeCallPeer || !!pendingOutgoingCallPeer || !!pendingIncomingCallPeer
 }
 
 function playRingtone(){
@@ -569,13 +591,37 @@ joinBtn.onclick = async () => {
     }
 
     if(data.type === 'video-call-request'){
+      if(isBusy()){
+        sendToPeer(peerId,{
+          type:'video-call-busy',
+          room:roomName,
+          fromName:playerName
+        })
+        return
+      }
+
+      pendingIncomingCallPeer = peerId
+      broadcastState()
+
       showIncomingRequest(peerId, data.fromName || 'Someone')
+      return
+    }
+
+    if(data.type === 'video-call-busy'){
+      pendingOutgoingCallPeer = null
+      broadcastState()
+      closeRequestModal()
+      alert((data.fromName || 'Peer') + ' is currently chatting.')
       return
     }
 
     if(data.type === 'video-call-accept'){
       stopRingtone()
+      pendingOutgoingCallPeer = null
+      pendingIncomingCallPeer = null
       activeCallPeer = peerId
+      broadcastState()
+
       closeRequestModal()
       openCallModal(peerId)
       await startCall(peerId, shouldInitiate(peerId))
@@ -584,6 +630,10 @@ joinBtn.onclick = async () => {
 
     if(data.type === 'video-call-decline'){
       stopRingtone()
+      pendingOutgoingCallPeer = null
+      pendingIncomingCallPeer = null
+      broadcastState()
+
       closeRequestModal()
       alert((peerStates[peerId]?.name || 'Peer') + ' declined the video call.')
       return
@@ -630,6 +680,7 @@ function createPlayer(id, name, isLocal){
 
   player.innerHTML = `
     <div class="nameTag">${escapeHTML(name)}</div>
+    <div class="busyLabel">Currently chatting</div>
     <button class="chatBubble">💬</button>
     <div class="sprite"></div>
   `
@@ -651,6 +702,16 @@ function createPlayer(id, name, isLocal){
 
     chatBubble.onclick = e => {
       e.stopPropagation()
+
+      if(isBusy()){
+        alert('You are currently chatting.')
+        return
+      }
+
+      if(peerStates[id]?.busy){
+        alert((peerStates[id]?.name || 'Peer') + ' is currently chatting.')
+        return
+      }
 
       const myPlayer = players.local
       const distance = distanceBetweenPlayers(myPlayer, player)
@@ -683,11 +744,30 @@ function updateNearbyChatBubbles(){
   const myPlayer = players.local
   if(!myPlayer) return
 
+  const iAmBusy = isBusy()
+
   Object.keys(players).forEach(peerId => {
     if(peerId === 'local') return
 
     const peerPlayer = players[peerId]
     if(!peerPlayer) return
+
+    const busyLabel = peerPlayer.querySelector('.busyLabel')
+    const peerBusy = peerStates[peerId]?.busy === true
+
+    if(iAmBusy || peerBusy){
+      peerPlayer.classList.remove('nearby')
+
+      if(busyLabel){
+        busyLabel.style.display = 'block'
+      }
+
+      return
+    }
+
+    if(busyLabel){
+      busyLabel.style.display = 'none'
+    }
 
     const distance = distanceBetweenPlayers(myPlayer, peerPlayer)
 
@@ -700,6 +780,19 @@ function updateNearbyChatBubbles(){
 }
 
 function showOutgoingRequest(peerId){
+  if(isBusy()){
+    alert('You are currently chatting.')
+    return
+  }
+
+  if(peerStates[peerId]?.busy){
+    alert((peerStates[peerId]?.name || 'Peer') + ' is currently chatting.')
+    return
+  }
+
+  pendingOutgoingCallPeer = peerId
+  broadcastState()
+
   const name = peerStates[peerId]?.name || 'Peer'
 
   requestTitle.textContent = 'Start Video Call'
@@ -723,10 +816,18 @@ function showOutgoingRequest(peerId){
       <button class="cancelBtn" id="cancelCallBtn2">Cancel</button>
     `
 
-    document.getElementById('cancelCallBtn2').onclick = closeRequestModal
+    document.getElementById('cancelCallBtn2').onclick = () => {
+      pendingOutgoingCallPeer = null
+      broadcastState()
+      closeRequestModal()
+    }
   }
 
-  document.getElementById('cancelCallBtn').onclick = closeRequestModal
+  document.getElementById('cancelCallBtn').onclick = () => {
+    pendingOutgoingCallPeer = null
+    broadcastState()
+    closeRequestModal()
+  }
 
   requestModal.style.display = 'flex'
 }
@@ -745,7 +846,10 @@ function showIncomingRequest(peerId, fromName){
   document.getElementById('acceptCallBtn').onclick = async () => {
     stopRingtone()
 
+    pendingOutgoingCallPeer = null
+    pendingIncomingCallPeer = null
     activeCallPeer = peerId
+    broadcastState()
 
     sendToPeer(peerId,{
       type:'video-call-accept',
@@ -760,6 +864,10 @@ function showIncomingRequest(peerId, fromName){
 
   document.getElementById('declineCallBtn').onclick = () => {
     stopRingtone()
+
+    pendingIncomingCallPeer = null
+    pendingOutgoingCallPeer = null
+    broadcastState()
 
     sendToPeer(peerId,{
       type:'video-call-decline',
@@ -969,7 +1077,10 @@ function createPeerConnection(peerId){
 async function handleOffer(peerId, offer){
   await acceptPeer(peerId)
 
+  pendingOutgoingCallPeer = null
+  pendingIncomingCallPeer = null
   activeCallPeer = peerId
+  broadcastState()
 
   openCallModal(peerId)
 
@@ -1049,7 +1160,10 @@ function endCall(peerId, notify){
   delete pendingIce[peerId]
 
   activeCallPeer = null
+  pendingOutgoingCallPeer = null
+  pendingIncomingCallPeer = null
 
+  broadcastState()
   closeCallModal()
 
   statusEl.textContent = 'Call ended'
@@ -1169,7 +1283,8 @@ function broadcastState(targetPeerId = null){
       ...localState,
       x:myPosition.x,
       y:myPosition.y,
-      name:playerName
+      name:playerName,
+      busy:isBusy()
     }
   }
 
@@ -1213,6 +1328,9 @@ function removePeer(peerId){
 
   if(activeCallPeer === peerId){
     activeCallPeer = null
+    pendingOutgoingCallPeer = null
+    pendingIncomingCallPeer = null
+    broadcastState()
     closeCallModal()
   }
 }
