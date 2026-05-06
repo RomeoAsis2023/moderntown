@@ -248,6 +248,16 @@
             video { width: 130px; }
             .action-btn { font-size: 9px; padding: 6px 10px; }
         }
+        
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #0f0;
+            font-size: 12px;
+            z-index: 200;
+        }
     </style>
 </head>
 <body>
@@ -278,7 +288,7 @@
         </div>
         
         <div class="connection-status" id="connStatus">
-            🔌 Connecting...
+            🔌 Initializing...
         </div>
 
         <div id="selfVideoBox" class="video-box" style="display: none;">
@@ -295,9 +305,22 @@
     </div>
 
     <script type="module">
-        // Import the libraries from correct CDNs
-        import webconnect from 'https://cdn.skypack.dev/webconnect';
-        import { gdb } from 'https://cdn.skypack.dev/genosdb';
+        // Import libraries with correct syntax
+        import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect@latest/dist/esm/webconnect.js';
+        
+        // GenosDB - using window load approach since module export is tricky
+        let gdb = null;
+        try {
+            const GenosDBModule = await import('https://cdn.jsdelivr.net/npm/genosdb@latest/dist/index.js');
+            gdb = GenosDBModule.gdb || GenosDBModule.default?.gdb;
+            if (!gdb) {
+                console.warn("GenosDB export not found, using fallback");
+                gdb = null;
+            }
+        } catch(e) {
+            console.warn("GenosDB failed to load:", e);
+            gdb = null;
+        }
         
         // ---------------- GLOBALS ----------------
         const canvas = document.getElementById("gameCanvas");
@@ -338,7 +361,7 @@
         const connStatusDiv = document.getElementById("connStatus");
         
         function generateId() {
-            return 'player_' + Math.random().toString(36).substr(2, 9);
+            return 'player_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
         }
         
         function addChatMessage(sender, msg, isSystem = false) {
@@ -363,15 +386,9 @@
             });
         }
         
-        // Update connection status
         function updateStatus(message, isError = false) {
             connStatusDiv.innerHTML = isError ? `⚠️ ${message}` : `🔗 ${message}`;
             connStatusDiv.style.borderColor = isError ? "#f00" : "#0f0";
-            setTimeout(() => {
-                if (!isError) {
-                    connStatusDiv.innerHTML = `✅ Connected to ${roomName}`;
-                }
-            }, 3000);
         }
         
         // Custom sprite upload
@@ -396,9 +413,8 @@
                         addChatMessage("System", "✨ Custom sprite equipped!", true);
                         syncFullState();
                         
-                        // Save to GenosDB
                         if (db && myId) {
-                            db.put(`room.${roomName}.players.${myId}.sprite`, localSpriteDataURL);
+                            db.put(`room.${roomName}.players.${myId}.sprite`, localSpriteDataURL).catch(e => console.warn);
                         }
                     };
                 };
@@ -462,7 +478,7 @@
                 const sy = direction * 32;
                 ctx.drawImage(img, sx, sy, 32, 32, x - 16, y - 16, 32, 32);
             } else {
-                // Fallback
+                // Fallback avatar
                 ctx.fillStyle = isLocal ? "#44ff44" : "#44dd44";
                 ctx.beginPath();
                 ctx.arc(x, y, 14, 0, Math.PI * 2);
@@ -470,6 +486,8 @@
                 ctx.fillStyle = "#000";
                 ctx.fillRect(x-4, y-4, 3, 3);
                 ctx.fillRect(x+2, y-4, 3, 3);
+                ctx.fillStyle = "#442200";
+                ctx.fillRect(x-5, y+4, 10, 4);
                 if (isLocal) {
                     ctx.strokeStyle = "#ffff00";
                     ctx.lineWidth = 2;
@@ -486,9 +504,9 @@
             }
         }
         
-        // Sync state via WebConnect and GenosDB
         function syncFullState() {
             const state = {
+                type: 'player_update',
                 x: myX,
                 y: myY,
                 dir: myDirection,
@@ -497,18 +515,18 @@
                 spriteURL: localSpriteDataURL
             };
             
-            // Send via WebConnect for real-time
             if (wc && wc.Send) {
-                wc.Send({
-                    type: 'player_update',
-                    ...state
-                });
+                wc.Send(state);
             }
             
-            // Save to GenosDB for persistence
             if (db && myId) {
                 db.put(`room.${roomName}.players.${myId}`, {
-                    ...state,
+                    x: myX,
+                    y: myY,
+                    dir: myDirection,
+                    frame: myAnimationFrame,
+                    name: myUsername,
+                    spriteURL: localSpriteDataURL,
                     lastSeen: Date.now()
                 }).catch(e => console.warn("DB save error:", e));
             }
@@ -528,7 +546,6 @@
             addChatMessage(myUsername, message);
         }
         
-        // Handle movement
         function handleMovement() {
             let moved = false;
             let speed = 4.2;
@@ -557,7 +574,6 @@
             }
         }
         
-        // Drawing
         function drawWorld() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
@@ -607,7 +623,6 @@
             requestAnimationFrame(gameLoop);
         }
         
-        // Create default sprite
         function createDefaultSprite() {
             const offCanvas = document.createElement("canvas");
             offCanvas.width = 96;
@@ -629,6 +644,11 @@
             localSpriteDataURL = dataURL;
         }
         
+        function updatePlayerCount() {
+            const count = remotePlayers.size + 1;
+            playerCountSpan.textContent = count;
+        }
+        
         // Initialize WebConnect
         async function initWebConnect() {
             return new Promise((resolve, reject) => {
@@ -642,7 +662,7 @@
                     });
                     
                     wc.onConnect((attr) => {
-                        console.log("WebConnect connected:", attr);
+                        console.log("WebConnect connected");
                         updateStatus(`Connected to ${roomName}`);
                         addChatMessage("System", `🌐 Connected to global room: ${roomName}`, true);
                         syncFullState();
@@ -689,8 +709,14 @@
             });
         }
         
-        // Initialize GenosDB
+        // Initialize GenosDB if available
         async function initGenosDB() {
+            if (!gdb) {
+                console.log("GenosDB not available, using WebConnect only");
+                updateStatus("P2P mode only");
+                return;
+            }
+            
             try {
                 db = await gdb(roomName, { 
                     rtc: true, 
@@ -698,13 +724,13 @@
                     persist: true 
                 });
                 console.log("GenosDB ready");
-                updateStatus("Database connected");
+                updateStatus("Database + P2P active");
                 
                 // Load existing players
                 const playersData = await db.get(`room.${roomName}.players`);
                 if (playersData) {
                     Object.keys(playersData).forEach(playerId => {
-                        if (playerId !== myId && playersData[playerId]) {
+                        if (playerId !== myId && playersData[playerId] && playersData[playerId].x) {
                             const data = playersData[playerId];
                             remotePlayers.set(playerId, {
                                 x: data.x,
@@ -723,43 +749,10 @@
                     });
                     updatePlayerCount();
                 }
-                
-                // Subscribe to changes
-                db.subscribe(`room.${roomName}.players`, (data, key) => {
-                    if (key.includes(myId)) return;
-                    const playerId = key.split('.').pop();
-                    if (data && typeof data === 'object') {
-                        if (!remotePlayers.has(playerId)) {
-                            remotePlayers.set(playerId, {});
-                        }
-                        const player = remotePlayers.get(playerId);
-                        player.x = data.x;
-                        player.y = data.y;
-                        player.dir = data.dir;
-                        player.frame = data.frame;
-                        player.name = data.name;
-                        if (data.spriteURL && (!player.spriteURL || player.spriteURL !== data.spriteURL)) {
-                            player.spriteURL = data.spriteURL;
-                            player.img = new Image();
-                            player.img.src = data.spriteURL;
-                        }
-                        remotePlayers.set(playerId, player);
-                        updatePlayerCount();
-                    } else if (data === null) {
-                        remotePlayers.delete(playerId);
-                        updatePlayerCount();
-                    }
-                });
-                
             } catch (e) {
                 console.warn("GenosDB error:", e);
-                updateStatus("Database offline - P2P only", true);
+                updateStatus("P2P mode only", true);
             }
-        }
-        
-        function updatePlayerCount() {
-            const count = remotePlayers.size + 1;
-            playerCountSpan.textContent = count;
         }
         
         // Initialize everything
@@ -776,12 +769,11 @@
             createDefaultSprite();
             await initMediaDevices();
             
-            // Initialize both services
             try {
                 await initWebConnect();
             } catch (e) {
                 console.error("WebConnect failed:", e);
-                updateStatus("WebConnect failed - offline mode", true);
+                updateStatus("Connection failed - offline mode", true);
             }
             
             await initGenosDB();
@@ -827,7 +819,6 @@
                 }
             });
             
-            // Resize canvas
             function resizeCanvas() {
                 const w = window.innerWidth;
                 const h = window.innerHeight;
@@ -842,7 +833,6 @@
             gameLoop();
             addChatMessage("System", "✨ Welcome to Gather Town! WASD to move, upload custom sprites, and chat with players worldwide!", true);
             
-            // Periodic sync
             setInterval(() => {
                 syncFullState();
             }, 2000);
@@ -851,7 +841,6 @@
         // Start the app
         document.getElementById("joinBtn").onclick = initializeApp;
         
-        // Initial canvas size
         canvas.width = 1280;
         canvas.height = 720;
     </script>
