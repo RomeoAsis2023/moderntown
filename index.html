@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gather Town • Global Room</title>
-    <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"></script>
+    <title>Gather Town • webconnect.js</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         body { margin:0; background:#000; font-family:'Press Start 2P',system-ui; overflow:hidden; color:#fff; }
@@ -26,9 +25,9 @@
 
     <div id="ui">
         <div id="auth" class="panel">
-            <h1 style="color:#0f0;margin:0 0 20px;">GATHER TOWN<br><small>GENOSDB GLOBAL ROOM</small></h1>
-            <button onclick="joinRoom()" style="width:100%;padding:18px;font-size:16px;">ENTER GLOBAL ROOM</button>
-            <small style="color:#0ff;display:block;margin-top:15px;">Everyone joins the same room automatically</small>
+            <h1 style="color:#0f0;margin:0 0 20px;">GATHER TOWN<br><small>webconnect.js ESM</small></h1>
+            <button onclick="startApp()" style="width:100%;padding:18px;font-size:16px;">JOIN GLOBAL ROOM</button>
+            <small style="color:#0ff;display:block;margin-top:15px;">Pure P2P • No GunDB</small>
         </div>
 
         <div id="controls" class="panel" style="display:none;">
@@ -51,17 +50,17 @@
     </div>
 
     <script type="module">
-        import { gdb } from "https://cdn.jsdelivr.net/npm/genosdb@latest/dist/index.min.js";
+        import webconnect from "https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js";
 
-        let db, myId, myProfile = {name: "Player"};
-        let canvas, ctx;
+        let canvas, ctx, wc;
+        let myId, myProfile = {name: "Player"};
         let myX = 512, myY = 384, myDir = 0, myFrame = 0, animTime = 0;
         let keys = {}, lastSync = 0;
         let spriteSheetImg = null;
         let players = {}, spriteSheets = {};
         let myStream = null;
 
-        const ROOM = "gather-global-room-v16";
+        const ROOM = "gather-global-room-v17";
 
         window.onload = () => {
             canvas = document.getElementById("canvas");
@@ -69,7 +68,7 @@
             ctx.imageSmoothingEnabled = false;
         };
 
-        async function joinRoom() {
+        async function startApp() {
             document.getElementById("auth").style.display = "none";
             document.getElementById("controls").style.display = "flex";
             document.getElementById("chat").style.display = "block";
@@ -77,45 +76,33 @@
             myId = "p-" + Math.random().toString(36).slice(2, 10);
             myProfile.name = "P" + myId.slice(0,4);
 
-            // Initialize GenosDB
-            db = await gdb(ROOM, { rtc: true, autoConnect: true, persist: false });
+            // Initialize webconnect.js
+            wc = webconnect({
+                appName: "gather-town",
+                channelName: ROOM,
+                rtc: true,
+                autoConnect: true
+            });
 
-            // Realtime players
-            db.get(`room.${ROOM}.players`, (data, key) => {
-                if (key === myId || !data) return;
+            wc.onConnect((attr) => {
+                console.log("🔗 Peer connected:", attr.connectId);
+            });
 
-                players[key] = {
-                    x: Number(data.x) || 400,
-                    y: Number(data.y) || 300,
-                    dir: Number(data.dir) || 0,
-                    frame: Number(data.frame) || 0,
-                    name: data.name || "Player",
-                    spriteDataURL: data.spriteDataURL
-                };
-
-                if (data.spriteDataURL && !spriteSheets[key]) {
-                    const img = new Image();
-                    img.src = data.spriteDataURL;
-                    img.onload = () => spriteSheets[key] = img;
+            wc.onReceive((data, attr) => {
+                if (data.type === "position") {
+                    players[attr.connectId] = data.pos;
+                    if (data.sprite && !spriteSheets[attr.connectId]) {
+                        const img = new Image();
+                        img.src = data.sprite;
+                        img.onload = () => spriteSheets[attr.connectId] = img;
+                    }
                 }
             });
 
-            console.log("✅ GenosDB Global Room Joined");
+            console.log("✅ webconnect.js started");
             initMedia();
             setupInput();
             gameLoop();
-        }
-
-        function syncMyPlayer() {
-            if (!db) return;
-            db.put(`room.${ROOM}.players.${myId}`, {
-                x: Math.round(myX),
-                y: Math.round(myY),
-                dir: myDir,
-                frame: Math.floor(myFrame),
-                name: myProfile.name,
-                spriteDataURL: myProfile.spriteDataURL || null
-            });
         }
 
         async function initMedia() {
@@ -124,6 +111,15 @@
                 document.getElementById("selfVideo").srcObject = myStream;
                 document.getElementById("selfVideoContainer").style.display = "block";
             } catch(e) { console.log("Media blocked"); }
+        }
+
+        function syncPosition() {
+            if (!wc) return;
+            wc.send({
+                type: "position",
+                pos: { x: Math.round(myX), y: Math.round(myY), dir: myDir, frame: Math.floor(myFrame) },
+                sprite: myProfile.spriteDataURL
+            });
         }
 
         function uploadSprite() {
@@ -138,7 +134,6 @@
                         if (img.width !== 96 || img.height !== 128) return alert("Must be 96×128!");
                         spriteSheetImg = img;
                         myProfile.spriteDataURL = ev.target.result;
-                        syncMyPlayer();
                     };
                 };
                 reader.readAsDataURL(e.target.files[0]);
@@ -204,7 +199,7 @@
                 ctx.fillStyle = "#0ff";
                 ctx.font = "11px Press Start 2P";
                 ctx.textAlign = "center";
-                ctx.fillText(p.name, p.x, p.y - 28);
+                ctx.fillText(p.name || "?", p.x, p.y - 28);
             }
 
             drawSprite(spriteSheetImg, myX, myY, myDir, Math.floor(myFrame));
@@ -225,8 +220,8 @@
             myX = Math.max(20, Math.min(1004, myX));
             myY = Math.max(20, Math.min(748, myY));
 
-            if (Date.now() - lastSync > 80) {
-                syncMyPlayer();
+            if (Date.now() - lastSync > 70) {
+                syncPosition();
                 lastSync = Date.now();
             }
 
@@ -244,8 +239,8 @@
             input.value = "";
         }
 
-        // Expose to window
-        window.joinRoom = joinRoom;
+        // Expose functions
+        window.startApp = startApp;
         window.uploadSprite = uploadSprite;
         window.toggleCamera = toggleCamera;
         window.toggleMic = toggleMic;
