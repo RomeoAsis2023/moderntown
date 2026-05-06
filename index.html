@@ -7,306 +7,69 @@
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
+body{background:#0f172a;color:white;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
 
-body{
-  background:#0f172a;
-  color:white;
-  font-family:Arial,Helvetica,sans-serif;
-  overflow:hidden;
-}
+#ui{position:fixed;top:12px;left:12px;z-index:9999;width:350px;background:rgba(0,0,0,.72);padding:14px;border-radius:14px}
+#ui h1{font-size:18px;margin-bottom:10px}
+#ui input,#ui button{width:100%;padding:10px;margin-bottom:8px;border:none;border-radius:9px}
+#ui button{background:#2563eb;color:white;font-weight:bold;cursor:pointer}
+#ui button:disabled{opacity:.55}
+#status{font-size:13px;color:#cbd5e1;line-height:1.4}
 
-#ui{
-  position:fixed;
-  top:12px;
-  left:12px;
-  z-index:9999;
-  width:350px;
-  background:rgba(0,0,0,.72);
-  padding:14px;
-  border-radius:14px;
-}
+#scene{position:relative;width:100vw;height:100vh;overflow:hidden;background:
+linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);background-size:32px 32px}
 
-#ui h1{
-  font-size:18px;
-  margin-bottom:10px;
-}
+.player{position:absolute;width:96px;height:96px}
+.nameTag{position:absolute;top:-20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);padding:3px 8px;border-radius:999px;font-size:12px;white-space:nowrap}
+.sprite{position:absolute;left:32px;top:8px;width:32px;height:32px;image-rendering:pixelated;background-repeat:no-repeat;background-size:96px 128px;transform:scale(2);transform-origin:top left}
 
-#ui input,
-#ui button{
-  width:100%;
-  padding:10px;
-  margin-bottom:8px;
-  border:none;
-  border-radius:9px;
-}
+.chatBubble{position:absolute;top:-42px;left:50%;transform:translateX(-50%);width:34px;height:34px;border-radius:50%;border:none;background:#2563eb;color:white;font-size:17px;cursor:pointer;display:none;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.player.nearby .chatBubble{display:block}
 
-#ui button{
-  background:#2563eb;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-}
+#help{position:fixed;bottom:12px;left:12px;z-index:9999;background:rgba(0,0,0,.72);padding:12px;border-radius:12px;font-size:13px;color:#cbd5e1;line-height:1.5}
 
-#ui button:disabled{
-  opacity:.55;
-}
+.modal{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.68);display:none;align-items:center;justify-content:center}
+.modalBox{width:420px;background:#111827;border:1px solid rgba(255,255,255,.16);border-radius:18px;padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.modalBox.wide{width:760px}
+.modalBox h2{font-size:19px;margin-bottom:8px}
+.modalBox p{font-size:14px;color:#cbd5e1;line-height:1.5;margin-bottom:12px}
 
-#status{
-  font-size:13px;
-  color:#cbd5e1;
-  line-height:1.4;
-}
+.previewVideo,.remoteVideo{width:100%;background:#020617;object-fit:cover;border-radius:14px}
+.previewVideo{height:210px;margin-bottom:12px}
+.remoteVideo{height:360px}
 
-#scene{
-  position:relative;
-  width:100vw;
-  height:100vh;
-  overflow:hidden;
-  background:
-    linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+.callGrid{display:grid;grid-template-columns:1fr 210px;gap:12px;margin-bottom:12px}
+.sidePanel{display:flex;flex-direction:column;gap:10px}
+.localPreview{width:100%;height:120px;background:#020617;object-fit:cover;border-radius:12px}
 
-  background-size:32px 32px;
-}
+.modalControls,.callControls{display:flex;justify-content:center;gap:8px;margin-bottom:12px}
+.iconBtn{width:38px;height:38px;border:none;border-radius:50%;background:rgba(255,255,255,.18);color:white;font-size:16px;cursor:pointer}
+.iconBtn.off{background:#dc2626}
 
-.player{
-  position:absolute;
-  width:96px;
-  height:96px;
-}
+.modalActions{display:flex;gap:8px}
+.modalActions button,.sendBtn{padding:11px;border:none;border-radius:10px;color:white;font-weight:bold;cursor:pointer}
+.modalActions button{flex:1}
+.acceptBtn,.callBtn,.sendBtn{background:#16a34a}
+.declineBtn,.cancelBtn{background:#dc2626}
 
-.nameTag{
-  position:absolute;
-  top:-20px;
-  left:50%;
-  transform:translateX(-50%);
-  background:rgba(0,0,0,.7);
-  padding:3px 8px;
-  border-radius:999px;
-  font-size:12px;
-  white-space:nowrap;
-}
-
-.sprite{
-  position:absolute;
-  left:32px;
-  top:8px;
-  width:32px;
-  height:32px;
-  image-rendering:pixelated;
-  background-repeat:no-repeat;
-  background-size:96px 128px;
-  transform:scale(2);
-  transform-origin:top left;
-}
-
-.chatBubble{
-  position:absolute;
-  top:-42px;
-  left:50%;
-  transform:translateX(-50%);
-  width:34px;
-  height:34px;
-  border-radius:50%;
-  border:none;
-  background:#2563eb;
-  color:white;
-  font-size:17px;
-  cursor:pointer;
-  display:none;
-  box-shadow:0 8px 24px rgba(0,0,0,.35);
-}
-
-.player.nearby .chatBubble{
-  display:block;
-}
-
-#help{
-  position:fixed;
-  bottom:12px;
-  left:12px;
-  z-index:9999;
-  background:rgba(0,0,0,.72);
-  padding:12px;
-  border-radius:12px;
-  font-size:13px;
-  color:#cbd5e1;
-  line-height:1.5;
-}
-
-.modal{
-  position:fixed;
-  inset:0;
-  z-index:99999;
-  background:rgba(0,0,0,.68);
-  display:none;
-  align-items:center;
-  justify-content:center;
-}
-
-.modalBox{
-  width:420px;
-  background:#111827;
-  border:1px solid rgba(255,255,255,.16);
-  border-radius:18px;
-  padding:16px;
-  box-shadow:0 20px 60px rgba(0,0,0,.45);
-}
-
-.modalBox.wide{
-  width:760px;
-}
-
-.modalBox h2{
-  font-size:19px;
-  margin-bottom:8px;
-}
-
-.modalBox p{
-  font-size:14px;
-  color:#cbd5e1;
-  line-height:1.5;
-  margin-bottom:12px;
-}
-
-.previewVideo,
-.remoteVideo{
-  width:100%;
-  background:#020617;
-  object-fit:cover;
-  border-radius:14px;
-}
-
-.previewVideo{
-  height:210px;
-  margin-bottom:12px;
-}
-
-.remoteVideo{
-  height:360px;
-}
-
-.callGrid{
-  display:grid;
-  grid-template-columns:1fr 210px;
-  gap:12px;
-  margin-bottom:12px;
-}
-
-.sidePanel{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-
-.localPreview{
-  width:100%;
-  height:120px;
-  background:#020617;
-  object-fit:cover;
-  border-radius:12px;
-}
-
-.modalControls,
-.callControls{
-  display:flex;
-  justify-content:center;
-  gap:8px;
-  margin-bottom:12px;
-}
-
-.iconBtn{
-  width:38px;
-  height:38px;
-  border:none;
-  border-radius:50%;
-  background:rgba(255,255,255,.18);
-  color:white;
-  font-size:16px;
-  cursor:pointer;
-}
-
-.iconBtn.off{
-  background:#dc2626;
-}
-
-.modalActions{
-  display:flex;
-  gap:8px;
-}
-
-.modalActions button,
-.sendBtn{
-  padding:11px;
-  border:none;
-  border-radius:10px;
-  color:white;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-.modalActions button{
-  flex:1;
-}
-
-.acceptBtn,
-.callBtn,
-.sendBtn{
-  background:#16a34a;
-}
-
-.declineBtn,
-.cancelBtn{
-  background:#dc2626;
-}
-
-.chatBox{
-  height:185px;
-  background:#020617;
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:12px;
-  padding:10px;
-  overflow:auto;
-  font-size:13px;
-  color:#e5e7eb;
-}
-
-.chatMsg{
-  margin-bottom:8px;
-  line-height:1.35;
-}
-
-.chatMsg b{
-  color:#93c5fd;
-}
-
-.chatInputRow{
-  display:flex;
-  gap:8px;
-}
-
-.chatInputRow input{
-  flex:1;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  background:#1f2937;
-  color:white;
-}
+.chatBox{height:185px;background:#020617;border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px;overflow:auto;font-size:13px;color:#e5e7eb}
+.chatMsg{margin-bottom:8px;line-height:1.35}
+.chatMsg b{color:#93c5fd}
+.chatInputRow{display:flex;gap:8px}
+.chatInputRow input{flex:1;padding:10px;border:none;border-radius:10px;background:#1f2937;color:white}
 </style>
 </head>
 
 <body>
 
+<audio id="ringtoneAudio" src="https://romeoasis2023.github.io/moderntown/newmessage.mp3" loop preload="auto"></audio>
+
 <div id="ui">
   <h1>Sprite P2P Video Chat World</h1>
-
   <input id="roomInput" value="demo-room" placeholder="Room name" />
-
   <input id="spriteUpload" type="file" accept="image/png,image/webp,image/jpeg" />
-
   <button id="joinBtn">Join Room</button>
-
   <div id="status">Not connected</div>
 </div>
 
@@ -314,23 +77,17 @@ body{
   URL name: <b>?name=romeo</b><br>
   Upload sprite: <b>96x128px</b><br>
   W A S D = Move Sprite<br>
-  💬 appears only when near another player (80px)
+  💬 appears only when near another player (80px)<br>
+  Incoming calls play ringtone loop
 </div>
 
 <div id="scene"></div>
 
 <div id="requestModal" class="modal">
   <div class="modalBox">
-
     <h2 id="requestTitle">Video Call</h2>
-
     <p id="requestText">Call request</p>
-
-    <video id="requestPreview"
-           class="previewVideo"
-           autoplay
-           playsinline
-           muted></video>
+    <video id="requestPreview" class="previewVideo" autoplay playsinline muted></video>
 
     <div class="modalControls">
       <button id="requestVideoBtn" class="iconBtn">📹</button>
@@ -338,31 +95,20 @@ body{
     </div>
 
     <div id="requestActions" class="modalActions"></div>
-
   </div>
 </div>
 
 <div id="callModal" class="modal">
   <div class="modalBox wide">
-
     <h2 id="callTitle">Video Chat</h2>
 
     <div class="callGrid">
-
       <div>
-        <video id="remoteVideo"
-               class="remoteVideo"
-               autoplay
-               playsinline></video>
+        <video id="remoteVideo" class="remoteVideo" autoplay playsinline></video>
       </div>
 
       <div class="sidePanel">
-
-        <video id="localPreview"
-               class="localPreview"
-               autoplay
-               playsinline
-               muted></video>
+        <video id="localPreview" class="localPreview" autoplay playsinline muted></video>
 
         <div class="callControls">
           <button id="callVideoBtn" class="iconBtn">📹</button>
@@ -377,11 +123,8 @@ body{
           <input id="chatInput" placeholder="Type message..." />
           <button id="sendChatBtn" class="sendBtn">Send</button>
         </div>
-
       </div>
-
     </div>
-
   </div>
 </div>
 
@@ -393,43 +136,36 @@ const statusEl = document.getElementById('status')
 const joinBtn = document.getElementById('joinBtn')
 const roomInput = document.getElementById('roomInput')
 const spriteUpload = document.getElementById('spriteUpload')
+const ringtoneAudio = document.getElementById('ringtoneAudio')
 
 const requestModal = document.getElementById('requestModal')
 const requestTitle = document.getElementById('requestTitle')
 const requestText = document.getElementById('requestText')
 const requestPreview = document.getElementById('requestPreview')
 const requestActions = document.getElementById('requestActions')
-
 const requestVideoBtn = document.getElementById('requestVideoBtn')
 const requestMicBtn = document.getElementById('requestMicBtn')
 
 const callModal = document.getElementById('callModal')
 const callTitle = document.getElementById('callTitle')
-
 const remoteVideo = document.getElementById('remoteVideo')
 const localPreview = document.getElementById('localPreview')
-
 const callVideoBtn = document.getElementById('callVideoBtn')
 const callMicBtn = document.getElementById('callMicBtn')
 const callSpeakerBtn = document.getElementById('callSpeakerBtn')
 const callEndBtn = document.getElementById('callEndBtn')
-
 const chatBox = document.getElementById('chatBox')
 const chatInput = document.getElementById('chatInput')
 const sendChatBtn = document.getElementById('sendChatBtn')
 
 const urlParams = new URLSearchParams(window.location.search)
-
-const playerName =
-  sanitizeName(urlParams.get('name')) ||
-  'Guest-' + Math.random().toString(36).substring(2,6)
+const playerName = sanitizeName(urlParams.get('name')) || 'Guest-' + Math.random().toString(36).substring(2,6)
 
 const FRAME_W = 32
 const FRAME_H = 32
 const SHEET_W = 96
 const SHEET_H = 128
 const COLS = 3
-
 const CHAT_DISTANCE = 80
 
 const DIRECTION_ROW = {
@@ -466,6 +202,20 @@ let myPosition = {
   y:220
 }
 
+function playRingtone(){
+  if(!ringtoneAudio) return
+  ringtoneAudio.currentTime = 0
+  ringtoneAudio.play().catch(() => {
+    console.warn('Ringtone blocked until user interacts with the page.')
+  })
+}
+
+function stopRingtone(){
+  if(!ringtoneAudio) return
+  ringtoneAudio.pause()
+  ringtoneAudio.currentTime = 0
+}
+
 spriteUpload.addEventListener('change', e => {
   const file = e.target.files[0]
   if(!file) return
@@ -474,7 +224,6 @@ spriteUpload.addEventListener('change', e => {
   const url = URL.createObjectURL(file)
 
   img.onload = () => {
-
     if(img.width !== SHEET_W || img.height !== SHEET_H){
       alert('Please upload exact 96x128px sprite sheet.')
       spriteUpload.value = ''
@@ -485,12 +234,10 @@ spriteUpload.addEventListener('change', e => {
     const reader = new FileReader()
 
     reader.onload = ev => {
-
       localState.sprite = ev.target.result
 
       if(players.local){
-        players.local.querySelector('.sprite').style.backgroundImage =
-          `url(${localState.sprite})`
+        players.local.querySelector('.sprite').style.backgroundImage = `url(${localState.sprite})`
       }
 
       broadcastState()
@@ -504,20 +251,15 @@ spriteUpload.addEventListener('change', e => {
 })
 
 joinBtn.onclick = async () => {
-
   joinBtn.disabled = true
-
   roomName = roomInput.value.trim() || 'demo-room'
 
   try{
-
     localStream = await navigator.mediaDevices.getUserMedia({
       video:true,
       audio:true
     })
-
   }catch(error){
-
     alert('Camera and microphone permission are required.')
     joinBtn.disabled = false
     return
@@ -531,16 +273,8 @@ joinBtn.onclick = async () => {
   connect = webconnect()
 
   connect.getMyId(attribute => {
-
     myConnectId = attribute.connectId
-
-    statusEl.textContent =
-      'Connected as ' +
-      playerName +
-      ' (' +
-      myConnectId +
-      ') · Room: ' +
-      roomName
+    statusEl.textContent = 'Connected as ' + playerName + ' (' + myConnectId + ') · Room: ' + roomName
   })
 
   connect.onConnect(attribute => {
@@ -552,37 +286,26 @@ joinBtn.onclick = async () => {
   })
 
   connect.onReceive(async (data, attribute) => {
-
     const peerId = attribute.connectId
 
     if(!data || !data.type) return
     if(data.room && data.room !== roomName) return
 
     if(data.type === 'room-hello'){
-
       await acceptPeer(peerId)
-
       sendHello(peerId)
-
       broadcastState(peerId)
-
       return
     }
 
     if(data.type === 'state'){
-
       peerStates[peerId] = data.state
 
       if(!players[peerId]){
-        createPlayer(
-          peerId,
-          data.state.name || 'Peer-' + peerId.substring(0,4),
-          false
-        )
+        createPlayer(peerId, data.state.name || 'Peer-' + peerId.substring(0,4), false)
       }
 
       updateRemotePlayer(peerId)
-
       return
     }
 
@@ -592,24 +315,18 @@ joinBtn.onclick = async () => {
     }
 
     if(data.type === 'video-call-accept'){
-
+      stopRingtone()
       activeCallPeer = peerId
-
       closeRequestModal()
-
       openCallModal(peerId)
-
       await startCall(peerId, shouldInitiate(peerId))
-
       return
     }
 
     if(data.type === 'video-call-decline'){
-
+      stopRingtone()
       closeRequestModal()
-
       alert((peerStates[peerId]?.name || 'Peer') + ' declined the video call.')
-
       return
     }
 
@@ -646,11 +363,9 @@ joinBtn.onclick = async () => {
 }
 
 function createPlayer(id, name, isLocal){
-
   if(players[id]) return
 
   const player = document.createElement('div')
-
   player.className = 'player'
   player.id = 'player-' + id
 
@@ -663,30 +378,22 @@ function createPlayer(id, name, isLocal){
   scene.appendChild(player)
 
   const sprite = player.querySelector('.sprite')
-
-  sprite.style.backgroundImage =
-    `url(${isLocal ? localState.sprite : createDefaultSprite()})`
+  sprite.style.backgroundImage = `url(${isLocal ? localState.sprite : createDefaultSprite()})`
 
   const chatBubble = player.querySelector('.chatBubble')
 
   if(isLocal){
-
     player.style.left = myPosition.x + 'px'
     player.style.top = myPosition.y + 'px'
-
     chatBubble.style.display = 'none'
-
   }else{
-
     player.style.left = '300px'
     player.style.top = '300px'
 
     chatBubble.onclick = e => {
-
       e.stopPropagation()
 
       const myPlayer = players.local
-
       const distance = distanceBetweenPlayers(myPlayer, player)
 
       if(distance > CHAT_DISTANCE){
@@ -702,55 +409,40 @@ function createPlayer(id, name, isLocal){
 }
 
 function distanceBetweenPlayers(a, b){
-
   const ax = parseFloat(a.style.left || 0)
   const ay = parseFloat(a.style.top || 0)
-
   const bx = parseFloat(b.style.left || 0)
   const by = parseFloat(b.style.top || 0)
-
   const dx = ax - bx
   const dy = ay - by
-
   return Math.sqrt(dx * dx + dy * dy)
 }
 
 function updateNearbyChatBubbles(){
-
   const myPlayer = players.local
-
   if(!myPlayer) return
 
   Object.keys(players).forEach(peerId => {
-
     if(peerId === 'local') return
 
     const peerPlayer = players[peerId]
-
     if(!peerPlayer) return
 
-    const distance =
-      distanceBetweenPlayers(myPlayer, peerPlayer)
+    const distance = distanceBetweenPlayers(myPlayer, peerPlayer)
 
     if(distance <= CHAT_DISTANCE){
-
       peerPlayer.classList.add('nearby')
-
     }else{
-
       peerPlayer.classList.remove('nearby')
     }
   })
 }
 
 function showOutgoingRequest(peerId){
-
   const name = peerStates[peerId]?.name || 'Peer'
 
   requestTitle.textContent = 'Start Video Call'
-
-  requestText.textContent =
-    'Do you want to video call ' + name + '?'
+  requestText.textContent = 'Do you want to video call ' + name + '?'
 
   requestActions.innerHTML = `
     <button class="callBtn" id="callNowBtn">Call</button>
@@ -758,60 +450,57 @@ function showOutgoingRequest(peerId){
   `
 
   document.getElementById('callNowBtn').onclick = () => {
-
     sendToPeer(peerId,{
       type:'video-call-request',
       room:roomName,
       fromName:playerName
     })
 
-    requestText.textContent =
-      'Calling ' + name + '... waiting for answer.'
+    requestText.textContent = 'Calling ' + name + '... waiting for answer.'
 
     requestActions.innerHTML = `
       <button class="cancelBtn" id="cancelCallBtn2">Cancel</button>
     `
 
-    document.getElementById('cancelCallBtn2').onclick =
-      closeRequestModal
+    document.getElementById('cancelCallBtn2').onclick = () => {
+      closeRequestModal()
+    }
   }
 
-  document.getElementById('cancelCallBtn').onclick =
-    closeRequestModal
+  document.getElementById('cancelCallBtn').onclick = closeRequestModal
 
   requestModal.style.display = 'flex'
 }
 
 function showIncomingRequest(peerId, fromName){
+  playRingtone()
 
   requestTitle.textContent = 'Incoming Video Call'
-
-  requestText.textContent =
-    fromName + ' wants to video call you.'
+  requestText.textContent = fromName + ' wants to video call you.'
 
   requestActions.innerHTML = `
     <button class="acceptBtn" id="acceptCallBtn">Accept</button>
     <button class="declineBtn" id="declineCallBtn">Decline</button>
   `
 
-  document.getElementById('acceptCallBtn').onclick =
-    async () => {
+  document.getElementById('acceptCallBtn').onclick = async () => {
+    stopRingtone()
 
-      activeCallPeer = peerId
+    activeCallPeer = peerId
 
-      sendToPeer(peerId,{
-        type:'video-call-accept',
-        room:roomName
-      })
+    sendToPeer(peerId,{
+      type:'video-call-accept',
+      room:roomName
+    })
 
-      closeRequestModal()
+    closeRequestModal()
+    openCallModal(peerId)
 
-      openCallModal(peerId)
-
-      await startCall(peerId, shouldInitiate(peerId))
-    }
+    await startCall(peerId, shouldInitiate(peerId))
+  }
 
   document.getElementById('declineCallBtn').onclick = () => {
+    stopRingtone()
 
     sendToPeer(peerId,{
       type:'video-call-decline',
@@ -825,27 +514,19 @@ function showIncomingRequest(peerId, fromName){
 }
 
 function closeRequestModal(){
+  stopRingtone()
   requestModal.style.display = 'none'
 }
 
 function openCallModal(peerId){
-
   const name = peerStates[peerId]?.name || 'Peer'
 
   activeCallPeer = peerId
-
-  callTitle.textContent =
-    'Video Chat with ' + name
-
+  callTitle.textContent = 'Video Chat with ' + name
   localPreview.srcObject = localStream
-
   chatBox.innerHTML = ''
 
-  addChatMessage(
-    'System',
-    'Call connected. You can now chat P2P.',
-    false
-  )
+  addChatMessage('System', 'Call connected. You can now chat P2P.', false)
 
   callModal.style.display = 'flex'
 }
@@ -857,25 +538,16 @@ function closeCallModal(){
 
 requestVideoBtn.onclick = () => toggleLocalVideo()
 requestMicBtn.onclick = () => toggleLocalMic()
-
 callVideoBtn.onclick = () => toggleLocalVideo()
 callMicBtn.onclick = () => toggleLocalMic()
 
 callSpeakerBtn.onclick = () => {
-
   remoteVideo.muted = !remoteVideo.muted
-
-  callSpeakerBtn.classList.toggle(
-    'off',
-    remoteVideo.muted
-  )
-
-  callSpeakerBtn.textContent =
-    remoteVideo.muted ? '🔈' : '🔊'
+  callSpeakerBtn.classList.toggle('off', remoteVideo.muted)
+  callSpeakerBtn.textContent = remoteVideo.muted ? '🔈' : '🔊'
 }
 
 callEndBtn.onclick = () => {
-
   if(activeCallPeer){
     endCall(activeCallPeer, true)
   }
@@ -890,9 +562,7 @@ chatInput.addEventListener('keydown', e => {
 })
 
 function sendChatMessage(){
-
   const message = chatInput.value.trim()
-
   if(!message || !activeCallPeer) return
 
   addChatMessage(playerName, message, true)
@@ -908,65 +578,44 @@ function sendChatMessage(){
 }
 
 function addChatMessage(name, message, isMe){
-
   const div = document.createElement('div')
-
   div.className = 'chatMsg'
-
-  div.innerHTML =
-    `<b>${escapeHTML(isMe ? 'You' : name)}:</b> ${escapeHTML(message)}`
-
+  div.innerHTML = `<b>${escapeHTML(isMe ? 'You' : name)}:</b> ${escapeHTML(message)}`
   chatBox.appendChild(div)
-
   chatBox.scrollTop = chatBox.scrollHeight
 }
 
 function toggleLocalVideo(){
-
   localState.video = !localState.video
 
   localStream.getVideoTracks().forEach(track => {
     track.enabled = localState.video
   })
 
-  ;[
-    requestVideoBtn,
-    callVideoBtn
-  ].forEach(btn => {
-
+  ;[requestVideoBtn, callVideoBtn].forEach(btn => {
     btn.classList.toggle('off', !localState.video)
-
-    btn.textContent =
-      localState.video ? '📹' : '📷'
+    btn.textContent = localState.video ? '📹' : '📷'
   })
 
   broadcastState()
 }
 
 function toggleLocalMic(){
-
   localState.mic = !localState.mic
 
   localStream.getAudioTracks().forEach(track => {
     track.enabled = localState.mic
   })
 
-  ;[
-    requestMicBtn,
-    callMicBtn
-  ].forEach(btn => {
-
+  ;[requestMicBtn, callMicBtn].forEach(btn => {
     btn.classList.toggle('off', !localState.mic)
-
-    btn.textContent =
-      localState.mic ? '🎙️' : '🔇'
+    btn.textContent = localState.mic ? '🎙️' : '🔇'
   })
 
   broadcastState()
 }
 
 function sendHello(peerId){
-
   sendToPeer(peerId,{
     type:'room-hello',
     room:roomName,
@@ -975,24 +624,17 @@ function sendHello(peerId){
 }
 
 async function acceptPeer(peerId){
-
   if(connectedPeers.has(peerId)) return
-
   connectedPeers.add(peerId)
-
-  statusEl.textContent =
-    peerId + ' joined room'
+  statusEl.textContent = peerId + ' joined room'
 }
 
 function shouldInitiate(peerId){
-
   if(!myConnectId) return false
-
   return String(myConnectId) < String(peerId)
 }
 
 async function startCall(peerId, shouldCreateOffer){
-
   if(peerConnections[peerId]){
     return peerConnections[peerId]
   }
@@ -1004,9 +646,7 @@ async function startCall(peerId, shouldCreateOffer){
   })
 
   if(shouldCreateOffer){
-
     const offer = await pc.createOffer()
-
     await pc.setLocalDescription(offer)
 
     sendToPeer(peerId,{
@@ -1020,7 +660,6 @@ async function startCall(peerId, shouldCreateOffer){
 }
 
 function createPeerConnection(peerId){
-
   const pc = new RTCPeerConnection({
     iceServers:[
       {urls:'stun:stun.l.google.com:19302'},
@@ -1029,14 +668,10 @@ function createPeerConnection(peerId){
   })
 
   peerConnections[peerId] = pc
-
-  pendingIce[peerId] =
-    pendingIce[peerId] || []
+  pendingIce[peerId] = pendingIce[peerId] || []
 
   pc.onicecandidate = event => {
-
     if(event.candidate){
-
       sendToPeer(peerId,{
         type:'webrtc-ice',
         room:roomName,
@@ -1046,32 +681,21 @@ function createPeerConnection(peerId){
   }
 
   pc.ontrack = event => {
-
     const stream = event.streams[0]
 
     if(stream){
-
       remoteVideo.srcObject = stream
-
       remoteVideo.play().catch(() => {})
-
       callModal.style.display = 'flex'
     }
   }
 
   pc.onconnectionstatechange = () => {
-
     if(pc.connectionState === 'connected'){
-
-      statusEl.textContent =
-        'Video connected with ' +
-        (peerStates[peerId]?.name || peerId)
+      statusEl.textContent = 'Video connected with ' + (peerStates[peerId]?.name || peerId)
     }
 
-    if(
-      ['closed','failed','disconnected']
-      .includes(pc.connectionState)
-    ){
+    if(['closed','failed','disconnected'].includes(pc.connectionState)){
       endCall(peerId, false)
     }
   }
@@ -1080,7 +704,6 @@ function createPeerConnection(peerId){
 }
 
 async function handleOffer(peerId, offer){
-
   await acceptPeer(peerId)
 
   activeCallPeer = peerId
@@ -1089,14 +712,10 @@ async function handleOffer(peerId, offer){
 
   const pc = await startCall(peerId, false)
 
-  await pc.setRemoteDescription(
-    new RTCSessionDescription(offer)
-  )
-
+  await pc.setRemoteDescription(new RTCSessionDescription(offer))
   await flushPendingIce(peerId)
 
   const answer = await pc.createAnswer()
-
   await pc.setLocalDescription(answer)
 
   sendToPeer(peerId,{
@@ -1109,74 +728,50 @@ async function handleOffer(peerId, offer){
 }
 
 async function handleAnswer(peerId, answer){
-
   const pc = peerConnections[peerId]
-
   if(!pc) return
 
-  await pc.setRemoteDescription(
-    new RTCSessionDescription(answer)
-  )
-
+  await pc.setRemoteDescription(new RTCSessionDescription(answer))
   await flushPendingIce(peerId)
 }
 
 async function handleIce(peerId, candidate){
-
   if(!candidate) return
 
   const pc = peerConnections[peerId]
 
   if(!pc || !pc.remoteDescription){
-
-    pendingIce[peerId] =
-      pendingIce[peerId] || []
-
+    pendingIce[peerId] = pendingIce[peerId] || []
     pendingIce[peerId].push(candidate)
-
     return
   }
 
   try{
-
-    await pc.addIceCandidate(
-      new RTCIceCandidate(candidate)
-    )
-
+    await pc.addIceCandidate(new RTCIceCandidate(candidate))
   }catch(error){
-
     console.warn('ICE error:', error)
   }
 }
 
 async function flushPendingIce(peerId){
-
   const pc = peerConnections[peerId]
-
-  const queue =
-    pendingIce[peerId] || []
+  const queue = pendingIce[peerId] || []
 
   while(queue.length){
-
     const candidate = queue.shift()
 
     try{
-
-      await pc.addIceCandidate(
-        new RTCIceCandidate(candidate)
-      )
-
+      await pc.addIceCandidate(new RTCIceCandidate(candidate))
     }catch(error){
-
       console.warn('Queued ICE error:', error)
     }
   }
 }
 
 function endCall(peerId, notify){
+  stopRingtone()
 
   if(notify){
-
     sendToPeer(peerId,{
       type:'video-call-end',
       room:roomName
@@ -1184,9 +779,7 @@ function endCall(peerId, notify){
   }
 
   if(peerConnections[peerId]){
-
     peerConnections[peerId].close()
-
     delete peerConnections[peerId]
   }
 
@@ -1200,21 +793,17 @@ function endCall(peerId, notify){
 }
 
 function updateRemotePlayer(peerId){
-
   const player = players[peerId]
-
   const state = peerStates[peerId]
 
   if(!player || !state) return
 
   if(state.name){
-    player.querySelector('.nameTag').textContent =
-      state.name
+    player.querySelector('.nameTag').textContent = state.name
   }
 
   if(state.sprite){
-    player.querySelector('.sprite').style.backgroundImage =
-      `url(${state.sprite})`
+    player.querySelector('.sprite').style.backgroundImage = `url(${state.sprite})`
   }
 
   if(typeof state.x === 'number'){
@@ -1225,32 +814,20 @@ function updateRemotePlayer(peerId){
     player.style.top = state.y + 'px'
   }
 
-  updateSpriteFrame(
-    player,
-    state.direction,
-    state.frame
-  )
+  updateSpriteFrame(player, state.direction, state.frame)
 }
 
 function updateSpriteFrame(player, direction, frame){
+  const sprite = player.querySelector('.sprite')
+  const row = DIRECTION_ROW[direction] ?? 0
+  const col = Math.floor(frame) % COLS
 
-  const sprite =
-    player.querySelector('.sprite')
-
-  const row =
-    DIRECTION_ROW[direction] ?? 0
-
-  const col =
-    Math.floor(frame) % COLS
-
-  sprite.style.backgroundPosition =
-    `-${col * FRAME_W}px -${row * FRAME_H}px`
+  sprite.style.backgroundPosition = `-${col * FRAME_W}px -${row * FRAME_H}px`
 }
 
 const keys = {}
 
 window.addEventListener('keydown', e => {
-
   const key = e.key.toLowerCase()
 
   if(['w','a','s','d'].includes(key)){
@@ -1267,9 +844,7 @@ window.addEventListener('keyup', e => {
 let lastMoveSend = 0
 
 function movementLoop(timestamp = 0){
-
   const speed = 3
-
   let moved = false
 
   if(keys.w){
@@ -1296,46 +871,25 @@ function movementLoop(timestamp = 0){
     moved = true
   }
 
-  myPosition.x =
-    Math.max(
-      0,
-      Math.min(window.innerWidth - 180, myPosition.x)
-    )
-
-  myPosition.y =
-    Math.max(
-      40,
-      Math.min(window.innerHeight - 190, myPosition.y)
-    )
+  myPosition.x = Math.max(0, Math.min(window.innerWidth - 180, myPosition.x))
+  myPosition.y = Math.max(40, Math.min(window.innerHeight - 190, myPosition.y))
 
   localState.moving = moved
-
-  localState.frame =
-    moved ? localState.frame + 0.16 : 1
+  localState.frame = moved ? localState.frame + 0.16 : 1
 
   const myPlayer = players.local
 
   if(myPlayer){
+    myPlayer.style.left = myPosition.x + 'px'
+    myPlayer.style.top = myPosition.y + 'px'
 
-    myPlayer.style.left =
-      myPosition.x + 'px'
-
-    myPlayer.style.top =
-      myPosition.y + 'px'
-
-    updateSpriteFrame(
-      myPlayer,
-      localState.direction,
-      localState.frame
-    )
+    updateSpriteFrame(myPlayer, localState.direction, localState.frame)
   }
 
   updateNearbyChatBubbles()
 
   if(moved && timestamp - lastMoveSend > 60){
-
     broadcastState()
-
     lastMoveSend = timestamp
   }
 
@@ -1343,7 +897,6 @@ function movementLoop(timestamp = 0){
 }
 
 function broadcastState(targetPeerId = null){
-
   if(!connect) return
 
   const payload = {
@@ -1358,9 +911,7 @@ function broadcastState(targetPeerId = null){
   }
 
   if(targetPeerId){
-
     sendToPeer(targetPeerId, payload)
-
     return
   }
 
@@ -1370,36 +921,27 @@ function broadcastState(targetPeerId = null){
 }
 
 function sendToPeer(peerId, payload){
-
   if(!connect || !peerId) return
 
   try{
-
     connect.Send(payload,{
       connectId:peerId
     })
-
   }catch(error){
-
     console.warn('Send failed:', peerId, error)
   }
 }
 
 function removePeer(peerId){
-
   connectedPeers.delete(peerId)
 
   if(peerConnections[peerId]){
-
     peerConnections[peerId].close()
-
     delete peerConnections[peerId]
   }
 
   if(players[peerId]){
-
     players[peerId].remove()
-
     delete players[peerId]
   }
 
@@ -1407,15 +949,12 @@ function removePeer(peerId){
   delete pendingIce[peerId]
 
   if(activeCallPeer === peerId){
-
     activeCallPeer = null
-
     closeCallModal()
   }
 }
 
 function sanitizeName(name){
-
   if(!name) return ''
 
   return String(name)
@@ -1425,7 +964,6 @@ function sanitizeName(name){
 }
 
 function escapeHTML(str){
-
   return String(str).replace(/[&<>'"]/g, char => ({
     '&':'&amp;',
     '<':'&lt;',
@@ -1436,27 +974,17 @@ function escapeHTML(str){
 }
 
 function createDefaultSprite(){
-
   const canvas = document.createElement('canvas')
-
   canvas.width = SHEET_W
   canvas.height = SHEET_H
 
   const ctx = canvas.getContext('2d')
-
   ctx.imageSmoothingEnabled = false
 
-  const shirt = [
-    '#60a5fa',
-    '#22c55e',
-    '#f97316',
-    '#a855f7'
-  ]
+  const shirt = ['#60a5fa','#22c55e','#f97316','#a855f7']
 
   for(let row = 0; row < 4; row++){
-
     for(let col = 0; col < 3; col++){
-
       const x = col * FRAME_W
       const y = row * FRAME_H
       const step = col === 1 ? 0 : 1
