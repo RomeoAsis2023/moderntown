@@ -26,10 +26,7 @@ body{
   border-radius:14px;
 }
 
-#ui h1{
-  font-size:19px;
-  margin-bottom:10px;
-}
+#ui h1{font-size:19px;margin-bottom:10px}
 
 #ui input,
 #ui button{
@@ -47,10 +44,7 @@ body{
   cursor:pointer;
 }
 
-#ui button:disabled{
-  opacity:.55;
-  cursor:not-allowed;
-}
+#ui button:disabled{opacity:.55;cursor:not-allowed}
 
 #status{
   font-size:13px;
@@ -120,13 +114,8 @@ body{
   cursor:pointer;
 }
 
-.iconBtn.off{
-  background:#dc2626;
-}
-
-.iconBtn.remote{
-  cursor:default;
-}
+.iconBtn.off{background:#dc2626}
+.iconBtn.remote{cursor:default}
 
 #help{
   position:fixed;
@@ -153,6 +142,7 @@ body{
 </div>
 
 <div id="help">
+  URL name: <b>?name=romeo</b><br>
   W A S D = Move Video<br>
   📹 = Camera Toggle<br>
   🎙️ = Mic Toggle<br>
@@ -168,6 +158,12 @@ const scene = document.getElementById('scene')
 const statusEl = document.getElementById('status')
 const joinBtn = document.getElementById('joinBtn')
 const roomInput = document.getElementById('roomInput')
+
+const urlParams = new URLSearchParams(window.location.search)
+
+const playerName =
+  sanitizeName(urlParams.get('name')) ||
+  'Guest-' + Math.random().toString(36).substring(2, 6)
 
 let connect = null
 let localStream = null
@@ -206,13 +202,14 @@ joinBtn.onclick = async () => {
     return
   }
 
-  createVideoCard('local', localStream, 'You', true)
+  createVideoCard('local', localStream, playerName, true)
 
   connect = webconnect()
 
   connect.getMyId(attribute => {
     myConnectId = attribute.connectId
-    statusEl.textContent = 'Connected as ' + myConnectId + ' · Room: ' + roomName
+    statusEl.textContent =
+      'Connected as ' + playerName + ' (' + myConnectId + ') · Room: ' + roomName
   })
 
   connect.onConnect(attribute => {
@@ -234,6 +231,7 @@ joinBtn.onclick = async () => {
 
     if (data.type === 'room-hello') {
       await acceptPeer(peerId)
+
       sendHello(peerId)
 
       if (shouldInitiate(peerId)) {
@@ -277,7 +275,8 @@ function sendHello(peerId) {
 
   sendToPeer(peerId, {
     type: 'room-hello',
-    room: roomName
+    room: roomName,
+    name: playerName
   })
 }
 
@@ -341,7 +340,11 @@ function createPeerConnection(peerId) {
     const stream = event.streams[0]
 
     if (stream) {
-      createVideoCard(peerId, stream, 'Peer ' + peerId, false)
+      const peerName =
+        peerStates[peerId]?.name ||
+        'Peer-' + String(peerId).substring(0, 4)
+
+      createVideoCard(peerId, stream, peerName, false)
       updateRemoteCard(peerId)
     }
   }
@@ -365,7 +368,6 @@ async function handleOffer(peerId, offer) {
   const pc = await startCall(peerId, false)
 
   await pc.setRemoteDescription(new RTCSessionDescription(offer))
-
   await flushPendingIce(peerId)
 
   const answer = await pc.createAnswer()
@@ -423,7 +425,12 @@ async function flushPendingIce(peerId) {
 
 function createVideoCard(id, stream, name, isLocal) {
   if (peerCards[id]) {
-    peerCards[id].querySelector('video').srcObject = stream
+    const existingVideo = peerCards[id].querySelector('video')
+    existingVideo.srcObject = stream
+
+    const nameEl = peerCards[id].querySelector('.videoName')
+    if (nameEl && name) nameEl.textContent = name
+
     return
   }
 
@@ -508,6 +515,10 @@ function updateRemoteCard(peerId) {
 
   if (!card || !state) return
 
+  if (state.name) {
+    card.querySelector('.videoName').textContent = state.name
+  }
+
   if (typeof state.x === 'number') card.style.left = state.x + 'px'
   if (typeof state.y === 'number') card.style.top = state.y + 'px'
 
@@ -590,7 +601,8 @@ function broadcastState(targetPeerId = null) {
     state: {
       ...localState,
       x: myPosition.x,
-      y: myPosition.y
+      y: myPosition.y,
+      name: playerName
     }
   }
 
@@ -631,6 +643,15 @@ function removePeer(peerId) {
 
   delete peerStates[peerId]
   delete pendingIce[peerId]
+}
+
+function sanitizeName(name) {
+  if (!name) return ''
+
+  return String(name)
+    .trim()
+    .slice(0, 24)
+    .replace(/[<>]/g, '')
 }
 
 function escapeHTML(str) {
