@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Gather Town • Pixel World • Local Multiplayer</title>
+    <title>Gather Town • Global Multiplayer • WebConnect + GenosDB</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
         
@@ -55,12 +55,13 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 460px;
+            width: 480px;
             text-align: center;
             background: rgba(10, 20, 10, 0.95);
             border: 4px solid #0f0;
             border-radius: 24px;
             padding: 28px;
+            z-index: 100;
         }
         
         #auth h1 {
@@ -196,6 +197,13 @@
             background: #0f0;
             box-shadow: 0 0 6px #0f0;
             margin-right: 6px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
         
         ::-webkit-scrollbar {
@@ -211,12 +219,6 @@
             border-radius: 4px;
         }
         
-        @media (max-width: 700px) {
-            .chat-window { width: 280px; height: 240px; }
-            video { width: 130px; }
-            .action-btn { font-size: 9px; padding: 6px 10px; }
-        }
-        
         .player-count {
             position: absolute;
             top: 16px;
@@ -228,6 +230,24 @@
             font-size: 10px;
             pointer-events: auto;
         }
+        
+        .connection-status {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            background: rgba(0,0,0,0.7);
+            border: 1px solid #0f0;
+            border-radius: 8px;
+            padding: 4px 8px;
+            font-size: 8px;
+            pointer-events: auto;
+        }
+        
+        @media (max-width: 700px) {
+            .chat-window { width: 280px; height: 240px; }
+            video { width: 130px; }
+            .action-btn { font-size: 9px; padding: 6px 10px; }
+        }
     </style>
 </head>
 <body>
@@ -235,24 +255,30 @@
     
     <div id="ui">
         <div id="auth" class="glass-panel">
-            <div style="font-size: 32px; margin-bottom: 8px;">🏰</div>
+            <div style="font-size: 32px; margin-bottom: 8px;">🌍</div>
             <h1 style="color:#0f0;">✦ GATHER TOWN ✦</h1>
-            <p style="font-size: 11px; color:#0fa;">Local Multiplayer + WebRTC</p>
-            <p style="margin: 16px 0 8px; font-size: 10px;">⬆️⬇️⬅️➡️ or WASD move</p>
-            <input type="text" id="playerName" placeholder="Enter your name" maxlength="16" style="width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 2px solid #0f0; color: #0f0; font-family: monospace; text-align: center;">
-            <button id="joinBtn">⚡ ENTER THE LOBBY ⚡</button>
-            <div style="margin-top: 18px; font-size: 9px; color:#7f7;">custom sprite 96x128 · proximity chat</div>
+            <p style="font-size: 11px; color:#0fa;">Global Multiplayer · WebConnect + GenosDB</p>
+            <input type="text" id="playerName" placeholder="Enter your name" maxlength="16" 
+                   style="width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 2px solid #0f0; color: #0f0; font-family: monospace; text-align: center;">
+            <input type="text" id="roomName" placeholder="Room name (default: gather-world)" maxlength="30" 
+                   style="width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 2px solid #0f0; color: #0f0; font-family: monospace; text-align: center;" value="gather-world">
+            <button id="joinBtn">⚡ JOIN WORLD ⚡</button>
+            <div style="margin-top: 18px; font-size: 9px; color:#7f7;">WASD / arrows to move · Upload custom 96x128 sprite</div>
         </div>
 
         <div class="controls-bar" id="controlsBar" style="display: none;">
-            <button class="action-btn" id="spriteBtn">🎨 SPRITE</button>
+            <button class="action-btn" id="spriteBtn">🎨 UPLOAD SPRITE</button>
             <button class="action-btn" id="camToggleBtn">📹 CAM ON</button>
             <button class="action-btn" id="micToggleBtn">🎤 MIC ON</button>
-            <button class="action-btn" id="resetCamBtn">🔄 RESET POS</button>
+            <button class="action-btn" id="resetPosBtn">🔄 RESET POS</button>
         </div>
         
         <div class="player-count" id="playerCount" style="display: none;">
             👥 <span id="onlineCount">1</span> online
+        </div>
+        
+        <div class="connection-status" id="connStatus">
+            🔌 Connecting...
         </div>
 
         <div id="selfVideoBox" class="video-box" style="display: none;">
@@ -261,37 +287,43 @@
 
         <div id="chatPanel" class="chat-window" style="display: none;">
             <div class="chat-header">
-                <span class="status-led"></span> GLOBAL CHAT • <span id="roomIdDisplay">gather-local</span>
+                <span class="status-led"></span> GLOBAL CHAT
             </div>
             <div id="messages"></div>
             <input type="text" id="chatInput" placeholder="✏️ message + ENTER" maxlength="80">
         </div>
     </div>
 
-    <script>
+    <script type="module">
+        // Import the libraries from correct CDNs
+        import webconnect from 'https://cdn.skypack.dev/webconnect';
+        import { gdb } from 'https://cdn.skypack.dev/genosdb';
+        
         // ---------------- GLOBALS ----------------
         const canvas = document.getElementById("gameCanvas");
         const ctx = canvas.getContext("2d");
         ctx.imageSmoothingEnabled = false;
         
-        let myPeerConnection = null;
-        let dataChannel = null;
-        let remotePlayers = new Map();
-        let myId = "";
+        let wc = null;
+        let db = null;
+        let myId = null;
         let myUsername = "";
+        let roomName = "";
+        
         let myX = canvas.width / 2;
         let myY = canvas.height / 2;
         let myDirection = 2;
         let myAnimationFrame = 0;
         let animTimer = 0;
         let movementKeys = {};
+        
+        let remotePlayers = new Map();
         let localSpriteImg = null;
         let localSpriteDataURL = null;
         let mediaStream = null;
         let isCameraEnabled = true;
         let isMicEnabled = true;
         let lastSyncTime = 0;
-        let peerConnections = new Map(); // track all peer connections
         
         // UI Elements
         const authDiv = document.getElementById("auth");
@@ -303,20 +335,10 @@
         const micBtn = document.getElementById("micToggleBtn");
         const playerCountSpan = document.getElementById("onlineCount");
         const playerCountDiv = document.getElementById("playerCount");
-        
-        // Signaling server - using public STUN server only (no TURN needed for local/LAN)
-        const configuration = {
-            iceServers: [
-                { urls: "stun:stun.l.google.com:19302" },
-                { urls: "stun:stun1.l.google.com:19302" }
-            ]
-        };
-        
-        // Simple signaling via localStorage for same-tab demo, but we'll use BroadcastChannel for multi-tab
-        const signalChannel = new BroadcastChannel('gather_town_signaling');
+        const connStatusDiv = document.getElementById("connStatus");
         
         function generateId() {
-            return 'player_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+            return 'player_' + Math.random().toString(36).substr(2, 9);
         }
         
         function addChatMessage(sender, msg, isSystem = false) {
@@ -341,6 +363,17 @@
             });
         }
         
+        // Update connection status
+        function updateStatus(message, isError = false) {
+            connStatusDiv.innerHTML = isError ? `⚠️ ${message}` : `🔗 ${message}`;
+            connStatusDiv.style.borderColor = isError ? "#f00" : "#0f0";
+            setTimeout(() => {
+                if (!isError) {
+                    connStatusDiv.innerHTML = `✅ Connected to ${roomName}`;
+                }
+            }, 3000);
+        }
+        
         // Custom sprite upload
         function uploadCustomSprite() {
             const input = document.createElement("input");
@@ -360,8 +393,13 @@
                         }
                         localSpriteImg = img;
                         localSpriteDataURL = ev.target.result;
-                        addChatMessage("System", "✨ Your custom sprite is equipped!", true);
-                        broadcastState();
+                        addChatMessage("System", "✨ Custom sprite equipped!", true);
+                        syncFullState();
+                        
+                        // Save to GenosDB
+                        if (db && myId) {
+                            db.put(`room.${roomName}.players.${myId}.sprite`, localSpriteDataURL);
+                        }
                     };
                 };
                 reader.readAsDataURL(file);
@@ -375,7 +413,10 @@
                 if (mediaStream) {
                     mediaStream.getTracks().forEach(track => track.stop());
                 }
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240 }, audio: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { width: 320, height: 240 },
+                    audio: true 
+                });
                 mediaStream = stream;
                 selfVideo.srcObject = stream;
                 selfVideoBox.style.display = "block";
@@ -385,14 +426,9 @@
                 micBtn.textContent = "🎤 MIC ON";
                 camBtn.style.background = "#0a0";
                 micBtn.style.background = "#0a0";
-                
-                const videoTrack = stream.getVideoTracks()[0];
-                const audioTrack = stream.getAudioTracks()[0];
-                if (videoTrack) videoTrack.enabled = true;
-                if (audioTrack) audioTrack.enabled = true;
             } catch (err) {
                 console.warn("Media error:", err);
-                addChatMessage("System", "⚠️ Camera/Mic access denied - chat & movement only", true);
+                addChatMessage("System", "⚠️ Camera/Mic access denied", true);
                 selfVideoBox.style.display = "none";
             }
         }
@@ -419,14 +455,14 @@
             }
         }
         
-        // Draw character with sprite or fallback
+        // Draw character
         function drawCharacter(img, x, y, direction, frame, nameTag, isLocal = false) {
             if (img && img.complete && img.naturalWidth === 96) {
                 const sx = frame * 32;
                 const sy = direction * 32;
                 ctx.drawImage(img, sx, sy, 32, 32, x - 16, y - 16, 32, 32);
             } else {
-                // Fallback pixel avatar
+                // Fallback
                 ctx.fillStyle = isLocal ? "#44ff44" : "#44dd44";
                 ctx.beginPath();
                 ctx.arc(x, y, 14, 0, Math.PI * 2);
@@ -434,8 +470,6 @@
                 ctx.fillStyle = "#000";
                 ctx.fillRect(x-4, y-4, 3, 3);
                 ctx.fillRect(x+2, y-4, 3, 3);
-                ctx.fillStyle = "#442200";
-                ctx.fillRect(x-5, y+4, 10, 4);
                 if (isLocal) {
                     ctx.strokeStyle = "#ffff00";
                     ctx.lineWidth = 2;
@@ -445,229 +479,59 @@
                 }
             }
             if (nameTag) {
-                ctx.font = "10px 'Press Start 2P'";
+                ctx.font = "9px 'Press Start 2P'";
                 ctx.fillStyle = isLocal ? "#ffff88" : "#e0ffc0";
                 ctx.textAlign = "center";
                 ctx.fillText(nameTag.slice(0, 14), x, y - 22);
             }
         }
         
-        // Broadcast state to all peers
-        function broadcastState() {
+        // Sync state via WebConnect and GenosDB
+        function syncFullState() {
             const state = {
-                type: "state",
-                id: myId,
-                name: myUsername,
                 x: myX,
                 y: myY,
                 dir: myDirection,
                 frame: myAnimationFrame,
+                name: myUsername,
                 spriteURL: localSpriteDataURL
             };
             
-            for (let [peerId, dc] of peerConnections) {
-                if (dc && dc.readyState === "open") {
-                    try {
-                        dc.send(JSON.stringify(state));
-                    } catch(e) { console.warn("Send error:", e); }
-                }
+            // Send via WebConnect for real-time
+            if (wc && wc.Send) {
+                wc.Send({
+                    type: 'player_update',
+                    ...state
+                });
+            }
+            
+            // Save to GenosDB for persistence
+            if (db && myId) {
+                db.put(`room.${roomName}.players.${myId}`, {
+                    ...state,
+                    lastSeen: Date.now()
+                }).catch(e => console.warn("DB save error:", e));
             }
         }
         
         function broadcastChat(message) {
             const chatData = {
-                type: "chat",
+                type: 'chat',
                 sender: myUsername,
                 text: message,
                 timestamp: Date.now()
             };
-            for (let [peerId, dc] of peerConnections) {
-                if (dc && dc.readyState === "open") {
-                    try {
-                        dc.send(JSON.stringify(chatData));
-                    } catch(e) {}
-                }
+            
+            if (wc && wc.Send) {
+                wc.Send(chatData);
             }
             addChatMessage(myUsername, message);
         }
         
-        // Handle incoming messages from peer
-        function handleDataChannelMessage(event, peerId) {
-            try {
-                const data = JSON.parse(event.data);
-                if (data.type === "state") {
-                    if (data.id === myId) return;
-                    let player = remotePlayers.get(data.id);
-                    if (!player) {
-                        player = { id: data.id, name: data.name };
-                        remotePlayers.set(data.id, player);
-                        updatePlayerCount();
-                        addChatMessage("System", `${data.name} joined the town!`, true);
-                    }
-                    player.x = data.x;
-                    player.y = data.y;
-                    player.dir = data.dir;
-                    player.frame = data.frame;
-                    player.name = data.name;
-                    
-                    if (data.spriteURL && !player.img) {
-                        const img = new Image();
-                        img.src = data.spriteURL;
-                        img.onload = () => {
-                            player.img = img;
-                            remotePlayers.set(data.id, player);
-                        };
-                        player.img = img;
-                    } else if (data.spriteURL && player.img) {
-                        if (player.img.src !== data.spriteURL) {
-                            const img = new Image();
-                            img.src = data.spriteURL;
-                            img.onload = () => { player.img = img; };
-                            player.img = img;
-                        }
-                    }
-                    remotePlayers.set(data.id, player);
-                } else if (data.type === "chat") {
-                    addChatMessage(data.sender, data.text);
-                }
-            } catch(e) { console.warn("Parse error:", e); }
-        }
-        
-        // WebRTC peer creation
-        async function createPeerConnection(peerId) {
-            const pc = new RTCPeerConnection(configuration);
-            
-            // Add local stream if available
-            if (mediaStream) {
-                mediaStream.getTracks().forEach(track => {
-                    pc.addTrack(track, mediaStream);
-                });
-            }
-            
-            // Create data channel
-            const dc = pc.createDataChannel("chat");
-            dc.onopen = () => {
-                console.log("Data channel open with", peerId);
-                // Send initial state
-                dc.send(JSON.stringify({
-                    type: "state",
-                    id: myId,
-                    name: myUsername,
-                    x: myX,
-                    y: myY,
-                    dir: myDirection,
-                    frame: myAnimationFrame,
-                    spriteURL: localSpriteDataURL
-                }));
-            };
-            dc.onmessage = (event) => handleDataChannelMessage(event, peerId);
-            dc.onclose = () => {
-                console.log("Data channel closed", peerId);
-                remotePlayers.delete(peerId);
-                peerConnections.delete(peerId);
-                updatePlayerCount();
-                addChatMessage("System", `A player left the town`, true);
-            };
-            
-            pc.ondatachannel = (event) => {
-                const channel = event.channel;
-                channel.onmessage = (e) => handleDataChannelMessage(e, peerId);
-                channel.onopen = () => console.log("Incoming data channel open", peerId);
-            };
-            
-            pc.onicecandidate = (event) => {
-                if (event.candidate) {
-                    signalChannel.postMessage({
-                        type: "candidate",
-                        from: myId,
-                        to: peerId,
-                        candidate: event.candidate
-                    });
-                }
-            };
-            
-            pc.oniceconnectionstatechange = () => {
-                if (pc.iceConnectionState === "disconnected" || pc.iceConnectionState === "failed") {
-                    remotePlayers.delete(peerId);
-                    peerConnections.delete(peerId);
-                    updatePlayerCount();
-                }
-            };
-            
-            peerConnections.set(peerId, dc);
-            return { pc, dc };
-        }
-        
-        // Signaling handling
-        async function initSignaling() {
-            signalChannel.onmessage = async (event) => {
-                const data = event.data;
-                if (data.type === "offer" && data.to === myId) {
-                    const { pc, dc } = await createPeerConnection(data.from);
-                    await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
-                    const answer = await pc.createAnswer();
-                    await pc.setLocalDescription(answer);
-                    signalChannel.postMessage({
-                        type: "answer",
-                        from: myId,
-                        to: data.from,
-                        answer: answer
-                    });
-                    peerConnections.set(data.from, dc);
-                } else if (data.type === "answer" && data.to === myId) {
-                    const pc = Array.from(peerConnections.entries()).find(([id]) => id === data.from)?.[0];
-                    if (pc) {
-                        const existingPC = [...peerConnections.keys()].find(id => id === data.from);
-                        if (existingPC) {
-                            const connection = [...peerConnections.entries()].find(([id]) => id === data.from)?.[1];
-                            // Need to get the actual PC reference - simplified approach
-                        }
-                    }
-                    // Simplified: just create connection proactively
-                } else if (data.type === "candidate" && data.to === myId) {
-                    // Add ICE candidate logic here
-                } else if (data.type === "new_peer") {
-                    // Initiate connection to new peer
-                    if (data.id !== myId && !peerConnections.has(data.id)) {
-                        const { pc, dc } = await createPeerConnection(data.id);
-                        const offer = await pc.createOffer();
-                        await pc.setLocalDescription(offer);
-                        signalChannel.postMessage({
-                            type: "offer",
-                            from: myId,
-                            to: data.id,
-                            offer: offer
-                        });
-                        peerConnections.set(data.id, dc);
-                    }
-                }
-            };
-            
-            // Announce presence
-            signalChannel.postMessage({
-                type: "new_peer",
-                id: myId,
-                name: myUsername
-            });
-            
-            // Periodic cleanup
-            setInterval(() => {
-                signalChannel.postMessage({
-                    type: "heartbeat",
-                    id: myId
-                });
-            }, 5000);
-        }
-        
-        function updatePlayerCount() {
-            const count = remotePlayers.size + 1;
-            playerCountSpan.textContent = count;
-        }
-        
-        // Movement handling
+        // Handle movement
         function handleMovement() {
             let moved = false;
-            let speed = 4.5;
+            let speed = 4.2;
             let newX = myX, newY = myY;
             
             if (movementKeys["w"] || movementKeys["ArrowUp"]) { newY -= speed; myDirection = 3; moved = true; }
@@ -686,29 +550,43 @@
                 myAnimationFrame = 0;
                 animTimer = 0;
             }
+            
+            if (moved && Date.now() - lastSyncTime > 50) {
+                syncFullState();
+                lastSyncTime = Date.now();
+            }
         }
         
         // Drawing
         function drawWorld() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
             // Grid pattern
             for (let i = 0; i < canvas.width; i += 40) {
                 for (let j = 0; j < canvas.height; j += 40) {
-                    ctx.fillStyle = ((i/40 + j/40) % 2 === 0) ? "#296229" : "#3c8c3c";
+                    ctx.fillStyle = ((i/40 + j/40) % 2 === 0) ? "#2d6a2d" : "#3e8e3e";
                     ctx.fillRect(i, j, 40, 40);
                 }
             }
             
-            // Draw decorative elements
+            // Decorative pixels
             ctx.fillStyle = "#ffd966";
-            for (let i = 0; i < 60; i++) {
-                ctx.fillRect((i * 131) % canvas.width, (i * 57) % canvas.height, 4, 4);
+            for (let i = 0; i < 40; i++) {
+                ctx.fillRect((i * 173) % canvas.width, (i * 89) % canvas.height, 3, 3);
             }
             
             // Draw remote players
             for (let [id, player] of remotePlayers.entries()) {
                 if (player.x && player.y) {
-                    drawCharacter(player.img, player.x, player.y, player.dir, player.frame, player.name, false);
+                    let img = null;
+                    if (player.spriteURL && !player.img) {
+                        player.img = new Image();
+                        player.img.src = player.spriteURL;
+                        img = player.img;
+                    } else {
+                        img = player.img;
+                    }
+                    drawCharacter(img, player.x, player.y, player.dir || 2, player.frame || 0, player.name, false);
                 }
             }
             
@@ -718,29 +596,23 @@
             // UI hints
             ctx.font = "8px 'Press Start 2P'";
             ctx.fillStyle = "#b3ffb3";
-            ctx.fillText("⚡ WASD / ARROWS", canvas.width-180, 30);
-            ctx.fillText("💬 Enter to chat", canvas.width-180, 50);
+            ctx.fillText("⚡ WASD / ARROWS", canvas.width-170, 30);
+            ctx.fillText("💬 Enter to chat", canvas.width-170, 50);
+            ctx.fillText("🎨 Upload sprite", canvas.width-170, 70);
         }
         
         function gameLoop() {
             handleMovement();
             drawWorld();
-            
-            // Sync every 60ms
-            if (Date.now() - lastSyncTime > 60) {
-                broadcastState();
-                lastSyncTime = Date.now();
-            }
-            
             requestAnimationFrame(gameLoop);
         }
         
-        // Create default sprite if none uploaded
+        // Create default sprite
         function createDefaultSprite() {
-            const canvas = document.createElement("canvas");
-            canvas.width = 96;
-            canvas.height = 128;
-            const dctx = canvas.getContext("2d");
+            const offCanvas = document.createElement("canvas");
+            offCanvas.width = 96;
+            offCanvas.height = 128;
+            const dctx = offCanvas.getContext("2d");
             dctx.fillStyle = "#44c844";
             dctx.fillRect(0, 0, 96, 128);
             dctx.fillStyle = "#2a6b2a";
@@ -750,16 +622,150 @@
             dctx.fillStyle = "#000";
             dctx.fillRect(36, 38, 6, 6);
             dctx.fillRect(54, 38, 6, 6);
-            const dataURL = canvas.toDataURL();
+            const dataURL = offCanvas.toDataURL();
             const img = new Image();
             img.src = dataURL;
             localSpriteImg = img;
             localSpriteDataURL = dataURL;
         }
         
-        // Initialize app
+        // Initialize WebConnect
+        async function initWebConnect() {
+            return new Promise((resolve, reject) => {
+                try {
+                    wc = webconnect({
+                        appName: "gather-town-global",
+                        channelName: roomName,
+                        rtc: true,
+                        autoConnect: true,
+                        debug: false
+                    });
+                    
+                    wc.onConnect((attr) => {
+                        console.log("WebConnect connected:", attr);
+                        updateStatus(`Connected to ${roomName}`);
+                        addChatMessage("System", `🌐 Connected to global room: ${roomName}`, true);
+                        syncFullState();
+                        resolve();
+                    });
+                    
+                    wc.onReceive((data, attr) => {
+                        if (data.type === 'player_update') {
+                            if (!remotePlayers.has(attr.connectId)) {
+                                remotePlayers.set(attr.connectId, {});
+                                updatePlayerCount();
+                            }
+                            const player = remotePlayers.get(attr.connectId);
+                            player.x = data.x;
+                            player.y = data.y;
+                            player.dir = data.dir;
+                            player.frame = data.frame;
+                            player.name = data.name;
+                            if (data.spriteURL && (!player.spriteURL || player.spriteURL !== data.spriteURL)) {
+                                player.spriteURL = data.spriteURL;
+                                player.img = new Image();
+                                player.img.src = data.spriteURL;
+                            }
+                            remotePlayers.set(attr.connectId, player);
+                        } else if (data.type === 'chat') {
+                            addChatMessage(data.sender, data.text);
+                        }
+                    });
+                    
+                    wc.onDisconnect((attr) => {
+                        remotePlayers.delete(attr.connectId);
+                        updatePlayerCount();
+                        addChatMessage("System", `A player left the world`, true);
+                    });
+                    
+                    setTimeout(() => {
+                        if (!wc.connected) {
+                            reject(new Error("WebConnect timeout"));
+                        }
+                    }, 5000);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        }
+        
+        // Initialize GenosDB
+        async function initGenosDB() {
+            try {
+                db = await gdb(roomName, { 
+                    rtc: true, 
+                    autoConnect: true, 
+                    persist: true 
+                });
+                console.log("GenosDB ready");
+                updateStatus("Database connected");
+                
+                // Load existing players
+                const playersData = await db.get(`room.${roomName}.players`);
+                if (playersData) {
+                    Object.keys(playersData).forEach(playerId => {
+                        if (playerId !== myId && playersData[playerId]) {
+                            const data = playersData[playerId];
+                            remotePlayers.set(playerId, {
+                                x: data.x,
+                                y: data.y,
+                                dir: data.dir,
+                                frame: data.frame,
+                                name: data.name,
+                                spriteURL: data.spriteURL
+                            });
+                            if (data.spriteURL) {
+                                const img = new Image();
+                                img.src = data.spriteURL;
+                                remotePlayers.get(playerId).img = img;
+                            }
+                        }
+                    });
+                    updatePlayerCount();
+                }
+                
+                // Subscribe to changes
+                db.subscribe(`room.${roomName}.players`, (data, key) => {
+                    if (key.includes(myId)) return;
+                    const playerId = key.split('.').pop();
+                    if (data && typeof data === 'object') {
+                        if (!remotePlayers.has(playerId)) {
+                            remotePlayers.set(playerId, {});
+                        }
+                        const player = remotePlayers.get(playerId);
+                        player.x = data.x;
+                        player.y = data.y;
+                        player.dir = data.dir;
+                        player.frame = data.frame;
+                        player.name = data.name;
+                        if (data.spriteURL && (!player.spriteURL || player.spriteURL !== data.spriteURL)) {
+                            player.spriteURL = data.spriteURL;
+                            player.img = new Image();
+                            player.img.src = data.spriteURL;
+                        }
+                        remotePlayers.set(playerId, player);
+                        updatePlayerCount();
+                    } else if (data === null) {
+                        remotePlayers.delete(playerId);
+                        updatePlayerCount();
+                    }
+                });
+                
+            } catch (e) {
+                console.warn("GenosDB error:", e);
+                updateStatus("Database offline - P2P only", true);
+            }
+        }
+        
+        function updatePlayerCount() {
+            const count = remotePlayers.size + 1;
+            playerCountSpan.textContent = count;
+        }
+        
+        // Initialize everything
         async function initializeApp() {
             myUsername = document.getElementById("playerName").value.trim() || "Adventurer";
+            roomName = document.getElementById("roomName").value.trim() || "gather-world";
             myId = generateId();
             
             authDiv.style.display = "none";
@@ -769,15 +775,25 @@
             
             createDefaultSprite();
             await initMediaDevices();
-            await initSignaling();
+            
+            // Initialize both services
+            try {
+                await initWebConnect();
+            } catch (e) {
+                console.error("WebConnect failed:", e);
+                updateStatus("WebConnect failed - offline mode", true);
+            }
+            
+            await initGenosDB();
             
             // Setup event listeners
             document.getElementById("spriteBtn").onclick = uploadCustomSprite;
             camBtn.onclick = toggleCamera;
             micBtn.onclick = toggleMic;
-            document.getElementById("resetCamBtn").onclick = () => {
+            document.getElementById("resetPosBtn").onclick = () => {
                 myX = canvas.width/2;
                 myY = canvas.height/2;
+                syncFullState();
             };
             
             // Keyboard input
@@ -819,19 +835,23 @@
                 canvas.height = Math.min(720, h - 20);
                 canvas.style.width = `${canvas.width}px`;
                 canvas.style.height = `${canvas.height}px`;
-                if (!myX) { myX = canvas.width/2; myY = canvas.height/2; }
             }
             window.addEventListener("resize", resizeCanvas);
             resizeCanvas();
             
             gameLoop();
-            addChatMessage("System", "✨ Welcome to Gather Town! Press WASD to move, upload custom sprites!", true);
+            addChatMessage("System", "✨ Welcome to Gather Town! WASD to move, upload custom sprites, and chat with players worldwide!", true);
+            
+            // Periodic sync
+            setInterval(() => {
+                syncFullState();
+            }, 2000);
         }
         
-        // Start
+        // Start the app
         document.getElementById("joinBtn").onclick = initializeApp;
         
-        // Initial setup
+        // Initial canvas size
         canvas.width = 1280;
         canvas.height = 720;
     </script>
