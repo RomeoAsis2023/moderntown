@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>ModernTown - P2P Virtual Office (WebConnect)</title>
+    <title>ModernTown - WebConnect P2P Virtual Office</title>
     <style>
         * {
             margin: 0;
@@ -59,6 +59,11 @@
             transition: all 0.2s ease;
         }
 
+        .sidebar nav ul li a:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.05);
+        }
+
         .sidebar nav ul li a img {
             width: 24px;
             height: 24px;
@@ -84,6 +89,10 @@
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
+        }
+
+        .sidebar footer button:hover {
+            background: rgba(255,255,255,0.25);
         }
 
         .workspace {
@@ -281,21 +290,26 @@
             margin-left: 15px;
         }
         
-        .log-panel {
+        .status-log {
             position: fixed;
             bottom: 20px;
             left: 100px;
             background: rgba(0,0,0,0.6);
             color: #0f0;
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 20px;
             font-size: 10px;
             font-family: monospace;
             z-index: 100;
-            max-width: 300px;
+            max-width: 350px;
             overflow: hidden;
             white-space: nowrap;
             text-overflow: ellipsis;
+        }
+        
+        button.outline {
+            background: transparent;
+            border: 1px solid #aaa;
         }
     </style>
 </head>
@@ -358,21 +372,21 @@
 </div>
 
 <div class="peer-count" id="peerCount">👥 Peers: 1</div>
-<div class="connection-status" id="connectionStatus">🔄 Initializing WebConnect P2P...</div>
+<div class="connection-status" id="connectionStatus">🔄 Initializing WebConnect...</div>
 <div class="delete-hint" id="deleteHint">🗑️ Delete Mode: Click object to remove (syncs to all peers)</div>
-<div class="log-panel" id="logPanel">📡 Waiting for connection...</div>
+<div class="status-log" id="statusLog">📡 Waiting for connection...</div>
 
 <dialog id="builder">
     <form method="dialog">
-        <header><h3>🌐 WebRTC P2P Virtual Office</h3><button commandfor="builder" command="close">✕</button></header>
+        <header><h3>🌐 WebRTC P2P Virtual Office</h3><button commandfor="builder" command="close" class="outline">✕</button></header>
         <div style="padding: 22px;">
             <p>✨ <strong>WebConnect P2P Mesh - Real-time Sync!</strong></p>
             <p>🖱️ <strong>Move Mode:</strong> Drag objects - position syncs INSTANTLY to all connected peers.</p>
             <p>🗑️ <strong>Delete Mode:</strong> Click objects - removed from everyone's view.</p>
             <p>🔒 <strong>Lock Mode:</strong> Lock objects - lock state syncs across all peers.</p>
-            <p>💾 <strong>Every action is broadcast via WebRTC mesh</strong> - No central server needed!</p>
+            <p>💾 <strong>Every action is broadcast via WebRTC mesh</strong> - Stable peer connections.</p>
             <p>👥 <strong>Open in multiple tabs/windows</strong> - See objects sync in real-time!</p>
-            <p>📡 <strong>Using WebConnect CDN</strong> - True P2P mesh networking.</p>
+            <p>📡 <strong>Using WebConnect CDN</strong> - True P2P mesh networking with signaling server.</p>
         </div>
         <footer><button value="confirm">Start Building</button></footer>
     </form>
@@ -381,10 +395,11 @@
 <script type="module">
     import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
     
-    // Initialize WebConnect
+    // Initialize WebConnect with stable configuration
     const connect = webconnect()
     let myConnectId = null;
-    let connectedPeers = new Map(); // peerId -> { connectId, name }
+    let connectedPeers = new Map(); // connectId -> { connected: true, name: string }
+    let reconnectAttempts = 0;
     
     // ==================== APPLICATION STATE ====================
     let sceneItems = [];
@@ -395,12 +410,13 @@
     let itemStart = { x: 0, y: 0 };
     let nextLocalId = 1;
     let syncInProgress = false;
+    let initialStateLoaded = false;
     
     // Available objects library
     let availableObjects = [
-        { id: "chair", name: "Chair", spriteUrl: "/objects/sprites/chair_1.png", defaultW: 64, defaultH: 64 },
-        { id: "desk", name: "Desk", spriteUrl: "/objects/sprites/desk_1.png", defaultW: 110, defaultH: 75 },
-        { id: "workspace", name: "Office BG", spriteUrl: "/objects/sprites/workspace.png", defaultW: 500, defaultH: 300 }
+        { id: "chair", name: "Chair", spriteUrl: "./objects/sprites/chair_1.png", defaultW: 64, defaultH: 64 },
+        { id: "desk", name: "Desk", spriteUrl: "./objects/sprites/desk_1.png", defaultW: 110, defaultH: 75 },
+        { id: "workspace", name: "Office BG", spriteUrl: "./objects/sprites/workspace.png", defaultW: 500, defaultH: 300 }
     ];
     
     // DOM elements
@@ -410,15 +426,16 @@
     canvas.width = canvasW;
     canvas.height = canvasH;
     
-    function writeToLog(message) {
-        const logPanel = document.getElementById('logPanel');
+    function updateStatusLog(message) {
+        const logPanel = document.getElementById('statusLog');
         if (logPanel) {
-            logPanel.innerHTML = `📡 ${message}`;
+            const time = new Date().toLocaleTimeString();
+            logPanel.innerHTML = `📡 [${time}] ${message}`;
             setTimeout(() => {
-                if (logPanel.innerHTML === `📡 ${message}`) {
-                    logPanel.innerHTML = `📡 Ready - ${connectedPeers.size + 1} peers`;
+                if (logPanel.innerHTML === `📡 [${time}] ${message}` && connectedPeers.size === 0) {
+                    logPanel.innerHTML = `📡 Ready - ${connectedPeers.size + 1} local`;
                 }
-            }, 3000);
+            }, 4000);
         }
         console.log('[WebConnect]', message);
     }
@@ -458,7 +475,7 @@
         renderCanvas();
         saveToLocalStorage();
         
-        if (!skipSync && !syncInProgress && myConnectId) {
+        if (!skipSync && !syncInProgress && myConnectId && connectedPeers.size > 0) {
             broadcastToAllPeers({
                 type: 'object_saved',
                 payload: newItem
@@ -474,7 +491,7 @@
         renderCanvas();
         saveToLocalStorage();
         
-        if (!syncInProgress && myConnectId) {
+        if (!syncInProgress && myConnectId && connectedPeers.size > 0) {
             broadcastToAllPeers({
                 type: 'object_updated',
                 payload: { id: item.id, x: newX, y: newY, name: item.name, type: item.type }
@@ -488,7 +505,7 @@
         renderCanvas();
         saveToLocalStorage();
         
-        if (!syncInProgress && myConnectId) {
+        if (!syncInProgress && myConnectId && connectedPeers.size > 0) {
             broadcastToAllPeers({
                 type: 'object_locked',
                 payload: { id: item.id, locked: locked, name: item.name }
@@ -504,7 +521,7 @@
             renderCanvas();
             saveToLocalStorage();
             
-            if (!syncInProgress && myConnectId) {
+            if (!syncInProgress && myConnectId && connectedPeers.size > 0) {
                 broadcastToAllPeers({
                     type: 'object_deleted',
                     payload: { id: id, name: deletedItem.name }
@@ -517,15 +534,14 @@
     
     function saveToLocalStorage() {
         const objectsToSave = sceneItems.map(({ imageObj, ...rest }) => rest);
-        localStorage.setItem(`webconnect_office_objects`, JSON.stringify(objectsToSave));
+        localStorage.setItem(`webconnect_office_${myConnectId || 'local'}`, JSON.stringify(objectsToSave));
     }
     
     function loadFromLocalStorage() {
-        const saved = localStorage.getItem(`webconnect_office_objects`);
+        const saved = localStorage.getItem(`webconnect_office_${myConnectId || 'local'}`);
         if (saved) {
             try {
-                const objects = JSON.parse(saved);
-                return objects;
+                return JSON.parse(saved);
             } catch(e) {}
         }
         return [];
@@ -533,17 +549,19 @@
     
     // ==================== P2P BROADCAST FUNCTIONS ====================
     function broadcastToAllPeers(message) {
-        const fullMessage = {
+        const fullMessage = JSON.stringify({
             ...message,
             senderId: myConnectId,
             timestamp: Date.now()
-        };
+        });
         
         // Send to all connected peers
         for (let [peerId, peerInfo] of connectedPeers.entries()) {
             try {
-                connect.Send(JSON.stringify(fullMessage), { connectId: peerInfo.connectId });
-            } catch(e) { console.warn('Failed to send to peer', peerId); }
+                connect.Send(fullMessage, { connectId: peerId });
+            } catch(e) { 
+                console.warn('Failed to send to peer', peerId); 
+            }
         }
     }
     
@@ -569,7 +587,7 @@
                         if (item && message.payload.locked) item.locked = message.payload.locked;
                         renderCanvas();
                         syncInProgress = false;
-                        writeToLog(`Synced: ${message.payload.name} added`);
+                        updateStatusLog(`Synced: ${message.payload.name} added`);
                     });
                 }
             }
@@ -581,7 +599,7 @@
                     item.y = message.payload.y;
                     renderCanvas();
                     syncInProgress = false;
-                    writeToLog(`Synced: ${item.name} moved`);
+                    updateStatusLog(`Synced: ${item.name} moved`);
                 }
             }
             else if (message.type === 'object_locked') {
@@ -591,7 +609,7 @@
                     item.locked = message.payload.locked;
                     renderCanvas();
                     syncInProgress = false;
-                    writeToLog(`Synced: ${item.name} ${message.payload.locked ? 'locked' : 'unlocked'}`);
+                    updateStatusLog(`Synced: ${item.name} ${message.payload.locked ? 'locked' : 'unlocked'}`);
                 }
             }
             else if (message.type === 'object_deleted') {
@@ -602,7 +620,7 @@
                     sceneItems.splice(index, 1);
                     renderCanvas();
                     syncInProgress = false;
-                    writeToLog(`Synced: ${deletedName} deleted`);
+                    updateStatusLog(`Synced: ${deletedName} deleted`);
                 }
             }
             else if (message.type === 'request_full_state') {
@@ -612,10 +630,12 @@
                     type: 'full_state',
                     payload: currentState
                 }), { connectId: senderConnectId });
+                updateStatusLog(`Sent full state to peer`);
             }
             else if (message.type === 'full_state') {
-                // Receive full state from peer
-                if (message.payload && message.payload.length > 0 && sceneItems.length === 0) {
+                // Receive full state from peer (only if we have no objects)
+                if (message.payload && message.payload.length > 0 && sceneItems.length === 0 && !initialStateLoaded) {
+                    initialStateLoaded = true;
                     syncInProgress = true;
                     Promise.all(message.payload.map(async (obj) => {
                         const exists = sceneItems.some(i => i.id === obj.id);
@@ -634,7 +654,7 @@
                     })).then(() => {
                         renderCanvas();
                         syncInProgress = false;
-                        writeToLog(`Loaded ${message.payload.length} objects from peer`);
+                        updateStatusLog(`Loaded ${message.payload.length} objects from peer`);
                     });
                 }
             }
@@ -648,7 +668,13 @@
         const peerDiv = document.getElementById('peerCount');
         if (peerDiv) peerDiv.innerHTML = `👥 Peers: ${count + 1}`;
         const statusDiv = document.getElementById('connectionStatus');
-        if (statusDiv) statusDiv.innerHTML = `🌐 Connected to ${count} peer(s)`;
+        if (statusDiv) {
+            if (count === 0) {
+                statusDiv.innerHTML = `📡 Waiting for peers to join...`;
+            } else {
+                statusDiv.innerHTML = `🌐 Connected to ${count} peer(s)`;
+            }
+        }
         const badge = document.getElementById('syncBadge');
         if (badge) badge.innerHTML = `🔗 WebConnect (${count + 1} peers)`;
     }
@@ -656,8 +682,8 @@
     // ==================== WEBCONNECT EVENT HANDLERS ====================
     connect.getMyId((attribute) => {
         myConnectId = attribute.connectId;
-        writeToLog(`My connectId is ${myConnectId}`);
-        document.getElementById('connectionStatus').innerHTML = `✅ My ID: ${myConnectId.substring(0, 12)}...`;
+        updateStatusLog(`My connectId: ${myConnectId.substring(0, 12)}...`);
+        document.getElementById('connectionStatus').innerHTML = `✅ ID: ${myConnectId.substring(0, 12)}...`;
         
         // Load saved objects from localStorage
         const savedObjects = loadFromLocalStorage();
@@ -675,7 +701,7 @@
                 if (item && obj.locked) item.locked = obj.locked;
             })).then(() => {
                 renderCanvas();
-                writeToLog(`Loaded ${savedObjects.length} saved objects`);
+                updateStatusLog(`Loaded ${savedObjects.length} saved objects`);
             });
         } else {
             // Add demo objects if empty
@@ -683,18 +709,20 @@
                 if (sceneItems.length === 0) {
                     await addObjectToScene(availableObjects.find(o => o.id === 'desk'), canvasW/2 - 150, canvasH/2);
                     await addObjectToScene(availableObjects.find(o => o.id === 'chair'), canvasW/2 + 50, canvasH/2 + 80);
-                    writeToLog("Demo objects added - start designing!");
+                    updateStatusLog("Demo objects added - start designing!");
                 }
-            }, 1000);
+            }, 500);
         }
     });
     
     connect.onConnect(async (attribute) => {
-        writeToLog(`${attribute.connectId} is connected`);
+        updateStatusLog(`${attribute.connectId.substring(0, 12)}... connected`);
         
         // Store peer info
-        connectedPeers.set(attribute.connectId, { connectId: attribute.connectId, name: `Peer_${connectedPeers.size + 1}` });
-        updatePeerCount();
+        if (!connectedPeers.has(attribute.connectId)) {
+            connectedPeers.set(attribute.connectId, { connected: true, name: `Peer_${connectedPeers.size + 1}` });
+            updatePeerCount();
+        }
         
         // Send current state to new peer
         const currentState = sceneItems.map(({ imageObj, ...rest }) => rest);
@@ -703,18 +731,22 @@
                 type: 'full_state',
                 payload: currentState
             }), { connectId: attribute.connectId });
+            updateStatusLog(`Sent ${currentState.length} objects to new peer`);
         } else {
             // Request state from peer if we have none
             connect.Send(JSON.stringify({ type: 'request_full_state' }), { connectId: attribute.connectId });
+            updateStatusLog(`Requested state from new peer`);
         }
         
         // Test latency
-        const latency = await connect.Ping({ connectId: attribute.connectId });
-        writeToLog(`Latency to ${attribute.connectId} is ${latency} ms`);
+        try {
+            const latency = await connect.Ping({ connectId: attribute.connectId });
+            updateStatusLog(`Latency to ${attribute.connectId.substring(0, 12)}... is ${latency} ms`);
+        } catch(e) {}
     });
     
     connect.onDisconnect((attribute) => {
-        writeToLog(`${attribute.connectId} is disconnected`);
+        updateStatusLog(`${attribute.connectId.substring(0, 12)}... disconnected`);
         connectedPeers.delete(attribute.connectId);
         updatePeerCount();
     });
@@ -932,13 +964,23 @@
     renderCanvas();
     deleteHint.style.opacity = '0.3';
     
+    // Heartbeat to maintain connection visibility
+    setInterval(() => {
+        if (myConnectId) {
+            updatePeerCount();
+        }
+    }, 5000);
+    
     // Export for debugging
     window.ModernTown = {
         addObject: (name, spriteUrl, x, y, w = 64, h = 64) => 
             addObjectToScene({ name, spriteUrl, defaultW: w, defaultH: h, type: 'custom' }, x, y),
         getSceneObjects: () => [...sceneItems],
-        getPeers: () => Array.from(connectedPeers.keys())
+        getPeers: () => Array.from(connectedPeers.keys()),
+        getMyId: () => myConnectId
     };
+    
+    updateStatusLog("WebConnect initialized - ready for peers to join!");
 </script>
 </body>
 </html>
