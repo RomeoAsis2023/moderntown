@@ -5,609 +5,336 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>ModernTown • P2P Virtual Office</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;display=swap');
-        
-        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
-        
-        body {
-            background: #0f172a;
-            font-family: 'Inter', system-ui, sans-serif;
-            overflow: hidden;
-            height: 100vh;
-            color: #e2e8f0;
-        }
-        
-        .app-container { display: flex; height: 100vh; width: 100%; background: linear-gradient(180deg, #1e2937 0%, #0f172a 100%); }
-        
-        .sidebar {
-            width: 85px;
-            background: rgba(15, 23, 42, 0.98);
-            backdrop-filter: blur(12px);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: space-between;
-            padding: 24px 0 32px 0;
-            border-right: 1px solid rgba(148, 163, 184, 0.1);
-            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
-            z-index: 30;
-        }
-        
-        .sidebar nav ul { list-style: none; display: flex; flex-direction: column; gap: 28px; padding: 0; }
-        .sidebar nav ul li a {
-            display: flex; justify-content: center; align-items: center;
-            width: 52px; height: 52px; background: rgba(255,255,255,0.08);
-            border-radius: 18px; transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .sidebar nav ul li a:hover { background: #3b82f6; transform: scale(1.08); }
-        .sidebar nav ul li a img { width: 26px; height: 26px; filter: brightness(0) invert(1); }
-        
-        .sidebar footer { display: flex; flex-direction: column; gap: 16px; width: 100%; align-items: center; }
-        .sidebar footer button {
-            background: rgba(255,255,255,0.08); border: none;
-            width: 52px; height: 52px; border-radius: 18px; cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .sidebar footer button:hover { background: #3b82f6; }
-        
-        .workspace {
-            flex: 1; display: flex; flex-direction: column; overflow: hidden;
-            padding: 16px 20px 20px 20px; gap: 16px; background: #1e2937;
-        }
-        
-        .top-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            background: #334155; padding: 10px 28px; border-radius: 9999px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); color: white;
-        }
-        
-        .logo-area { display: flex; align-items: center; gap: 12px; }
-        .logo-area img { height: 42px; object-fit: contain; }
-        
-        .sync-badge {
-            background: linear-gradient(90deg, #22c55e, #10b981);
-            color: white; padding: 4px 16px; border-radius: 9999px;
-            font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px;
-            box-shadow: 0 0 10px rgba(134, 239, 172, 0.4);
-        }
-        
-        .mode-toggle { display: flex; gap: 8px; background: #1e2937; padding: 6px; border-radius: 9999px; }
-        .mode-btn {
-            padding: 8px 24px; border-radius: 9999px; font-weight: 600; border: none;
-            background: transparent; color: #e2e8f0; cursor: pointer; font-size: 0.9rem;
-            transition: all 0.2s; display: flex; align-items: center; gap: 6px;
-        }
-        .mode-btn.active-move { background: #10b981; color: white; }
-        .mode-btn.active-lock { background: #f59e0b; color: white; }
-        .mode-btn.active-delete { background: #ef4444; color: white; }
-        
-        .canvas-wrapper {
-            flex: 1; background: #1e2937; border-radius: 28px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.4);
-            overflow: hidden; border: 4px solid #334155; position: relative;
-        }
-        
-        canvas { display: block; background: #0f172a; cursor: grab; }
-        
-        .bottom-panel {
-            background: #334155; border-radius: 24px; padding: 12px 20px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); display: flex; gap: 16px; align-items: center;
-        }
-        
-        .tab { padding: 8px 20px; border-radius: 9999px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .tab.active { background: #0ea5e9; color: white; }
-        
-        .peer-count, .connection-status, .status-log {
-            position: fixed; z-index: 100; background: rgba(15,23,42,0.95);
-            color: #67e8f9; padding: 6px 18px; border-radius: 9999px; font-size: 13px;
-            font-family: monospace; backdrop-filter: blur(8px);
-        }
-        .peer-count { top: 24px; right: 280px; background: rgba(16,185,129,0.9); color: white; }
-        .connection-status { top: 24px; right: 24px; }
-        .status-log { bottom: 24px; left: 120px; max-width: 420px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
-        .delete-hint {
-            position: fixed; bottom: 24px; right: 24px; background: rgba(239,68,68,0.9);
-            color: white; padding: 8px 20px; border-radius: 9999px; font-size: 13px; z-index: 100; display: none;
-        }
-        
-        dialog {
-            border: none; border-radius: 24px; padding: 0; box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
-            background: #1e2937; color: #e2e8f0; max-width: 480px; width: 100%;
-        }
-        
-        .modal-header { padding: 24px 32px 16px; border-bottom: 1px solid #334155; display: flex; justify-content: space-between; align-items: center; }
-        .modal-content { padding: 32px; }
-        
-        #chatPanel { max-height: 320px; overflow-y: auto; background: #1e2937; border-radius: 16px; padding: 12px; }
-        .chat-message { margin-bottom: 12px; max-width: 80%; padding: 10px 16px; border-radius: 20px; }
-        .chat-message.self { margin-left: auto; background: #0ea5e9; color: white; border-radius: 20px 20px 4px 20px; }
-        .chat-message.other { background: #334155; border-radius: 20px 20px 20px 4px; }
-        
-        .media-controls {
-            position: fixed; top: 80px; right: 24px; background: #1e2937; padding: 12px; border-radius: 16px;
-            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3); z-index: 110; display: flex; flex-direction: column; gap: 8px;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+        * { margin:0; padding:0; box-sizing:border-box; user-select:none; }
+        body { background:#0f172a; font-family:'Inter',sans-serif; overflow:hidden; height:100vh; color:#e2e8f0; }
+        .app-container { display:flex; height:100vh; }
+        .sidebar { width:85px; background:rgba(15,23,42,0.98); backdrop-filter:blur(12px); display:flex; flex-direction:column; align-items:center; justify-content:space-between; padding:24px 0; border-right:1px solid rgba(148,163,184,0.1); }
+        .sidebar nav ul { list-style:none; display:flex; flex-direction:column; gap:28px; }
+        .sidebar nav ul li a { width:52px; height:52px; background:rgba(255,255,255,0.08); border-radius:18px; display:flex; align-items:center; justify-content:center; transition:0.25s; }
+        .sidebar nav ul li a:hover { background:#3b82f6; transform:scale(1.1); }
+        .workspace { flex:1; display:flex; flex-direction:column; padding:16px 20px; gap:16px; background:#1e2937; }
+        .top-bar { display:flex; justify-content:space-between; align-items:center; background:#334155; padding:10px 28px; border-radius:9999px; }
+        .canvas-wrapper { flex:1; background:#1e2937; border-radius:28px; border:4px solid #334155; overflow:hidden; position:relative; }
+        canvas { display:block; background:#0f172a; }
+        .bottom-panel { background:#334155; border-radius:24px; padding:12px 20px; display:flex; gap:16px; align-items:center; }
+        .tab { padding:8px 20px; border-radius:9999px; cursor:pointer; }
+        .tab.active { background:#0ea5e9; color:white; }
+        .peer-count, .connection-status, .status-log { position:fixed; z-index:100; padding:6px 18px; border-radius:9999px; font-family:monospace; font-size:13px; }
+        .peer-count { top:24px; right:280px; background:rgba(16,185,129,0.9); color:white; }
+        .connection-status { top:24px; right:24px; background:rgba(15,23,42,0.95); }
+        .status-log { bottom:24px; left:120px; background:rgba(15,23,42,0.95); color:#67e8f9; max-width:420px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .media-controls { position:fixed; top:80px; right:24px; background:#1e2937; padding:12px; border-radius:16px; display:flex; flex-direction:column; gap:8px; z-index:110; }
     </style>
 </head>
 <body>
     <div class="app-container">
         <aside class="sidebar">
-            <div style="margin-bottom: 24px;"><img width="52" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E"></div>
+            <div style="margin-bottom:24px;"><img width="52" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23fff'%3E%3Cpath d='M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5'/%3E%3C/svg%3E"></div>
             <nav><ul>
                 <li><a href="#"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23fff' viewBox='0 0 24 24'%3E%3Cpath d='M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'/%3E%3C/svg%3E"></a></li>
-                <li><a href="#"><img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23fff' viewBox='0 0 24 24'%3E%3Cpath d='M15 10l4.5-4.5M15 10l-4.5 4.5M15 10l4.5 4.5M9 14l-4.5 4.5M9 14l4.5-4.5'/%3E%3C/svg%3E"></a></li>
             </ul></nav>
             <footer>
-                <button id="openProfileBtn" title="My Profile">👤</button>
-                <button id="openMediaBtn" title="Media Controls">🎤📹</button>
+                <button id="openMediaBtn">🎤📹</button>
             </footer>
         </aside>
-        
+
         <div class="workspace">
             <div class="top-bar">
-                <div class="logo-area">
+                <div style="display:flex;align-items:center;gap:12px;">
                     <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 300 70'%3E%3Crect width='300' height='70' fill='%233b82f6' rx='12'/%3E%3Ctext x='24' y='48' fill='white' font-size='32' font-weight='700'%3EModernTown%3C/text%3E%3C/svg%3E" style="height:42px;">
-                    <span class="sync-badge" id="syncBadge"><span id="liveDot">●</span> LIVE GENOSDB</span>
+                    <span style="background:linear-gradient(90deg,#22c55e,#10b981);padding:4px 16px;border-radius:9999px;font-size:13px;font-weight:600;">🔴 LIVE P2P</span>
                 </div>
-                
-                <div class="mode-toggle">
-                    <button id="moveModeBtn" class="mode-btn active-move">🖱️ Move Objects</button>
-                    <button id="deleteModeBtn" class="mode-btn">🗑️ Delete</button>
-                    <button id="lockModeBtn" class="mode-btn">🔒 Lock</button>
-                </div>
-                
-                <div id="myProfilePill" style="background:#1e2937; padding:4px 12px; border-radius:9999px; font-size:13px; display:flex; align-items:center; gap:6px; cursor:pointer;">
-                    <span id="myAvatarMini" style="width:24px;height:24px;border-radius:50%;background:#64748b;overflow:hidden;"></span>
-                    <span id="myNameDisplay" style="font-weight:600;"></span>
-                </div>
+                <div id="myNameDisplay" style="background:#1e2937;padding:6px 16px;border-radius:9999px;font-weight:600;"></div>
             </div>
-            
-            <div class="canvas-wrapper"><canvas id="officeCanvas" width="1600" height="950"></canvas></div>
-            
+
+            <div class="canvas-wrapper">
+                <canvas id="officeCanvas" width="1600" height="950"></canvas>
+            </div>
+
             <div class="bottom-panel">
-                <div onclick="switchTab(0)" id="tabObjects" class="tab active">📦 Objects</div>
-                <div onclick="switchTab(1)" id="tabChat" class="tab">💬 Chat</div>
-                <div id="objectsContainer" style="flex:1; display:flex; overflow-x:auto; gap:12px;">
-                    <div id="objectsDock" style="display:flex; gap:16px; white-space:nowrap;"></div>
-                </div>
-                <div id="chatContainer" style="display:none; flex:1; flex-direction:column; height:100%;">
-                    <div id="chatPanel"></div>
-                    <div style="display:flex; margin-top:8px; gap:8px;">
-                        <input id="chatInput" type="text" placeholder="Type message..." style="flex:1; background:#1e2937; border:none; border-radius:9999px; padding:12px 20px; color:white;">
-                        <button onclick="sendChatMessage()" style="background:#0ea5e9; color:white; border:none; width:52px; border-radius:9999px;">↑</button>
-                    </div>
-                </div>
+                <div onclick="switchTab(0)" class="tab active" id="tab0">📦 Objects</div>
+                <div onclick="switchTab(1)" class="tab" id="tab1">💬 Chat</div>
+                <div id="objectsDock" style="display:flex;gap:12px;overflow-x:auto;flex:1;padding:4px;"></div>
             </div>
         </div>
     </div>
-    
+
     <!-- Media Controls -->
-    <div class="media-controls" id="mediaControls">
-        <button onclick="toggleMic()" id="micBtn" style="background:#10b981;color:white;padding:12px 20px;border-radius:9999px;border:none;display:flex;align-items:center;gap:8px;font-size:15px;">
-            🎤 <span id="micLabel">Mic ON</span>
-        </button>
-        <button onclick="toggleCamera()" id="camBtn" style="background:#10b981;color:white;padding:12px 20px;border-radius:9999px;border:none;display:flex;align-items:center;gap:8px;font-size:15px;">
-            📹 <span id="camLabel">Camera ON</span>
-        </button>
-        <div id="localPreview" style="width:160px;height:120px;background:#0f172a;border-radius:12px;overflow:hidden;display:none;"></div>
+    <div class="media-controls" id="mediaPanel" style="display:none;">
+        <button onclick="toggleMic()" id="micBtn" style="background:#10b981;color:white;padding:12px 24px;border:none;border-radius:9999px;">🎤 Mic ON</button>
+        <button onclick="toggleCamera()" id="camBtn" style="background:#10b981;color:white;padding:12px 24px;border:none;border-radius:9999px;">📹 Camera ON</button>
+        <div id="localPreview" style="width:180px;height:135px;background:#000;border-radius:12px;overflow:hidden;margin-top:8px;display:none;"></div>
     </div>
-    
-    <!-- Overlays -->
+
     <div class="peer-count" id="peerCount">👥 1 online</div>
-    <div class="connection-status" id="connectionStatus">🟢 GenoSDB Connected</div>
-    <div class="status-log" id="statusLog">🔥 Real-time sync active</div>
-    <div class="delete-hint" id="deleteHint">Click object to delete • Saved to GenoSDB</div>
-    
+    <div class="connection-status" id="connectionStatus">🟢 Connecting...</div>
+    <div class="status-log" id="statusLog">Loading...</div>
+
     <!-- Onboarding -->
-    <dialog id="onboardingModal">
-        <div class="modal-header">
-            <h2>Welcome to ModernTown 👋</h2>
-            <button onclick="this.closest('dialog').close()" style="background:none;border:none;font-size:28px;cursor:pointer;color:#64748b;">✕</button>
+    <dialog id="onboardingModal" style="border:none;border-radius:24px;background:#1e2937;color:#e2e8f0;width:480px;">
+        <div style="padding:24px 32px;border-bottom:1px solid #334155;display:flex;justify-content:space-between;">
+            <h2>Welcome to ModernTown</h2>
+            <button onclick="this.closest('dialog').close()" style="background:none;border:none;font-size:28px;color:#64748b;cursor:pointer;">✕</button>
         </div>
-        <div class="modal-content">
-            <form id="profileForm">
-                <label style="display:block;margin-bottom:8px;font-weight:500;">Your Name</label>
-                <input id="profileName" type="text" required placeholder="Alex Rivera" style="width:100%;padding:14px;border-radius:12px;border:1px solid #334155;background:#1e2937;color:white;margin-bottom:20px;">
-                
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-                    <div>
-                        <label style="display:block;margin-bottom:8px;font-weight:500;">Gender</label>
-                        <select id="profileGender" style="width:100%;padding:14px;border-radius:12px;border:1px solid #334155;background:#1e2937;color:white;">
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="display:block;margin-bottom:8px;font-weight:500;">Position</label>
-                        <input id="profilePosition" type="text" required placeholder="Product Designer" style="width:100%;padding:14px;border-radius:12px;border:1px solid #334155;background:#1e2937;color:white;">
-                    </div>
-                </div>
-                
-                <div style="margin:24px 0;">
-                    <label style="display:block;margin-bottom:8px;font-weight:500;">Profile Picture</label>
-                    <input type="file" id="profilePicUpload" accept="image/*" style="display:none;">
-                    <div onclick="document.getElementById('profilePicUpload').click()" style="border:2px dashed #64748b;border-radius:16px;padding:20px;text-align:center;cursor:pointer;">
-                        <div id="profilePicPreview" style="width:96px;height:96px;margin:0 auto;border-radius:50%;background:#334155;overflow:hidden;"></div>
-                        <p style="margin-top:12px;font-size:13px;color:#94a3b8;">Upload profile photo</p>
-                    </div>
-                </div>
-                
-                <div>
-                    <label style="display:block;margin-bottom:8px;font-weight:500;">Avatar Sprite (4×4 walk cycle)</label>
-                    <input type="file" id="spriteUpload" accept="image/*" style="display:none;">
-                    <div onclick="document.getElementById('spriteUpload').click()" style="border:2px dashed #64748b;border-radius:16px;padding:16px;text-align:center;cursor:pointer;">
-                        <div id="spritePreview" style="margin:0 auto;width:128px;height:128px;background:#1e2937;border-radius:12px;overflow:hidden;"></div>
-                        <p style="margin-top:8px;font-size:13px;color:#94a3b8;">Upload your character sprite</p>
-                    </div>
-                </div>
-                
-                <button type="button" onclick="saveProfileAndStart()" style="margin-top:32px;width:100%;background:#0ea5e9;color:white;padding:16px;border-radius:9999px;font-size:17px;font-weight:600;">
-                    Enter Office
-                </button>
-            </form>
+        <div style="padding:32px;">
+            <input id="profileName" placeholder="Your Name" style="width:100%;padding:14px;margin-bottom:16px;border-radius:12px;background:#334155;border:none;color:white;">
+            <button onclick="saveProfileAndStart()" style="width:100%;padding:16px;background:#0ea5e9;color:white;border:none;border-radius:9999px;font-size:17px;font-weight:600;">
+                Enter Office
+            </button>
         </div>
     </dialog>
-    
+
     <script type="module">
-        // ==================== GenoSDB + WebRTC P2P ====================
-        import('https://cdn.jsdelivr.net/npm/genosdb@latest/dist/index.min.js').then(async ({ gdb }) => {
-            const db = await gdb.init({
-                appId: 'moderntown-p2p',
-                rtc: true,           // enables built-in GenosRTC P2P
-                persist: true
-            });
-            
-            console.log('✅ GenoSDB initialized with realtime P2P');
-            
-            // Collections
-            const objectsCollection = db.collection('office_objects');
-            const avatarsCollection = db.collection('office_avatars');
-            const chatCollection = db.collection('office_chat');
-            
-            // Global state
-            let myConnectId = null;
-            let connectedPeers = new Set();
-            let peerAvatars = new Map();
-            let sceneItems = [];
-            let selfAvatar = null;
-            let profile = null;
-            
-            const canvas = document.getElementById('officeCanvas');
-            const ctx = canvas.getContext('2d');
-            const CANVAS_W = 1600, CANVAS_H = 950;
-            canvas.width = CANVAS_W; canvas.height = CANVAS_H;
-            
-            let keys = {};
-            let lastBroadcast = 0;
-            
-            // Sprite config (perfect for your uploaded 4×4 sprite)
-            let FRAME_COLS = 4, FRAME_ROWS = 4, FRAME_W = 64, FRAME_H = 64;
-            
-            let availableObjects = [
+        import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js';
+
+        const connect = webconnect();
+        let myConnectId = null;
+        let connectedPeers = new Set();
+        let peerAvatars = new Map();
+        let sceneItems = [];
+        let selfAvatar = null;
+        let profile = null;
+
+        const canvas = document.getElementById('officeCanvas');
+        const ctx = canvas.getContext('2d');
+        const W = 1600, H = 950;
+        canvas.width = W; canvas.height = H;
+
+        let keys = {};
+        let lastBroadcast = 0;
+
+        // Sprite settings (4×4)
+        let FRAME_COLS = 4, FRAME_ROWS = 4, FRAME_W = 64, FRAME_H = 64;
+
+        let availableObjects = [
             { id: "chair", name: "Chair", spriteUrl: "./objects/sprites/chair_1.png", defaultW: 21, defaultH: 35 },
             { id: "desk", name: "Desk", spriteUrl: "./objects/sprites/desk_1.png", defaultW: 56, defaultH: 55 },
             { id: "workspace", name: "Workspace", spriteUrl: "./objects/sprites/workspace.png", defaultW: 500, defaultH: 300 }
         ];
-            
-            let localStream = null;
-            let micEnabled = true;
-            let camEnabled = true;
-            
-            // ==================== PROFILE ====================
-            function loadProfile() {
-                const saved = localStorage.getItem('modernTownProfile');
-                if (saved) {
-                    profile = JSON.parse(saved);
-                    document.getElementById('myNameDisplay').textContent = profile.name;
-                    return true;
-                }
-                return false;
+
+        let localStream = null;
+        let micOn = true, camOn = true;
+
+        // ==================== PROFILE ====================
+        function loadProfile() {
+            const saved = localStorage.getItem('modernTownProfile');
+            if (saved) {
+                profile = JSON.parse(saved);
+                document.getElementById('myNameDisplay').textContent = profile.name;
+                return true;
             }
-            
-            window.saveProfileAndStart = function() {
-                const name = document.getElementById('profileName').value.trim();
-                if (!name) return alert("Name is required");
-                
-                Promise.all([
-                    document.getElementById('profilePicUpload').files[0] ? fileToDataURL(document.getElementById('profilePicUpload').files[0]) : Promise.resolve(null),
-                    document.getElementById('spriteUpload').files[0] ? fileToDataURL(document.getElementById('spriteUpload').files[0]) : Promise.resolve('https://picsum.photos/id/64/256/256')
-                ]).then(([picData, spriteData]) => {
-                    profile = {
-                        id: 'p_' + Date.now(),
-                        name: name,
-                        gender: document.getElementById('profileGender').value,
-                        position: document.getElementById('profilePosition').value || 'Member',
-                        profilePic: picData,
-                        spriteUrl: spriteData
-                    };
-                    localStorage.setItem('modernTownProfile', JSON.stringify(profile));
-                    document.getElementById('onboardingModal').close();
-                    document.getElementById('myNameDisplay').textContent = profile.name;
-                    createSelfAvatar();
-                    initApp();
-                });
+            return false;
+        }
+
+        window.saveProfileAndStart = function() {
+            const name = document.getElementById('profileName').value.trim() || "Player" + Math.floor(Math.random()*999);
+            profile = { name, spriteUrl: "./objects/sprites/character_sprite.png" };
+            localStorage.setItem('modernTownProfile', JSON.stringify(profile));
+            document.getElementById('onboardingModal').close();
+            document.getElementById('myNameDisplay').textContent = profile.name;
+            createSelfAvatar();
+            initApp();
+        };
+
+        // ==================== AVATAR ====================
+        function createSelfAvatar() {
+            selfAvatar = {
+                id: 'self',
+                name: profile.name,
+                x: W/2 - 32,
+                y: H/2 - 32,
+                w: 64, h: 64,
+                spriteUrl: profile.spriteUrl,
+                spriteImg: null,
+                direction: 0,
+                frame: 0,
+                speed: 5
             };
-            
-            function fileToDataURL(file) {
-                return new Promise(r => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.readAsDataURL(file); });
+            const img = new Image();
+            img.onload = () => { selfAvatar.spriteImg = img; FRAME_W = img.width/4; FRAME_H = img.height/4; };
+            img.src = selfAvatar.spriteUrl;
+        }
+
+        function renderAvatar(av) {
+            if (!av.spriteImg) {
+                ctx.fillStyle = av.id === 'self' ? '#22c55e' : '#3b82f6';
+                ctx.fillRect(av.x, av.y, av.w, av.h);
+                return;
             }
-            
-            // ==================== AVATAR (Accurate 4×4 sprite) ====================
-            function createSelfAvatar() {
-                selfAvatar = {
-                    id: 'self',
-                    name: profile.name,
-                    x: CANVAS_W/2 - 32,
-                    y: CANVAS_H/2 - 32,
-                    w: 64, h: 64,
-                    spriteUrl: profile.spriteUrl,
-                    spriteImg: null,
-                    direction: 0,
-                    frame: 0,
-                    speed: 5.2,
-                    lastFrameTime: Date.now()
-                };
-                loadSpriteSheet(selfAvatar);
+            const sx = av.frame * FRAME_W;
+            const sy = av.direction * FRAME_H;
+            ctx.drawImage(av.spriteImg, sx, sy, FRAME_W, FRAME_H, av.x, av.y, av.w, av.h);
+        }
+
+        // ==================== MOVEMENT (WASD + Arrows) ====================
+        function updateMovement() {
+            if (!selfAvatar) return;
+            let vx = 0, vy = 0;
+            if (keys['w'] || keys['arrowup']) vy -= selfAvatar.speed;
+            if (keys['s'] || keys['arrowdown']) vy += selfAvatar.speed;
+            if (keys['a'] || keys['arrowleft']) vx -= selfAvatar.speed;
+            if (keys['d'] || keys['arrowright']) vx += selfAvatar.speed;
+
+            const moving = vx !== 0 || vy !== 0;
+            if (moving) {
+                if (vx && vy) { const l = Math.hypot(vx,vy); vx = vx/l * selfAvatar.speed; vy = vy/l * selfAvatar.speed; }
+                selfAvatar.x = Math.max(10, Math.min(W-74, selfAvatar.x + vx));
+                selfAvatar.y = Math.max(10, Math.min(H-74, selfAvatar.y + vy));
+
+                selfAvatar.direction = Math.abs(vy) > Math.abs(vx) ? (vy > 0 ? 0 : 3) : (vx > 0 ? 2 : 1);
+                selfAvatar.frame = (selfAvatar.frame + 1) % 4;
+            } else {
+                selfAvatar.frame = 0;
             }
-            
-            function loadSpriteSheet(avatar) {
-                const img = new Image();
-                img.onload = () => {
-                    avatar.spriteImg = img;
-                    FRAME_W = Math.floor(img.width / FRAME_COLS);
-                    FRAME_H = Math.floor(img.height / FRAME_ROWS);
-                    renderCanvas();
-                };
-                img.src = avatar.spriteUrl;
+
+            if (moving && Date.now() - lastBroadcast > 60) {
+                broadcastAvatar();
+                lastBroadcast = Date.now();
             }
-            
-            function updateAvatarAnimation(avatar, moving) {
-                const now = Date.now();
-                if (now - avatar.lastFrameTime > (moving ? 70 : 400)) {
-                    avatar.frame = moving ? (avatar.frame + 1) % 4 : 0;
-                    avatar.lastFrameTime = now;
-                }
+        }
+
+        function broadcastAvatar() {
+            const data = { type: 'avatar', payload: { id: selfAvatar.id, name: selfAvatar.name, x: selfAvatar.x, y: selfAvatar.y, direction: selfAvatar.direction, frame: selfAvatar.frame } };
+            connectedPeers.forEach(p => {
+                try { connect.Send(JSON.stringify(data), { connectId: p }); } catch(e){}
+            });
+        }
+
+        // ==================== RENDER ====================
+        function render() {
+            ctx.clearRect(0,0,W,H);
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0,0,W,H);
+
+            // grid
+            ctx.strokeStyle = '#334155';
+            for (let i=0; i<W; i+=50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,H); ctx.stroke(); }
+            for (let i=0; i<H; i+=50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(W,i); ctx.stroke(); }
+
+            // objects
+            sceneItems.forEach(o => {
+                ctx.fillStyle = '#64748b';
+                ctx.fillRect(o.x||100, o.y||100, o.w||64, o.h||64);
+            });
+
+            peerAvatars.forEach(av => renderAvatar(av));
+            if (selfAvatar) renderAvatar(selfAvatar);
+        }
+
+        function loop() {
+            updateMovement();
+            render();
+            requestAnimationFrame(loop);
+        }
+
+        // ==================== MEDIA ====================
+        window.toggleMic = async function() {
+            micOn = !micOn;
+            document.getElementById('micBtn').textContent = micOn ? '🎤 Mic ON' : '🎤 Mic OFF';
+            document.getElementById('micBtn').style.background = micOn ? '#10b981' : '#ef4444';
+            if (micOn && !localStream) localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+        };
+
+        window.toggleCamera = async function() {
+            camOn = !camOn;
+            document.getElementById('camBtn').textContent = camOn ? '📹 Camera ON' : '📹 Camera OFF';
+            document.getElementById('camBtn').style.background = camOn ? '#10b981' : '#ef4444';
+            const prev = document.getElementById('localPreview');
+            if (camOn) {
+                const stream = await navigator.mediaDevices.getUserMedia({video:true});
+                const video = document.createElement('video');
+                video.autoplay = true; video.muted = true; video.srcObject = stream;
+                prev.innerHTML = ''; prev.appendChild(video); prev.style.display = 'block';
+            } else {
+                prev.style.display = 'none';
             }
-            
-            function renderAvatar(avatar) {
-                if (!avatar.spriteImg) {
-                    ctx.fillStyle = '#22c55e';
-                    ctx.fillRect(avatar.x, avatar.y, avatar.w, avatar.h);
-                    return;
-                }
-                const sx = avatar.frame * FRAME_W;
-                const sy = avatar.direction * FRAME_H;
-                ctx.drawImage(avatar.spriteImg, sx, sy, FRAME_W, FRAME_H, avatar.x, avatar.y, avatar.w, avatar.h);
-                
-                ctx.fillStyle = 'rgba(15,23,42,0.85)';
-                ctx.fillRect(avatar.x + avatar.w/2 - 40, avatar.y - 28, 80, 22);
-                ctx.fillStyle = '#fff';
-                ctx.font = '500 13px Inter';
-                ctx.textAlign = 'center';
-                ctx.fillText(avatar.name, avatar.x + avatar.w/2, avatar.y - 12);
-            }
-            
-            // ==================== MOVEMENT ====================
-            function updateMovement() {
-                if (!selfAvatar) return;
-                let vx = 0, vy = 0;
-                if (keys['w'] || keys['arrowup']) vy -= selfAvatar.speed;
-                if (keys['s'] || keys['arrowdown']) vy += selfAvatar.speed;
-                if (keys['a'] || keys['arrowleft']) vx -= selfAvatar.speed;
-                if (keys['d'] || keys['arrowright']) vx += selfAvatar.speed;
-                
-                const moving = vx !== 0 || vy !== 0;
-                
-                if (moving) {
-                    if (vx && vy) {
-                        const len = Math.hypot(vx, vy);
-                        vx = vx / len * selfAvatar.speed;
-                        vy = vy / len * selfAvatar.speed;
-                    }
-                    selfAvatar.x = Math.max(10, Math.min(CANVAS_W - 74, selfAvatar.x + vx));
-                    selfAvatar.y = Math.max(10, Math.min(CANVAS_H - 74, selfAvatar.y + vy));
-                    
-                    selfAvatar.direction = Math.abs(vy) > Math.abs(vx) ? (vy > 0 ? 0 : 3) : (vx > 0 ? 2 : 1);
-                    updateAvatarAnimation(selfAvatar, true);
-                    
-                    if (Date.now() - lastBroadcast > 50) {
-                        avatarsCollection.set(selfAvatar.id, { ...selfAvatar, timestamp: Date.now() });
-                        lastBroadcast = Date.now();
-                    }
-                } else {
-                    updateAvatarAnimation(selfAvatar, false);
-                }
-            }
-            
-            // ==================== RENDERING ====================
-            function renderCanvas() {
-                ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
-                ctx.fillStyle = '#0f172a';
-                ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-                
-                // Grid
-                ctx.strokeStyle = '#334155';
-                for (let i = 0; i < CANVAS_W; i += 50) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,CANVAS_H); ctx.stroke(); }
-                for (let i = 0; i < CANVAS_H; i += 50) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(CANVAS_W,i); ctx.stroke(); }
-                
-                // Static objects
-                sceneItems.forEach(item => {
-                    ctx.fillStyle = '#64748b';
-                    ctx.fillRect(item.x, item.y, item.w || 64, item.h || 64);
-                });
-                
-                // Peer avatars
-                peerAvatars.forEach(av => renderAvatar(av));
-                
-                // Self avatar on top
-                if (selfAvatar) renderAvatar(selfAvatar);
-            }
-            
-            function gameLoop() {
-                updateMovement();
-                renderCanvas();
-                requestAnimationFrame(gameLoop);
-            }
-            
-            // ==================== GenoSDB Realtime Sync ====================
-            function initGenoDBSync() {
-                // Objects sync
-                objectsCollection.on('change', (change) => {
-                    if (change.type === 'added' || change.type === 'modified') {
-                        const idx = sceneItems.findIndex(i => i.id === change.doc.id);
-                        if (idx > -1) sceneItems[idx] = change.doc;
-                        else sceneItems.push(change.doc);
-                        renderCanvas();
-                    } else if (change.type === 'removed') {
-                        sceneItems = sceneItems.filter(i => i.id !== change.doc.id);
-                        renderCanvas();
-                    }
-                });
-                
-                // Avatars sync
-                avatarsCollection.on('change', (change) => {
-                    if (change.doc.id === 'self') return;
-                    let peer = peerAvatars.get(change.doc.id);
-                    if (!peer) {
-                        peer = { ...change.doc, spriteImg: null };
-                        peerAvatars.set(change.doc.id, peer);
+        };
+
+        // ==================== P2P ====================
+        function handleMessage(data, sender) {
+            try {
+                const msg = JSON.parse(data);
+                if (msg.type === 'avatar') {
+                    let p = peerAvatars.get(sender);
+                    if (!p) {
+                        p = { ...msg.payload, spriteImg: null };
+                        peerAvatars.set(sender, p);
                         const img = new Image();
-                        img.src = profile.spriteUrl;
-                        img.onload = () => { peer.spriteImg = img; };
+                        img.src = "./objects/sprites/character_sprite.png";
+                        img.onload = () => p.spriteImg = img;
                     } else {
-                        Object.assign(peer, change.doc);
+                        Object.assign(p, msg.payload);
                     }
-                    renderCanvas();
-                });
-                
-                // Initial load
-                objectsCollection.getAll().then(docs => {
-                    sceneItems = docs;
-                    renderCanvas();
-                });
-                
-                avatarsCollection.getAll().then(docs => {
-                    docs.forEach(doc => {
-                        if (doc.id !== 'self') peerAvatars.set(doc.id, doc);
-                    });
-                });
-            }
-            
-            // ==================== Media ====================
-            window.toggleMic = async function() {
-                micEnabled = !micEnabled;
-                document.getElementById('micLabel').textContent = micEnabled ? 'Mic ON' : 'Mic OFF';
-                document.getElementById('micBtn').style.background = micEnabled ? '#10b981' : '#ef4444';
-                if (micEnabled && !localStream) {
-                    localStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                } else if (!micEnabled && localStream) {
-                    localStream.getAudioTracks().forEach(t => t.stop());
                 }
-            };
-            
-            window.toggleCamera = async function() {
-                camEnabled = !camEnabled;
-                document.getElementById('camLabel').textContent = camEnabled ? 'Camera ON' : 'Camera OFF';
-                document.getElementById('camBtn').style.background = camEnabled ? '#10b981' : '#ef4444';
-                const preview = document.getElementById('localPreview');
-                if (camEnabled) {
-                    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                    const video = document.createElement('video');
-                    video.autoplay = true; video.muted = true; video.srcObject = stream;
-                    preview.innerHTML = ''; preview.appendChild(video); preview.style.display = 'block';
-                } else {
-                    preview.style.display = 'none';
-                    preview.innerHTML = '';
-                }
-            };
-            
-            // ==================== Chat ====================
-            window.sendChatMessage = function() {
-                const input = document.getElementById('chatInput');
-                const text = input.value.trim();
-                if (!text || !profile) return;
-                chatCollection.add({ name: profile.name, text: text, timestamp: Date.now() });
-                input.value = '';
-            };
-            
-            // ==================== UI Helpers ====================
-            window.switchTab = function(n) {
-                document.getElementById('objectsContainer').style.display = n === 0 ? 'flex' : 'none';
-                document.getElementById('chatContainer').style.display = n === 1 ? 'flex' : 'none';
-                document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', parseInt(t.id.replace('tab','')) === n));
-            };
-            
-            function updatePeerCount() {
+            } catch(e) {}
+        }
+
+        function initApp() {
+            connect.getMyId(a => {
+                myConnectId = a.connectId;
+                document.getElementById('connectionStatus').innerHTML = '🟢 P2P Connected';
+            });
+
+            connect.onConnect(a => {
+                connectedPeers.add(a.connectId);
                 document.getElementById('peerCount').innerHTML = `👥 ${connectedPeers.size + 1} online`;
-            }
-            
-            // ==================== Init ====================
-            function initApp() {
-                myConnectId = 'user_' + Date.now();
-                initGenoDBSync();
-                
-                // Keyboard
-                window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-                window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-                
-                // Rebuild objects dock
-                const dock = document.getElementById('objectsDock');
-                dock.innerHTML = '';
-                availableObjects.forEach(obj => {
-                    const div = document.createElement('div');
-                    div.style.cssText = 'background:#1e2937;border-radius:16px;padding:8px 16px;cursor:grab;display:flex;flex-direction:column;align-items:center;min-width:80px;';
-                    div.innerHTML = `<img src="${obj.spriteUrl}" width="48" height="48"><span style="margin-top:6px;font-size:12px;">${obj.name}</span>`;
-                    div.draggable = true;
-                    div.ondragstart = e => e.dataTransfer.setData('application/json', JSON.stringify(obj));
-                    dock.appendChild(div);
-                });
-                
-                canvas.addEventListener('drop', e => {
-                    e.preventDefault();
-                    const data = e.dataTransfer.getData('application/json');
-                    if (data) {
-                        const config = JSON.parse(data);
-                        const rect = canvas.getBoundingClientRect();
-                        const x = (e.clientX - rect.left) * (CANVAS_W / rect.width);
-                        const y = (e.clientY - rect.top) * (CANVAS_H / rect.height);
-                        const newItem = { id: 'obj_' + Date.now(), ...config, x: x - 32, y: y - 32 };
-                        objectsCollection.add(newItem);
-                    }
-                });
-                
-                gameLoop();
-                setInterval(updatePeerCount, 1500);
-                document.getElementById('statusLog').innerHTML = '✅ GenoSDB realtime sync active';
-                console.log('🚀 ModernTown fully running with GenoSDB P2P + persistent objects');
-            }
-            
-            // Start
-            window.onload = () => {
-                if (!loadProfile()) {
-                    document.getElementById('onboardingModal').showModal();
-                } else {
-                    createSelfAvatar();
-                    initApp();
-                }
-                
-                // Preview handlers
-                document.getElementById('profilePicUpload').onchange = e => {
-                    if (e.target.files[0]) fileToDataURL(e.target.files[0]).then(url => {
-                        document.getElementById('profilePicPreview').style.background = `url(${url}) center/cover`;
-                    });
-                };
-                document.getElementById('spriteUpload').onchange = e => {
-                    if (e.target.files[0]) fileToDataURL(e.target.files[0]).then(url => {
-                        const preview = document.getElementById('spritePreview');
-                        const img = document.createElement('img');
-                        img.src = url; img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'contain';
-                        preview.innerHTML = ''; preview.appendChild(img);
-                    });
-                };
+                broadcastAvatar();
+            });
+
+            connect.onDisconnect(a => {
+                connectedPeers.delete(a.connectId);
+                peerAvatars.delete(a.connectId);
+                document.getElementById('peerCount').innerHTML = `👥 ${connectedPeers.size + 1} online`;
+            });
+
+            connect.onReceive((data, attr) => handleMessage(data, attr.connectId));
+
+            // Keyboard
+            window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+            window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+            // Objects panel
+            const dock = document.getElementById('objectsDock');
+            availableObjects.forEach(obj => {
+                const d = document.createElement('div');
+                d.style = 'background:#1e2937;border-radius:12px;padding:8px;text-align:center;cursor:grab;min-width:70px;';
+                d.innerHTML = `<img src="${obj.spriteUrl}" style="width:48px;height:48px;"><div style="font-size:12px;margin-top:4px;">${obj.name}</div>`;
+                d.draggable = true;
+                d.ondragstart = ev => ev.dataTransfer.setData('text', JSON.stringify(obj));
+                dock.appendChild(d);
+            });
+
+            canvas.ondragover = e => e.preventDefault();
+            canvas.ondrop = e => {
+                e.preventDefault();
+                const obj = JSON.parse(e.dataTransfer.getData('text'));
+                const rect = canvas.getBoundingClientRect();
+                const x = (e.clientX - rect.left) * (W / rect.width) - obj.defaultW/2;
+                const y = (e.clientY - rect.top) * (H / rect.height) - obj.defaultH/2;
+                sceneItems.push({id: 'obj'+Date.now(), ...obj, x, y});
+                render();
             };
-        });
+
+            // Media panel
+            document.getElementById('openMediaBtn').onclick = () => {
+                const p = document.getElementById('mediaPanel');
+                p.style.display = p.style.display === 'none' ? 'flex' : 'none';
+            };
+
+            loop();
+            setInterval(() => broadcastAvatar(), 150);
+            document.getElementById('statusLog').innerHTML = '✅ All systems ready — WASD to move';
+        }
+
+        window.switchTab = function(n) {
+            document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active', i===n));
+        };
+
+        window.onload = () => {
+            if (!loadProfile()) document.getElementById('onboardingModal').showModal();
+            else { createSelfAvatar(); initApp(); }
+        };
     </script>
 </body>
 </html>
