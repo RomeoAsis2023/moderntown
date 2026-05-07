@@ -77,7 +77,7 @@ body{
   text-align:center;
 }
 
-.usersPreview{
+.userPreview{
   display:none;
   align-items:center;
   gap:10px;
@@ -88,7 +88,7 @@ body{
   margin-bottom:10px;
 }
 
-.usersPreview img{
+.userPreview img{
   width:42px;
   height:42px;
   border-radius:50%;
@@ -96,8 +96,8 @@ body{
   background:#020617;
 }
 
-.usersPreview strong{display:block;font-size:14px}
-.usersPreview span{display:block;font-size:12px;color:#cbd5e1;margin-top:2px}
+.userPreview strong{display:block;font-size:14px}
+.userPreview span{display:block;font-size:12px;color:#cbd5e1;margin-top:2px}
 
 #scene{
   position:relative;
@@ -225,7 +225,7 @@ body{
 }
 
 .profileHeader,
-.requestusersCard{
+.requestUserCard{
   display:flex;
   align-items:center;
   gap:10px;
@@ -237,7 +237,7 @@ body{
 }
 
 .profileHeader img,
-.requestusersCard img{
+.requestUserCard img{
   width:48px;
   height:48px;
   border-radius:50%;
@@ -247,9 +247,9 @@ body{
 }
 
 .profileHeader strong,
-.requestusersCard strong{display:block;font-size:14px}
+.requestUserCard strong{display:block;font-size:14px}
 .profileHeader span,
-.requestusersCard span{display:block;font-size:12px;color:#cbd5e1;margin-top:2px}
+.requestUserCard span{display:block;font-size:12px;color:#cbd5e1;margin-top:2px}
 
 .previewVideo,
 .remoteVideo{
@@ -405,11 +405,11 @@ body{
 
     <input id="emailInput" type="email" placeholder="Enter your Modern email" autocomplete="email" />
 
-    <div id="usersPreview" class="usersPreview">
-      <img id="usersPreviewPic" alt="Profile" />
+    <div id="userPreview" class="userPreview">
+      <img id="userPreviewPic" alt="Profile" />
       <div>
-        <strong id="usersPreviewName"></strong>
-        <span id="usersPreviewMeta"></span>
+        <strong id="userPreviewName"></strong>
+        <span id="userPreviewMeta"></span>
       </div>
     </div>
 
@@ -434,11 +434,11 @@ body{
   <div class="modalBox">
     <h2 id="requestTitle">Video Call</h2>
 
-    <div class="requestusersCard">
+    <div class="requestUserCard">
       <img id="requestProfilePic" alt="Caller profile" />
       <div>
-        <strong id="requestusersName">Peer</strong>
-        <span id="requestusersMeta">Video call request</span>
+        <strong id="requestUserName">Peer</strong>
+        <span id="requestUserMeta">Video call request</span>
       </div>
     </div>
 
@@ -461,7 +461,7 @@ body{
       <img id="callProfilePic" alt="Peer profile" />
       <div>
         <h2 id="callTitle">Video Chat</h2>
-        <span id="callusersMeta"></span>
+        <span id="callUserMeta"></span>
       </div>
     </div>
 
@@ -494,8 +494,8 @@ body{
 <script type="module">
 import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
 
-const usersS_JSON_URL = 'https://gist.githubuserscontent.com/RomeoAsis2023/dcb6239ab41d40f39852e97a60ccf504/raw/4ba1fe9fcc6cb8f957e89369e2a1c94eaaf8a551/modern_users_data.json'
-const FALLBACK_PROFILE_PIC = 'https://placehold.co/120x120/111827/ffffff?text=users'
+const USERS_JSON_URL = 'https://gist.githubusercontent.com/RomeoAsis2023/dcb6239ab41d40f39852e97a60ccf504/raw/4ba1fe9fcc6cb8f957e89369e2a1c94eaaf8a551/modern_user_data.json'
+const FALLBACK_PROFILE_PIC = 'https://placehold.co/120x120/111827/ffffff?text=User'
 
 const scene = document.getElementById('scene')
 const ui = document.getElementById('ui')
@@ -503,10 +503,10 @@ const statusEl = document.getElementById('status')
 const joinBtn = document.getElementById('joinBtn')
 const roomInput = document.getElementById('roomInput')
 const emailInput = document.getElementById('emailInput')
-const usersPreview = document.getElementById('usersPreview')
-const usersPreviewPic = document.getElementById('usersPreviewPic')
-const usersPreviewName = document.getElementById('usersPreviewName')
-const usersPreviewMeta = document.getElementById('usersPreviewMeta')
+const userPreview = document.getElementById('userPreview')
+const userPreviewPic = document.getElementById('userPreviewPic')
+const userPreviewName = document.getElementById('userPreviewName')
+const userPreviewMeta = document.getElementById('userPreviewMeta')
 const ringtoneAudio = document.getElementById('ringtoneAudio')
 const joinBellAudio = document.getElementById('joinBellAudio')
 
@@ -518,13 +518,13 @@ const requestActions = document.getElementById('requestActions')
 const requestVideoBtn = document.getElementById('requestVideoBtn')
 const requestMicBtn = document.getElementById('requestMicBtn')
 const requestProfilePic = document.getElementById('requestProfilePic')
-const requestusersName = document.getElementById('requestusersName')
-const requestusersMeta = document.getElementById('requestusersMeta')
+const requestUserName = document.getElementById('requestUserName')
+const requestUserMeta = document.getElementById('requestUserMeta')
 
 const callModal = document.getElementById('callModal')
 const callTitle = document.getElementById('callTitle')
 const callProfilePic = document.getElementById('callProfilePic')
-const callusersMeta = document.getElementById('callusersMeta')
+const callUserMeta = document.getElementById('callUserMeta')
 const remoteVideo = document.getElementById('remoteVideo')
 const localPreview = document.getElementById('localPreview')
 const callVideoBtn = document.getElementById('callVideoBtn')
@@ -566,7 +566,7 @@ let localProfilePic = ''
 let localPositionTitle = ''
 let localDepartment = ''
 let localModernEmail = ''
-let currentusers = null
+let currentUser = null
 
 const connectedPeers = new Set()
 const peerStates = {}
@@ -614,75 +614,91 @@ function playJoinBell(){
   joinBellAudio.play().catch(() => {})
 }
 
-async function fetchModernuserss(){
-  const response = await fetch(usersS_JSON_URL, {cache:'no-store'})
+async function fetchModernUsers(){
+  const response = await fetch(USERS_JSON_URL, {cache:'no-store'})
   if(!response.ok){
-    throw new Error('Unable to load Modern users data.')
+    throw new Error('Unable to load Modern user data.')
   }
 
   const data = await response.json()
 
   if(Array.isArray(data)) return data
-  if(Array.isArray(data.userss)) return data.userss
+  if(Array.isArray(data.users)) return data.users
 
   return []
 }
 
-async function findusersByEmail(email){
-  const userss = await fetchModernuserss()
-  const normalizedEmail = String(email || '').trim().toLowerCase()
+async function findUserByEmail(email){
 
-  return userss.find(users =>
-    String(users.modern_email || '').trim().toLowerCase() === normalizedEmail
-  ) || null
+  const response = await fetch(
+    USERS_JSON_URL + '?t=' + Date.now(),
+    {
+      cache:'no-store'
+    }
+  )
+
+  const data = await response.json()
+
+  if(!data.users || !Array.isArray(data.users)){
+    throw new Error('Invalid JSON format. Missing users array.')
+  }
+
+  return data.users.find(user =>
+    String(user.modern_email || '')
+      .trim()
+      .toLowerCase() ===
+    String(email || '')
+      .trim()
+      .toLowerCase()
+  )
 }
 
 function getPeerMeta(peerId){
   return peerStates[peerId] || {}
 }
 
-function getusersMetaLine(users){
+function getUserMetaLine(user){
   const parts = []
-  if(users?.position) parts.push(users.position)
-  if(users?.department) parts.push(users.department)
+  if(user?.position) parts.push(user.position)
+  if(user?.department) parts.push(user.department)
   return parts.join(' · ')
 }
 
-function setPreviewusers(users){
-  if(!users){
-    usersPreview.style.display = 'none'
+function setPreviewUser(user){
+  if(!user){
+    userPreview.style.display = 'none'
     return
   }
 
-  usersPreviewPic.src = users.profile_pic || FALLBACK_PROFILE_PIC
-  usersPreviewName.textContent = users.name || 'Modern users'
-  usersPreviewMeta.textContent = getusersMetaLine(users) || users.modern_email || ''
-  usersPreview.style.display = 'flex'
+  userPreviewPic.src = user.profile_pic || FALLBACK_PROFILE_PIC
+  userPreviewName.textContent = user.name || 'Modern User'
+  userPreviewMeta.textContent = getUserMetaLine(user) || user.modern_email || ''
+  userPreview.style.display = 'flex'
 }
 
 emailInput.addEventListener('change', async () => {
   const email = emailInput.value.trim()
   if(!email){
-    setPreviewusers(null)
+    setPreviewUser(null)
     return
   }
 
   try{
     statusEl.textContent = 'Checking Modern email...'
-    const users = await findusersByEmail(email)
-    currentusers = users
+    const user = await findUserByEmail(email)
+    currentUser = user
 
-    if(users){
-      setPreviewusers(users)
-      statusEl.textContent = 'Found ' + users.name + '. Ready to join.'
+    if(user){
+      setPreviewUser(user)
+      statusEl.textContent = 'Found ' + user.name + '. Ready to join.'
     }else{
-      setPreviewusers(null)
-      statusEl.textContent = 'No Modern users found for that email.'
+      setPreviewUser(null)
+      statusEl.textContent = 'No Modern user found for that email.'
     }
   }catch(error){
     console.error(error)
-    setPreviewusers(null)
-    statusEl.textContent = 'Could not load Modern users data.'
+    setPreviewUser(null)
+    statusEl.textContent = 'Could not load Modern user data.'
   }
 })
 
@@ -695,32 +711,32 @@ joinBtn.onclick = async () => {
   }
 
   joinBtn.disabled = true
-  statusEl.textContent = 'Loading Modern users data...'
+  statusEl.textContent = 'Loading Modern user data...'
 
   try{
-    currentusers = currentusers || await findusersByEmail(email)
+    currentUser = currentUser || await findUserByEmail(email)
   }catch(error){
     console.error(error)
-    alert('Unable to fetch Modern users data. Please try again.')
+    alert('Unable to fetch Modern user data. Please try again.')
     joinBtn.disabled = false
-    statusEl.textContent = 'Could not load Modern users data.'
+    statusEl.textContent = 'Could not load Modern user data.'
     return
   }
 
-  if(!currentusers){
-    alert('No users found with that Modern email.')
+  if(!currentUser){
+    alert('No user found with that Modern email.')
     joinBtn.disabled = false
-    statusEl.textContent = 'No Modern users found for that email.'
+    statusEl.textContent = 'No Modern user found for that email.'
     return
   }
 
-  playerName = sanitizeName(currentusers.name) || 'Guest-' + Math.random().toString(36).substring(2,6)
-  localProfilePic = currentusers.profile_pic || ''
-  localPositionTitle = currentusers.position || ''
-  localDepartment = currentusers.department || ''
-  localModernEmail = currentusers.modern_email || email
+  playerName = sanitizeName(currentUser.name) || 'Guest-' + Math.random().toString(36).substring(2,6)
+  localProfilePic = currentUser.profile_pic || ''
+  localPositionTitle = currentUser.position || ''
+  localDepartment = currentUser.department || ''
+  localModernEmail = currentUser.modern_email || email
 
-  localState.sprite = currentusers.sprite_image || createDefaultSprite()
+  localState.sprite = currentUser.sprite_image || createDefaultSprite()
   localState.profilePic = localProfilePic
   localState.position = localPositionTitle
   localState.department = localDepartment
@@ -733,7 +749,7 @@ joinBtn.onclick = async () => {
   roomName = roomInput.value.trim() || 'demo-room'
 
   try{
-    localStream = await navigator.mediaDevices.getusersMedia({
+    localStream = await navigator.mediaDevices.getUserMedia({
       video:true,
       audio:true
     })
@@ -998,8 +1014,8 @@ function showOutgoingRequest(peerId){
 
   requestTitle.textContent = 'Start Video Call'
   requestText.textContent = 'Do you want to video call ' + name + '?'
-  requestusersName.textContent = name
-  requestusersMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Video call request'
+  requestUserName.textContent = name
+  requestUserMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Video call request'
   requestProfilePic.src = peer.profilePic || FALLBACK_PROFILE_PIC
 
   requestActions.innerHTML = `
@@ -1044,8 +1060,8 @@ function showIncomingRequest(peerId, fromName){
 
   requestTitle.textContent = 'Incoming Video Call'
   requestText.textContent = displayName + ' wants to video call you.'
-  requestusersName.textContent = displayName
-  requestusersMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Incoming video call'
+  requestUserName.textContent = displayName
+  requestUserMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Incoming video call'
   requestProfilePic.src = peer.profilePic || FALLBACK_PROFILE_PIC
 
   requestActions.innerHTML = `
@@ -1102,7 +1118,7 @@ function openCallModal(peerId){
   activeCallPeer = peerId
   callTitle.textContent = 'Video Chat with ' + name
   callProfilePic.src = peer.profilePic || FALLBACK_PROFILE_PIC
-  callusersMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ')
+  callUserMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ')
   localPreview.srcObject = localStream
   chatBox.innerHTML = ''
 
