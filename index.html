@@ -453,8 +453,11 @@ body{
   </div>
 </div>
 
-<script type="module">
-import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/webconnect@0.0.12/dist/umd/webconnect.js"></script>
+
+<script>
+const createWebConnect = window.webconnect || window.WebConnect || (typeof webconnect !== 'undefined' ? webconnect : null)
 
 const USERS_JSON_URL = 'https://gist.githubusercontent.com/RomeoAsis2023/dcb6239ab41d40f39852e97a60ccf504/raw/modern_user_data.json'
 const FALLBACK_AVATAR = 'https://placehold.co/100x100/111827/ffffff?text=User'
@@ -530,6 +533,7 @@ const players = {}
 const peerConnections = {}
 const pendingIce = {}
 const peerDisconnectTimers = {}
+const remoteStreams = {}
 
 let localState = {
   video:true,
@@ -707,7 +711,14 @@ joinBtn.onclick = async () => {
 
   ui.style.display = 'none'
 
-  connect = webconnect()
+  if(!createWebConnect){
+    alert('webConnect.js failed to load. Please check the CDN connection.')
+    joinBtn.disabled = false
+    statusEl.textContent = 'webConnect.js failed to load.'
+    return
+  }
+
+  connect = createWebConnect()
 
   connect.getMyId(attribute => {
     myConnectId = attribute.connectId
@@ -780,7 +791,7 @@ joinBtn.onclick = async () => {
 
       closeRequestModal()
       openCallModal(peerId)
-      await startCall(peerId, shouldInitiate(peerId))
+      await startCall(peerId, true)
       return
     }
 
@@ -1024,7 +1035,7 @@ function showIncomingRequest(peerId, fromName){
     closeRequestModal()
     openCallModal(peerId)
 
-    await startCall(peerId, shouldInitiate(peerId))
+    await startCall(peerId, false)
   }
 
   document.getElementById('declineCallBtn').onclick = () => {
@@ -1187,18 +1198,37 @@ function shouldInitiate(peerId){
 }
 
 async function startCall(peerId, shouldCreateOffer){
-  if(peerConnections[peerId]){
-    return peerConnections[peerId]
+  let pc = peerConnections[peerId]
+
+  if(pc && pc.signalingState !== 'closed'){
+    if(shouldCreateOffer && pc.signalingState === 'stable'){
+      await createAndSendOffer(peerId, pc)
+    }
+    return pc
   }
 
-  const pc = createPeerConnection(peerId)
+  pc = createPeerConnection(peerId)
 
-  localStream.getTracks().forEach(track => {
-    pc.addTrack(track, localStream)
-  })
+  if(localStream){
+    localStream.getTracks().forEach(track => {
+      pc.addTrack(track, localStream)
+    })
+  }
 
   if(shouldCreateOffer){
-    const offer = await pc.createOffer()
+    await createAndSendOffer(peerId, pc)
+  }
+
+  return pc
+}
+
+async function createAndSendOffer(peerId, pc){
+  try{
+    const offer = await pc.createOffer({
+      offerToReceiveAudio:true,
+      offerToReceiveVideo:true
+    })
+
     await pc.setLocalDescription(offer)
 
     sendToPeer(peerId,{
@@ -1206,9 +1236,10 @@ async function startCall(peerId, shouldCreateOffer){
       room:roomName,
       offer:pc.localDescription
     })
+  }catch(error){
+    console.error('Create/send offer failed:', error)
+    statusEl.textContent = 'Could not start video offer. Check console.'
   }
-
-  return pc
 }
 
 function createPeerConnection(peerId){
@@ -1221,6 +1252,11 @@ function createPeerConnection(peerId){
 
   peerConnections[peerId] = pc
   pendingIce[peerId] = pendingIce[peerId] || []
+  remoteStreams[peerId] = remoteStreams[peerId] || new MediaStream()
+
+  if(activeCallPeer === peerId){
+    remoteVideo.srcObject = remoteStreams[peerId]
+  }
 
   pc.onicecandidate = event => {
     if(event.candidate){
@@ -1233,51 +1269,72 @@ function createPeerConnection(peerId){
   }
 
   pc.ontrack = event => {
-    let stream = event.streams && event.streams[0]
+    const stream = remoteStreams[peerId] || new MediaStream()
+    remoteStreams[peerId] = stream
 
-    if(!stream){
-      stream = remoteVideo.srcObject || new MediaStream()
+    if(!stream.getTracks().some(track => track.id === event.track.id)){
       stream.addTrack(event.track)
     }
 
-    if(stream){
-      remoteVideo.srcObject = stream
-      remoteVideo.play().catch(() => {})
-      callModal.style.display = 'flex'
-    }
+    remoteVideo.srcObject = stream
+    remoteVideo.autoplay = true
+    remoteVideo.playsInline = true
+    remoteVideo.muted = false
+    remoteVideo.play().catch(error => {
+      console.warn('Remote video autoplay blocked:', error)
+    })
+
+    callModal.style.display = 'flex'
+    statusEl.textContent = 'Receiving remote video from ' + (peerStates[peerId]?.name || peerId)
+  }
+
+  pc.onicecandidateerror = event => {
+    console.warn('ICE candidate error:', event)
   }
 
   pc.onconnectionstatechange = () => {
     const state = pc.connectionState
+    console.log('PeerConnection state', peerId, state)
 
     if(state === 'connected'){
       clearPeerDisconnectTimer(peerId)
       statusEl.textContent = 'Video connected with ' + (peerStates[peerId]?.name || peerId)
     }
 
-    if(state === 'disconnected'){
-      statusEl.textContent = 'Reconnecting video with ' + (peerStates[peerId]?.name || peerId) + '...'
-      schedulePeerDisconnect(peerId)
+    if(state === 'connecting'){
+      statusEl.textContent = 'Connecting video with ' + (peerStates[peerId]?.name || peerId) + '...'
     }
 
-    if(state === 'failed' || state === 'closed'){
-      schedulePeerDisconnect(peerId, 1200)
+    if(state === 'disconnected'){
+      statusEl.textContent = 'Video temporarily disconnected. Trying to reconnect...'
+      // Do not close the modal immediately. WebRTC often recovers from this state.
+      schedulePeerDisconnect(peerId, 20000)
+    }
+
+    if(state === 'failed'){
+      statusEl.textContent = 'Video ICE failed. Try ending and calling again, or use a TURN server for strict networks.'
+      // Keep the chat modal open so P2P text chat through webConnect can continue.
+    }
+
+    if(state === 'closed'){
+      clearPeerDisconnectTimer(peerId)
     }
   }
 
   pc.oniceconnectionstatechange = () => {
     const iceState = pc.iceConnectionState
+    console.log('ICE state', peerId, iceState)
 
     if(iceState === 'connected' || iceState === 'completed'){
       clearPeerDisconnectTimer(peerId)
     }
 
     if(iceState === 'disconnected'){
-      schedulePeerDisconnect(peerId)
+      schedulePeerDisconnect(peerId, 20000)
     }
 
-    if(iceState === 'failed' || iceState === 'closed'){
-      schedulePeerDisconnect(peerId, 1200)
+    if(iceState === 'failed'){
+      statusEl.textContent = 'ICE failed. Chat remains open; video may need TURN relay or a re-call.'
     }
   }
 
@@ -1296,27 +1353,37 @@ async function handleOffer(peerId, offer){
 
   const pc = await startCall(peerId, false)
 
-  await pc.setRemoteDescription(new RTCSessionDescription(offer))
-  await flushPendingIce(peerId)
+  try{
+    await pc.setRemoteDescription(new RTCSessionDescription(offer))
+    await flushPendingIce(peerId)
 
-  const answer = await pc.createAnswer()
-  await pc.setLocalDescription(answer)
+    const answer = await pc.createAnswer()
+    await pc.setLocalDescription(answer)
 
-  sendToPeer(peerId,{
-    type:'webrtc-answer',
-    room:roomName,
-    answer:pc.localDescription
-  })
+    sendToPeer(peerId,{
+      type:'webrtc-answer',
+      room:roomName,
+      answer:pc.localDescription
+    })
 
-  broadcastState(peerId)
+    broadcastState(peerId)
+  }catch(error){
+    console.error('Handle offer failed:', error)
+    statusEl.textContent = 'Could not answer video call. Check console.'
+  }
 }
 
 async function handleAnswer(peerId, answer){
   const pc = peerConnections[peerId]
   if(!pc) return
 
-  await pc.setRemoteDescription(new RTCSessionDescription(answer))
-  await flushPendingIce(peerId)
+  try{
+    await pc.setRemoteDescription(new RTCSessionDescription(answer))
+    await flushPendingIce(peerId)
+  }catch(error){
+    console.error('Handle answer failed:', error)
+    statusEl.textContent = 'Could not complete video answer. Check console.'
+  }
 }
 
 async function handleIce(peerId, candidate){
@@ -1373,7 +1440,7 @@ function schedulePeerDisconnect(peerId, delay = 8000){
     const iceBad = ['disconnected','failed','closed'].includes(pc.iceConnectionState)
 
     if(connectionBad || iceBad){
-      endCall(peerId, false)
+      statusEl.textContent = 'Video is still disconnected, but chat remains open. End and call again if needed.'
     }
   }, delay)
 }
