@@ -2,10 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Modern Town | User Directory</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern | User Directory</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -35,13 +35,25 @@
             padding-bottom: 1rem;
         }
         .title h1 {
-            font-family: 'Space Grotesk', monospace;
-            font-weight: 600;
+            font-weight: 700;
             font-size: 1.9rem;
             background: linear-gradient(135deg, #0b3954, #087e8b);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
+        }
+        .title p {
+            font-size: 0.85rem;
+            color: #3a6b8f;
+            margin-top: 0.2rem;
+        }
+        .badge {
+            background: #2c9cd4;
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
         }
         .dashboard {
             display: flex;
@@ -87,7 +99,7 @@
             display: block;
             margin-bottom: 5px;
         }
-        input, textarea, select {
+        input, textarea {
             width: 100%;
             padding: 12px 14px;
             border: 1px solid #cbdbe2;
@@ -226,6 +238,14 @@
             z-index: 1000;
             box-shadow: 0 6px 14px rgba(0,0,0,0.2);
         }
+        .cdn-badge {
+            background: #27ae60;
+            color: white;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            margin-left: 10px;
+        }
         @media (max-width: 780px) {
             body { padding: 1rem; }
             .dashboard { flex-direction: column; }
@@ -236,12 +256,12 @@
 <div class="container">
     <div class="brand">
         <div class="title">
-            <h1><i class="fas fa-cloud-upload-alt"></i> GistDrive Pro · Image Upload CRUD</h1>
-            <p>Upload profile pics & sprites to GitHub | Store metadata in Gist</p>
+            <h1><i class="fas fa-cloud-upload-alt"></i> GitHub CDN Drive <span class="badge">Free + CDN</span></h1>
+            <p>Upload images to GitHub • Served via jsDelivr CDN • Data stored in Gist</p>
         </div>
         <div class="gist-status">
-            <i class="fab fa-github"></i> <span id="gistLabel">Ready</span>
-            <button id="resetGistBtn" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i> reset</button>
+            <i class="fab fa-github"></i> <span id="statusText">Ready</span>
+            <button id="resetBtn" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i> Reset</button>
         </div>
     </div>
 
@@ -252,20 +272,20 @@
                 <input type="hidden" id="editId" value="">
                 <div class="form-group">
                     <label><i class="fas fa-user"></i> Full Name *</label>
-                    <input type="text" id="name" placeholder="e.g., Taylor Chen" required>
+                    <input type="text" id="name" placeholder="e.g., Sarah Johnson" required>
                 </div>
                 <div class="form-group">
                     <label><i class="fas fa-envelope"></i> Modern Email *</label>
-                    <input type="email" id="modern_email" placeholder="hello@creativelabs.com" required>
+                    <input type="email" id="modern_email" placeholder="sarah@example.com" required>
                 </div>
                 
                 <!-- Profile Picture Upload -->
                 <div class="form-group">
-                    <label><i class="fas fa-camera"></i> Profile Picture</label>
+                    <label><i class="fas fa-camera"></i> Profile Picture <span class="cdn-badge"><i class="fas fa-rocket"></i> CDN</span></label>
                     <div class="image-upload-area" onclick="document.getElementById('profilePicInput').click()">
                         <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #2c9cd4;"></i>
                         <p>Click to upload image</p>
-                        <small>PNG, JPG, GIF (max 2MB)</small>
+                        <small>PNG, JPG, GIF (max 2MB) → served via jsDelivr CDN</small>
                     </div>
                     <input type="file" id="profilePicInput" accept="image/*" style="display:none" onchange="uploadProfileImage(this.files[0])">
                     <div class="image-preview" id="profilePreview"></div>
@@ -273,24 +293,24 @@
                     <div id="profileUploadStatus" class="upload-progress"></div>
                 </div>
                 
-                <div class="row-flex">
-                    <div class="form-group">
+                <div class="row-flex" style="display: flex; gap: 12px;">
+                    <div class="form-group" style="flex:1">
                         <label><i class="fas fa-briefcase"></i> Position</label>
                         <input type="text" id="position" placeholder="Senior Designer">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" style="flex:1">
                         <label><i class="fas fa-building"></i> Department</label>
-                        <input type="text" id="department" placeholder="Engineering / Product">
+                        <input type="text" id="department" placeholder="Engineering">
                     </div>
                 </div>
                 
                 <!-- Sprite Image Upload -->
                 <div class="form-group">
-                    <label><i class="fas fa-cubes"></i> Sprite Image</label>
+                    <label><i class="fas fa-cubes"></i> Sprite Image <span class="cdn-badge"><i class="fas fa-tachometer-alt"></i> CDN</span></label>
                     <div class="image-upload-area" onclick="document.getElementById('spriteImageInput').click()">
                         <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #2c9cd4;"></i>
                         <p>Click to upload sprite/icon</p>
-                        <small>PNG, JPG, GIF, SVG (max 2MB)</small>
+                        <small>PNG, JPG, GIF, SVG (max 2MB) → CDN accelerated</small>
                     </div>
                     <input type="file" id="spriteImageInput" accept="image/*" style="display:none" onchange="uploadSpriteImage(this.files[0])">
                     <div class="image-preview" id="spritePreview"></div>
@@ -300,15 +320,15 @@
                 
                 <div style="display: flex; gap: 12px; margin-top: 16px;">
                     <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Save User</button>
-                    <button type="button" class="btn btn-secondary" id="cancelEditBtn"><i class="fas fa-times"></i> Cancel</button>
+                    <button type="button" class="btn btn-secondary" id="cancelBtn"><i class="fas fa-times"></i> Cancel</button>
                 </div>
             </form>
         </div>
 
         <div class="table-card">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
-                <h2><i class="fas fa-table-list"></i> Directory</h2>
-                <button id="refreshTableBtn" class="btn btn-sm btn-secondary"><i class="fas fa-rotate-right"></i> Refresh</button>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2><i class="fas fa-users"></i> Directory</h2>
+                <button id="refreshBtn" class="btn btn-sm btn-secondary"><i class="fas fa-rotate-right"></i> Refresh</button>
             </div>
             <div style="overflow-x: auto;">
                 <table id="userTable">
@@ -325,21 +345,25 @@
 </div>
 
 <script>
-    // Configuration
+    // ========== CONFIGURATION ==========
     let GIST_ID = null;
     let REPO_OWNER = null;
     let REPO_NAME = null;
+    let GITHUB_TOKEN = null;
     const GIST_FILENAME = "modern_user_data.json";
     
-    // GitHub configuration for image hosting
-    let GITHUB_TOKEN = null;
-    let IMAGE_REPO = null; // Will be set by user: username/repo
-    
-    // Helper: Get/set GitHub token
+    // Helper: Get GitHub Token
     function getGitHubToken() {
         let token = localStorage.getItem("github_token");
         if (!token) {
-            token = prompt("🔐 GitHub Personal Access Token Required\n\nCreate at: https://github.com/settings/tokens\nRequired scopes: 'gist', 'repo' (for image upload)\n\nEnter token:", "");
+            token = prompt(
+                "🔐 GitHub Personal Access Token Required\n\n" +
+                "Create one at: https://github.com/settings/tokens\n\n" +
+                "Required scopes:\n" +
+                "✓ gist (for storing user data)\n" +
+                "✓ repo (for uploading images)\n\n" +
+                "Enter your token:"
+            );
             if (token && token.trim()) {
                 localStorage.setItem("github_token", token.trim());
                 return token.trim();
@@ -353,8 +377,17 @@
     async function setupImageRepo() {
         let repoInfo = localStorage.getItem("image_repo");
         if (!repoInfo) {
-            const username = prompt("📁 Image Repository Setup\n\nEnter your GitHub username:", "");
-            const repo = prompt("Enter repository name for storing images (will be created if doesn't exist):\n(e.g., 'user-images')", "user-directory-images");
+            const username = prompt(
+                "📁 Image Repository Setup\n\n" +
+                "Enter your GitHub username:", 
+                ""
+            );
+            const repo = prompt(
+                "Enter repository name for storing images:\n" +
+                "(Will be created automatically if needed)\n\n" +
+                "Example: user-images",
+                "user-directory-images"
+            );
             if (username && repo) {
                 REPO_OWNER = username;
                 REPO_NAME = repo;
@@ -363,17 +396,24 @@
                 // Try to create repo if it doesn't exist
                 try {
                     await githubFetch(`/repos/${username}/${repo}`, { method: 'GET' });
+                    showToast(`✅ Using existing repository: ${repo}`);
                 } catch(e) {
                     if (confirm(`Repository "${repo}" doesn't exist. Create it now?`)) {
                         await githubFetch(`/user/repos`, {
                             method: 'POST',
-                            body: JSON.stringify({ name: repo, private: false, auto_init: false })
+                            body: JSON.stringify({ 
+                                name: repo, 
+                                private: false, 
+                                auto_init: false,
+                                description: "Images for User Directory CDN"
+                            })
                         });
                         showToast(`✅ Created repository: ${repo}`);
                     }
                 }
                 return { owner: username, repo: repo };
             }
+            return null;
         }
         const parsed = JSON.parse(repoInfo);
         REPO_OWNER = parsed.owner;
@@ -381,6 +421,7 @@
         return { owner: REPO_OWNER, repo: REPO_NAME };
     }
     
+    // GitHub API wrapper
     async function githubFetch(endpoint, options = {}) {
         const token = getGitHubToken();
         if (!token) throw new Error("No GitHub token");
@@ -397,13 +438,30 @@
         return response.json();
     }
     
-    // Upload image to GitHub repository
-    async function uploadImageToGitHub(file, path) {
+    // Convert image to CDN URL (GitHub raw → jsDelivr CDN)
+    function getCDNUrl(githubRawUrl) {
+        // Convert: https://raw.githubusercontent.com/user/repo/branch/path
+        // To:      https://cdn.jsdelivr.net/gh/user/repo/path
+        if (!githubRawUrl) return null;
+        const match = githubRawUrl.match(/raw\.githubusercontent\.com\/([^\/]+)\/([^\/]+)\/([^\/]+)\/(.+)/);
+        if (match) {
+            const [, owner, repo, branch, path] = match;
+            return `https://cdn.jsdelivr.net/gh/${owner}/${repo}/${path}`;
+        }
+        return githubRawUrl;
+    }
+    
+    // Upload image to GitHub and return CDN URL
+    async function uploadImageToGitHub(file, folder) {
         const reader = new FileReader();
         return new Promise((resolve, reject) => {
             reader.onload = async () => {
                 const base64Content = reader.result.split(',')[1];
-                const commitMessage = `Upload ${path}`;
+                const timestamp = Date.now();
+                const random = Math.random().toString(36).substr(2, 8);
+                const extension = file.name.split('.').pop();
+                const filename = `${timestamp}_${random}.${extension}`;
+                const path = `${folder}/${filename}`;
                 
                 try {
                     // Check if file exists
@@ -413,18 +471,20 @@
                         if (existing.sha) sha = existing.sha;
                     } catch(e) {}
                     
-                    const response = await githubFetch(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+                    // Upload to GitHub
+                    await githubFetch(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
                         method: 'PUT',
                         body: JSON.stringify({
-                            message: commitMessage,
+                            message: `Upload ${filename}`,
                             content: base64Content,
                             sha: sha,
                             branch: 'main'
                         })
                     });
                     
-                    const imageUrl = response.content.download_url;
-                    resolve(imageUrl);
+                    // Generate CDN URL
+                    const cdnUrl = `https://cdn.jsdelivr.net/gh/${REPO_OWNER}/${REPO_NAME}/${path}`;
+                    resolve(cdnUrl);
                 } catch(error) {
                     reject(error);
                 }
@@ -435,31 +495,26 @@
     }
     
     // Upload handlers
-    let currentProfileFile = null;
-    let currentSpriteFile = null;
-    
     window.uploadProfileImage = async (file) => {
         if (!file) return;
         if (!REPO_OWNER) await setupImageRepo();
+        if (!REPO_OWNER) {
+            showToast("Please set up image repository first", true);
+            return;
+        }
         
         const statusDiv = document.getElementById('profileUploadStatus');
-        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading to GitHub + CDN...';
         
         try {
-            const extension = file.name.split('.').pop();
-            const filename = `profile_${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
-            const path = `profile_pics/${filename}`;
-            const imageUrl = await uploadImageToGitHub(file, path);
-            
-            document.getElementById('profile_pic').value = imageUrl;
-            document.getElementById('profilePreview').innerHTML = `<img src="${imageUrl}" class="preview-img" alt="Profile">`;
-            statusDiv.innerHTML = '<i class="fas fa-check-circle" style="color:#27ae60;"></i> Uploaded!';
-            currentProfileFile = imageUrl;
+            const cdnUrl = await uploadImageToGitHub(file, 'profile_pics');
+            document.getElementById('profile_pic').value = cdnUrl;
+            document.getElementById('profilePreview').innerHTML = `<img src="${cdnUrl}" class="preview-img" alt="Profile"><small style="color:#27ae60;">✓ CDN ready</small>`;
+            statusDiv.innerHTML = '<i class="fas fa-check-circle" style="color:#27ae60;"></i> Uploaded & CDN active!';
             setTimeout(() => statusDiv.innerHTML = '', 3000);
-            showToast('✅ Profile picture uploaded!');
+            showToast('✅ Profile picture uploaded to CDN!');
         } catch(error) {
             statusDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="color:#e74c3c;"></i> Upload failed';
-            console.error(error);
             showToast('❌ Upload failed: ' + error.message, true);
         }
     };
@@ -467,30 +522,28 @@
     window.uploadSpriteImage = async (file) => {
         if (!file) return;
         if (!REPO_OWNER) await setupImageRepo();
+        if (!REPO_OWNER) {
+            showToast("Please set up image repository first", true);
+            return;
+        }
         
         const statusDiv = document.getElementById('spriteUploadStatus');
-        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading sprite to CDN...';
         
         try {
-            const extension = file.name.split('.').pop();
-            const filename = `sprite_${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
-            const path = `sprites/${filename}`;
-            const imageUrl = await uploadImageToGitHub(file, path);
-            
-            document.getElementById('sprite_image').value = imageUrl;
-            document.getElementById('spritePreview').innerHTML = `<img src="${imageUrl}" class="preview-img" alt="Sprite">`;
-            statusDiv.innerHTML = '<i class="fas fa-check-circle" style="color:#27ae60;"></i> Uploaded!';
-            currentSpriteFile = imageUrl;
+            const cdnUrl = await uploadImageToGitHub(file, 'sprites');
+            document.getElementById('sprite_image').value = cdnUrl;
+            document.getElementById('spritePreview').innerHTML = `<img src="${cdnUrl}" class="preview-img" alt="Sprite"><small style="color:#27ae60;">✓ CDN ready</small>`;
+            statusDiv.innerHTML = '<i class="fas fa-check-circle" style="color:#27ae60;"></i> Uploaded & CDN active!';
             setTimeout(() => statusDiv.innerHTML = '', 3000);
-            showToast('✅ Sprite image uploaded!');
+            showToast('✅ Sprite image uploaded to CDN!');
         } catch(error) {
             statusDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="color:#e74c3c;"></i> Upload failed';
-            console.error(error);
             showToast('❌ Upload failed: ' + error.message, true);
         }
     };
     
-    // Gist operations (same as before)
+    // ========== GIST OPERATIONS ==========
     async function getOrCreateGist() {
         const storedGistId = localStorage.getItem("gist_directory_id");
         if (storedGistId) {
@@ -507,7 +560,7 @@
         const newGist = await githubFetch(`/gists`, {
             method: "POST",
             body: JSON.stringify({
-                description: "User Directory with Image URLs",
+                description: "User Directory with CDN Images",
                 public: false,
                 files: { [GIST_FILENAME]: { content: JSON.stringify(emptyStructure, null, 2) } }
             })
@@ -517,7 +570,7 @@
         return GIST_ID;
     }
     
-    async function loadUsersFromGist() {
+    async function loadUsers() {
         if (!GIST_ID) await getOrCreateGist();
         const gist = await githubFetch(`/gists/${GIST_ID}`);
         const file = gist.files[GIST_FILENAME];
@@ -527,7 +580,7 @@
         return usersArray.map(u => ({ ...u, id: u.id || Date.now() + "_" + Math.random() }));
     }
     
-    async function saveUsersToGist(usersArray) {
+    async function saveUsers(usersArray) {
         if (!GIST_ID) await getOrCreateGist();
         const dataToStore = { users: usersArray };
         await githubFetch(`/gists/${GIST_ID}`, {
@@ -537,13 +590,14 @@
         showToast("✅ Data synced to Gist");
     }
     
-    // UI Logic
+    // ========== UI RENDERING ==========
     let currentUsers = [];
     
     async function refreshTable() {
         try {
-            currentUsers = await loadUsersFromGist();
+            currentUsers = await loadUsers();
             renderTable(currentUsers);
+            document.getElementById('statusText').innerHTML = `<i class="fab fa-github"></i> Gist: ${GIST_ID.substring(0,8)} | CDN Active`;
         } catch(err) {
             document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" class="empty-row">Error: ${err.message}</td></tr>`;
         }
@@ -552,7 +606,7 @@
     function renderTable(users) {
         const tbody = document.getElementById("tableBody");
         if (!users.length) {
-            tbody.innerHTML = `<tr><td colspan="7" class="empty-row">No users. Add one!</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-row">📭 No users. Add one or click Reset!</td></tr>`;
             return;
         }
         tbody.innerHTML = users.map(user => `
@@ -579,9 +633,9 @@
         
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', async () => {
-                if (confirm('Delete user?')) {
+                if (confirm('Delete this user?')) {
                     currentUsers = currentUsers.filter(u => u.id !== btn.dataset.id);
-                    await saveUsersToGist(currentUsers);
+                    await saveUsers(currentUsers);
                     await refreshTable();
                     clearForm();
                 }
@@ -597,8 +651,8 @@
         document.getElementById('position').value = user.position || '';
         document.getElementById('department').value = user.department || '';
         document.getElementById('sprite_image').value = user.sprite_image || '';
-        if (user.profile_pic) document.getElementById('profilePreview').innerHTML = `<img src="${user.profile_pic}" class="preview-img">`;
-        if (user.sprite_image) document.getElementById('spritePreview').innerHTML = `<img src="${user.sprite_image}" class="preview-img">`;
+        if (user.profile_pic) document.getElementById('profilePreview').innerHTML = `<img src="${user.profile_pic}" class="preview-img"><small>CDN active</small>`;
+        if (user.sprite_image) document.getElementById('spritePreview').innerHTML = `<img src="${user.sprite_image}" class="preview-img"><small>CDN active</small>`;
         document.getElementById('formTitle').innerHTML = '<i class="fas fa-user-edit"></i> Edit User';
         document.getElementById('submitBtn').innerHTML = '<i class="fas fa-pen"></i> Update User';
     }
@@ -627,7 +681,7 @@
         };
         
         if (!userData.name || !userData.modern_email) {
-            showToast('Name and email required', true);
+            showToast('Name and email are required', true);
             return;
         }
         
@@ -639,13 +693,34 @@
             currentUsers.push(userData);
         }
         
-        await saveUsersToGist(currentUsers);
+        await saveUsers(currentUsers);
         await refreshTable();
         clearForm();
         showToast(editId ? 'User updated' : 'User added');
     }
     
-    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    async function resetToSample() {
+        if (!confirm('Reset to sample data? This will load the 6 sample users from modern_user_data.json')) return;
+        try {
+            const response = await fetch('./modern_user_data.json');
+            if (!response.ok) throw new Error('modern_user_data.json not found');
+            const sampleData = await response.json();
+            const sampleUsers = (sampleData.users || []).map(u => ({ 
+                ...u, 
+                id: Date.now() + "_" + Math.random().toString(36)
+            }));
+            await saveUsers(sampleUsers);
+            await refreshTable();
+            showToast('Sample data loaded!');
+        } catch(err) {
+            showToast('Could not load modern_user_data.json', true);
+        }
+    }
+    
+    function escapeHtml(str) { 
+        if(!str) return ''; 
+        return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); 
+    }
     
     let toastTimeout;
     function showToast(msg, isError = false) {
@@ -660,7 +735,7 @@
         toastTimeout = setTimeout(() => div.remove(), 3000);
     }
     
-    // Initialize
+    // ========== INITIALIZATION ==========
     window.addEventListener("DOMContentLoaded", async () => {
         GITHUB_TOKEN = getGitHubToken();
         if (!GITHUB_TOKEN) return;
@@ -670,17 +745,9 @@
         await refreshTable();
         
         document.getElementById('userForm').addEventListener('submit', handleSubmit);
-        document.getElementById('cancelEditBtn').addEventListener('click', clearForm);
-        document.getElementById('refreshTableBtn').addEventListener('click', refreshTable);
-        document.getElementById('resetGistBtn').addEventListener('click', async () => {
-            if (confirm('Reset to sample data?')) {
-                const sampleResponse = await fetch('./modern_user_data.json');
-                const sampleData = await sampleResponse.json();
-                const sampleUsers = (sampleData.users || []).map(u => ({ ...u, id: Date.now() + "_" + Math.random() }));
-                await saveUsersToGist(sampleUsers);
-                await refreshTable();
-            }
-        });
+        document.getElementById('cancelBtn').addEventListener('click', clearForm);
+        document.getElementById('refreshBtn').addEventListener('click', refreshTable);
+        document.getElementById('resetBtn').addEventListener('click', resetToSample);
     });
 </script>
 </body>
