@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Modern Town | User Directory Manager</title>
+    <title>Modern Town | User Directory</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -42,28 +42,7 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            letter-spacing: -0.3px;
         }
-        .title p {
-            font-size: 0.85rem;
-            color: #3a6b8f;
-            margin-top: 0.2rem;
-        }
-        .gist-status {
-            background: white;
-            padding: 0.4rem 1rem;
-            border-radius: 60px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .gist-status i {
-            font-size: 1rem;
-        }
-
         .dashboard {
             display: flex;
             flex-wrap: wrap;
@@ -77,7 +56,6 @@
             border-radius: 32px;
             box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
             padding: 1.8rem;
-            border: 1px solid rgba(255,255,255,0.5);
         }
         .table-card {
             flex: 2.5;
@@ -101,7 +79,7 @@
             margin-bottom: 1.2rem;
         }
         label {
-            font-weight: 500;
+            font-weight: 600;
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -109,7 +87,7 @@
             display: block;
             margin-bottom: 5px;
         }
-        input, textarea {
+        input, textarea, select {
             width: 100%;
             padding: 12px 14px;
             border: 1px solid #cbdbe2;
@@ -124,13 +102,32 @@
             border-color: #2c9cd4;
             box-shadow: 0 0 0 3px rgba(44,156,212,0.2);
         }
-        .row-flex {
+        .image-upload-area {
+            border: 2px dashed #cbdbe2;
+            border-radius: 20px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #f8fafc;
+        }
+        .image-upload-area:hover {
+            border-color: #2c9cd4;
+            background: #f0f7fc;
+        }
+        .image-preview {
+            margin-top: 10px;
             display: flex;
-            gap: 12px;
+            gap: 10px;
+            align-items: center;
             flex-wrap: wrap;
         }
-        .row-flex .form-group {
-            flex: 1;
+        .preview-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+            border: 2px solid #e2edf4;
         }
         .btn {
             border: none;
@@ -157,13 +154,6 @@
         }
         .btn-secondary:hover {
             background: #cbdbe2;
-        }
-        .btn-danger {
-            background: #c44536;
-            color: white;
-        }
-        .btn-danger:hover {
-            background: #a33426;
         }
         .btn-sm {
             padding: 6px 14px;
@@ -219,10 +209,10 @@
             border-radius: 12px;
             background-color: #f5f7fb;
         }
-        .empty-row {
-            text-align: center;
-            padding: 40px;
-            color: #6b8ba3;
+        .upload-progress {
+            font-size: 0.75rem;
+            color: #2c9cd4;
+            margin-top: 5px;
         }
         .toast-msg {
             position: fixed;
@@ -235,33 +225,10 @@
             font-weight: 500;
             z-index: 1000;
             box-shadow: 0 6px 14px rgba(0,0,0,0.2);
-            transition: 0.2s;
         }
         @media (max-width: 780px) {
             body { padding: 1rem; }
             .dashboard { flex-direction: column; }
-        }
-        .btn-reset-gist {
-            background: #f0eef2;
-            margin-left: 8px;
-        }
-        .spinner {
-            display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid white;
-            border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 0.6s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .gist-link {
-            text-decoration: none;
-            color: #1a5d7a;
-            font-weight: 500;
-        }
-        .gist-link:hover {
-            text-decoration: underline;
         }
     </style>
 </head>
@@ -269,12 +236,12 @@
 <div class="container">
     <div class="brand">
         <div class="title">
-            <h1><i class="fas fa-database" style="color:#2c9cd4;"></i> GistDrive · User Directory</h1>
-            <p>Full CRUD with GitHub Gists | modern_user_data.json storage</p>
+            <h1><i class="fas fa-cloud-upload-alt"></i> GistDrive Pro · Image Upload CRUD</h1>
+            <p>Upload profile pics & sprites to GitHub | Store metadata in Gist</p>
         </div>
         <div class="gist-status">
-            <i class="fab fa-github"></i> <span id="gistLabel">⚡ Gist storage</span>
-            <button id="resetGistBtn" class="btn btn-sm btn-reset-gist" title="Reset to sample data"><i class="fas fa-sync-alt"></i> reset</button>
+            <i class="fab fa-github"></i> <span id="gistLabel">Ready</span>
+            <button id="resetGistBtn" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i> reset</button>
         </div>
     </div>
 
@@ -291,10 +258,21 @@
                     <label><i class="fas fa-envelope"></i> Modern Email *</label>
                     <input type="email" id="modern_email" placeholder="hello@creativelabs.com" required>
                 </div>
+                
+                <!-- Profile Picture Upload -->
                 <div class="form-group">
-                    <label><i class="fas fa-image"></i> Profile Picture URL</label>
-                    <input type="url" id="profile_pic" placeholder="https://randomuser.me/api/portraits/women/68.jpg">
+                    <label><i class="fas fa-camera"></i> Profile Picture</label>
+                    <div class="image-upload-area" onclick="document.getElementById('profilePicInput').click()">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #2c9cd4;"></i>
+                        <p>Click to upload image</p>
+                        <small>PNG, JPG, GIF (max 2MB)</small>
+                    </div>
+                    <input type="file" id="profilePicInput" accept="image/*" style="display:none" onchange="uploadProfileImage(this.files[0])">
+                    <div class="image-preview" id="profilePreview"></div>
+                    <input type="hidden" id="profile_pic" value="">
+                    <div id="profileUploadStatus" class="upload-progress"></div>
                 </div>
+                
                 <div class="row-flex">
                     <div class="form-group">
                         <label><i class="fas fa-briefcase"></i> Position</label>
@@ -305,11 +283,21 @@
                         <input type="text" id="department" placeholder="Engineering / Product">
                     </div>
                 </div>
+                
+                <!-- Sprite Image Upload -->
                 <div class="form-group">
-                    <label><i class="fas fa-cubes"></i> Sprite Image (URL)</label>
-                    <input type="text" id="sprite_image" placeholder="https://cdn-icons-png.flaticon.com/512/1995/1995572.png">
-                    <small style="color:#54809b;">48x48 preview in table</small>
+                    <label><i class="fas fa-cubes"></i> Sprite Image</label>
+                    <div class="image-upload-area" onclick="document.getElementById('spriteImageInput').click()">
+                        <i class="fas fa-cloud-upload-alt" style="font-size: 2rem; color: #2c9cd4;"></i>
+                        <p>Click to upload sprite/icon</p>
+                        <small>PNG, JPG, GIF, SVG (max 2MB)</small>
+                    </div>
+                    <input type="file" id="spriteImageInput" accept="image/*" style="display:none" onchange="uploadSpriteImage(this.files[0])">
+                    <div class="image-preview" id="spritePreview"></div>
+                    <input type="hidden" id="sprite_image" value="">
+                    <div id="spriteUploadStatus" class="upload-progress"></div>
                 </div>
+                
                 <div style="display: flex; gap: 12px; margin-top: 16px;">
                     <button type="submit" class="btn btn-primary" id="submitBtn"><i class="fas fa-save"></i> Save User</button>
                     <button type="button" class="btn btn-secondary" id="cancelEditBtn"><i class="fas fa-times"></i> Cancel</button>
@@ -328,7 +316,7 @@
                         <tr><th>Avatar</th><th>Name</th><th>Email</th><th>Position</th><th>Dept</th><th>Sprite</th><th>Actions</th></tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="7" class="empty-row">Loading data from Gist...</td></tr>
+                        <tr><td colspan="7" class="empty-row">Loading...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -337,265 +325,328 @@
 </div>
 
 <script>
-    // GIST CONFIGURATION
+    // Configuration
     let GIST_ID = null;
+    let REPO_OWNER = null;
+    let REPO_NAME = null;
     const GIST_FILENAME = "modern_user_data.json";
     
-    // Helper functions
+    // GitHub configuration for image hosting
+    let GITHUB_TOKEN = null;
+    let IMAGE_REPO = null; // Will be set by user: username/repo
+    
+    // Helper: Get/set GitHub token
     function getGitHubToken() {
-        let token = localStorage.getItem("github_gist_token");
+        let token = localStorage.getItem("github_token");
         if (!token) {
-            token = prompt("🔐 GitHub Personal Access Token Required\n\nCreate a token at: https://github.com/settings/tokens\nRequired scope: 'gist'\n\nEnter your token:", "");
+            token = prompt("🔐 GitHub Personal Access Token Required\n\nCreate at: https://github.com/settings/tokens\nRequired scopes: 'gist', 'repo' (for image upload)\n\nEnter token:", "");
             if (token && token.trim()) {
-                localStorage.setItem("github_gist_token", token.trim());
+                localStorage.setItem("github_token", token.trim());
                 return token.trim();
-            } else {
-                alert("⚠️ A GitHub token with 'gist' scope is required to use this application.");
-                return null;
             }
+            return null;
         }
         return token;
     }
-
+    
+    // Setup image repository
+    async function setupImageRepo() {
+        let repoInfo = localStorage.getItem("image_repo");
+        if (!repoInfo) {
+            const username = prompt("📁 Image Repository Setup\n\nEnter your GitHub username:", "");
+            const repo = prompt("Enter repository name for storing images (will be created if doesn't exist):\n(e.g., 'user-images')", "user-directory-images");
+            if (username && repo) {
+                REPO_OWNER = username;
+                REPO_NAME = repo;
+                localStorage.setItem("image_repo", JSON.stringify({ owner: username, repo: repo }));
+                
+                // Try to create repo if it doesn't exist
+                try {
+                    await githubFetch(`/repos/${username}/${repo}`, { method: 'GET' });
+                } catch(e) {
+                    if (confirm(`Repository "${repo}" doesn't exist. Create it now?`)) {
+                        await githubFetch(`/user/repos`, {
+                            method: 'POST',
+                            body: JSON.stringify({ name: repo, private: false, auto_init: false })
+                        });
+                        showToast(`✅ Created repository: ${repo}`);
+                    }
+                }
+                return { owner: username, repo: repo };
+            }
+        }
+        const parsed = JSON.parse(repoInfo);
+        REPO_OWNER = parsed.owner;
+        REPO_NAME = parsed.repo;
+        return { owner: REPO_OWNER, repo: REPO_NAME };
+    }
+    
     async function githubFetch(endpoint, options = {}) {
         const token = getGitHubToken();
-        if (!token) throw new Error("No GitHub token provided");
+        if (!token) throw new Error("No GitHub token");
         const headers = {
             "Authorization": `token ${token}`,
             "Accept": "application/vnd.github.v3+json",
             "Content-Type": "application/json",
         };
         const response = await fetch(`https://api.github.com${endpoint}`, { ...options, headers });
-        if (!response.ok) {
+        if (!response.ok && response.status !== 404) {
             const errText = await response.text();
-            throw new Error(`GitHub API error ${response.status}: ${errText.substring(0, 150)}`);
+            throw new Error(`API error ${response.status}: ${errText.substring(0, 150)}`);
         }
         return response.json();
     }
-
+    
+    // Upload image to GitHub repository
+    async function uploadImageToGitHub(file, path) {
+        const reader = new FileReader();
+        return new Promise((resolve, reject) => {
+            reader.onload = async () => {
+                const base64Content = reader.result.split(',')[1];
+                const commitMessage = `Upload ${path}`;
+                
+                try {
+                    // Check if file exists
+                    let sha = null;
+                    try {
+                        const existing = await githubFetch(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`);
+                        if (existing.sha) sha = existing.sha;
+                    } catch(e) {}
+                    
+                    const response = await githubFetch(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
+                        method: 'PUT',
+                        body: JSON.stringify({
+                            message: commitMessage,
+                            content: base64Content,
+                            sha: sha,
+                            branch: 'main'
+                        })
+                    });
+                    
+                    const imageUrl = response.content.download_url;
+                    resolve(imageUrl);
+                } catch(error) {
+                    reject(error);
+                }
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
+    }
+    
+    // Upload handlers
+    let currentProfileFile = null;
+    let currentSpriteFile = null;
+    
+    window.uploadProfileImage = async (file) => {
+        if (!file) return;
+        if (!REPO_OWNER) await setupImageRepo();
+        
+        const statusDiv = document.getElementById('profileUploadStatus');
+        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        
+        try {
+            const extension = file.name.split('.').pop();
+            const filename = `profile_${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
+            const path = `profile_pics/${filename}`;
+            const imageUrl = await uploadImageToGitHub(file, path);
+            
+            document.getElementById('profile_pic').value = imageUrl;
+            document.getElementById('profilePreview').innerHTML = `<img src="${imageUrl}" class="preview-img" alt="Profile">`;
+            statusDiv.innerHTML = '<i class="fas fa-check-circle" style="color:#27ae60;"></i> Uploaded!';
+            currentProfileFile = imageUrl;
+            setTimeout(() => statusDiv.innerHTML = '', 3000);
+            showToast('✅ Profile picture uploaded!');
+        } catch(error) {
+            statusDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="color:#e74c3c;"></i> Upload failed';
+            console.error(error);
+            showToast('❌ Upload failed: ' + error.message, true);
+        }
+    };
+    
+    window.uploadSpriteImage = async (file) => {
+        if (!file) return;
+        if (!REPO_OWNER) await setupImageRepo();
+        
+        const statusDiv = document.getElementById('spriteUploadStatus');
+        statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+        
+        try {
+            const extension = file.name.split('.').pop();
+            const filename = `sprite_${Date.now()}_${Math.random().toString(36).substr(2, 8)}.${extension}`;
+            const path = `sprites/${filename}`;
+            const imageUrl = await uploadImageToGitHub(file, path);
+            
+            document.getElementById('sprite_image').value = imageUrl;
+            document.getElementById('spritePreview').innerHTML = `<img src="${imageUrl}" class="preview-img" alt="Sprite">`;
+            statusDiv.innerHTML = '<i class="fas fa-check-circle" style="color:#27ae60;"></i> Uploaded!';
+            currentSpriteFile = imageUrl;
+            setTimeout(() => statusDiv.innerHTML = '', 3000);
+            showToast('✅ Sprite image uploaded!');
+        } catch(error) {
+            statusDiv.innerHTML = '<i class="fas fa-exclamation-circle" style="color:#e74c3c;"></i> Upload failed';
+            console.error(error);
+            showToast('❌ Upload failed: ' + error.message, true);
+        }
+    };
+    
+    // Gist operations (same as before)
     async function getOrCreateGist() {
         const storedGistId = localStorage.getItem("gist_directory_id");
         if (storedGistId) {
             try {
                 const gist = await githubFetch(`/gists/${storedGistId}`);
-                if (gist && gist.id && gist.files[GIST_FILENAME]) {
+                if (gist && gist.id) {
                     GIST_ID = storedGistId;
                     return GIST_ID;
                 }
-            } catch(e) { 
-                console.warn("Stored gist invalid, creating new one", e);
-                localStorage.removeItem("gist_directory_id"); 
-            }
+            } catch(e) { localStorage.removeItem("gist_directory_id"); }
         }
         
-        // Create new gist with minimal structure (no sample data in HTML)
         const emptyStructure = { users: [] };
-        const defaultContent = JSON.stringify(emptyStructure, null, 2);
-        const files = { [GIST_FILENAME]: { content: defaultContent } };
-        const newGist = await githubFetch(`/gists`, { 
-            method: "POST", 
-            body: JSON.stringify({ 
-                description: "User Directory CRUD - modern_user_data.json", 
-                public: false, 
-                files 
-            }) 
+        const newGist = await githubFetch(`/gists`, {
+            method: "POST",
+            body: JSON.stringify({
+                description: "User Directory with Image URLs",
+                public: false,
+                files: { [GIST_FILENAME]: { content: JSON.stringify(emptyStructure, null, 2) } }
+            })
         });
         GIST_ID = newGist.id;
         localStorage.setItem("gist_directory_id", GIST_ID);
         return GIST_ID;
     }
-
+    
     async function loadUsersFromGist() {
         if (!GIST_ID) await getOrCreateGist();
-        try {
-            const gist = await githubFetch(`/gists/${GIST_ID}`);
-            const file = gist.files[GIST_FILENAME];
-            if (!file || !file.content) return [];
-            const data = JSON.parse(file.content);
-            // Support both direct array and {users: []} structure
-            let usersArray = Array.isArray(data) ? data : (data.users || []);
-            return usersArray.map(u => ({ 
-                ...u, 
-                id: u.id || crypto.randomUUID?.() || Date.now() + "_" + Math.random().toString(36)
-            }));
-        } catch(e) {
-            console.error("Load failed", e);
-            return [];
-        }
+        const gist = await githubFetch(`/gists/${GIST_ID}`);
+        const file = gist.files[GIST_FILENAME];
+        if (!file || !file.content) return [];
+        const data = JSON.parse(file.content);
+        let usersArray = Array.isArray(data) ? data : (data.users || []);
+        return usersArray.map(u => ({ ...u, id: u.id || Date.now() + "_" + Math.random() }));
     }
-
+    
     async function saveUsersToGist(usersArray) {
         if (!GIST_ID) await getOrCreateGist();
-        // Store as object with users property for clarity
         const dataToStore = { users: usersArray };
-        const content = JSON.stringify(dataToStore, null, 2);
-        const patchData = { files: { [GIST_FILENAME]: { content } } };
-        await githubFetch(`/gists/${GIST_ID}`, { method: "PATCH", body: JSON.stringify(patchData) });
-        showToast("✅ Data synced to GitHub Gist");
+        await githubFetch(`/gists/${GIST_ID}`, {
+            method: "PATCH",
+            body: JSON.stringify({ files: { [GIST_FILENAME]: { content: JSON.stringify(dataToStore, null, 2) } } })
+        });
+        showToast("✅ Data synced to Gist");
     }
-
-    async function resetToSample() {
-        if (!confirm("⚠️ RESET will load sample data from modern_user_data.json file.\nContinue?")) return;
-        
-        // Fetch the sample JSON file from the same directory
-        try {
-            const response = await fetch('./modern_user_data.json');
-            if (!response.ok) throw new Error('Could not load modern_user_data.json');
-            const sampleData = await response.json();
-            let sampleUsers = sampleData.users || [];
-            
-            // Ensure all users have IDs
-            sampleUsers = sampleUsers.map(u => ({ 
-                ...u, 
-                id: u.id || crypto.randomUUID?.() || Date.now() + "_" + Math.random().toString(36)
-            }));
-            
-            await saveUsersToGist(sampleUsers);
-            await refreshTable();
-            clearForm();
-            showToast("🔥 Loaded sample data from modern_user_data.json");
-        } catch (err) {
-            console.error(err);
-            showToast("❌ Could not load modern_user_data.json. Make sure the file exists in the same directory.", true);
-        }
-    }
-
-    // UI State
+    
+    // UI Logic
     let currentUsers = [];
     
     async function refreshTable() {
         try {
             currentUsers = await loadUsersFromGist();
             renderTable(currentUsers);
-            updateGistDisplay();
         } catch(err) {
-            console.error(err);
-            document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Error loading: ${err.message}. Check token & network.</td></tr>`;
-            showToast("❌ Failed to load gist data", true);
+            document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" class="empty-row">Error: ${err.message}</td></tr>`;
         }
     }
-
-    function updateGistDisplay() {
-        const statusDiv = document.querySelector(".gist-status");
-        const existingLink = statusDiv.querySelector('.gist-link');
-        if (existingLink) existingLink.remove();
-        
-        if (GIST_ID) {
-            const gistLink = document.createElement("a");
-            gistLink.href = `https://gist.github.com/${GIST_ID}`;
-            gistLink.target = "_blank";
-            gistLink.className = "gist-link";
-            gistLink.innerHTML = `<i class="fab fa-github"></i> gist/${GIST_ID.substring(0,8)}`;
-            statusDiv.appendChild(gistLink);
-        }
-    }
-
+    
     function renderTable(users) {
         const tbody = document.getElementById("tableBody");
         if (!users.length) {
-            tbody.innerHTML = `<tr><td colspan="7" class="empty-row">📭 No users found. Click "Reset" to load sample data or add new users.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-row">No users. Add one!</td></tr>`;
             return;
         }
         tbody.innerHTML = users.map(user => `
-            <tr data-id="${user.id}">
-                <td><img class="avatar-preview" src="${escapeHtml(user.profile_pic || 'https://via.placeholder.com/42?text=?' )}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.name||'U')}&background=9aa9bb&color=fff'"></td>
-                <td><strong>${escapeHtml(user.name || '—')}</strong></td>
-                <td>${escapeHtml(user.modern_email || '')}</td>
+            <tr>
+                <td><img class="avatar-preview" src="${escapeHtml(user.profile_pic || 'https://via.placeholder.com/42')}" onerror="this.src='https://via.placeholder.com/42'"></td>
+                <td><strong>${escapeHtml(user.name)}</strong></td>
+                <td>${escapeHtml(user.modern_email)}</td>
                 <td>${escapeHtml(user.position || '—')}</td>
                 <td>${escapeHtml(user.department || '—')}</td>
-                <td><div class="sprite-preview" style="background-image: url('${escapeHtml(user.sprite_image || '')}'); background-size: contain; background-repeat: no-repeat; background-position:center;"></div></td>
+                <td><div class="sprite-preview" style="background-image: url('${escapeHtml(user.sprite_image || '')}'); background-size: contain;"></div></td>
                 <td class="action-icons">
-                    <button class="edit-btn" data-id="${user.id}" title="Edit"><i class="fas fa-pen"></i></button>
-                    <button class="delete-btn" data-id="${user.id}" title="Delete"><i class="fas fa-trash-alt"></i></button>
+                    <button class="edit-btn" data-id="${user.id}"><i class="fas fa-pen"></i></button>
+                    <button class="delete-btn" data-id="${user.id}"><i class="fas fa-trash-alt"></i></button>
                 </td>
             </tr>
         `).join('');
         
         document.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const id = btn.getAttribute('data-id');
-                const user = currentUsers.find(u => u.id === id);
-                if (user) populateFormForEdit(user);
+            btn.addEventListener('click', () => {
+                const user = currentUsers.find(u => u.id === btn.dataset.id);
+                if (user) populateForm(user);
             });
         });
         
         document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const id = btn.getAttribute('data-id');
-                if (confirm("Delete this user permanently?")) {
-                    const updated = currentUsers.filter(u => u.id !== id);
-                    await saveUsersToGist(updated);
+            btn.addEventListener('click', async () => {
+                if (confirm('Delete user?')) {
+                    currentUsers = currentUsers.filter(u => u.id !== btn.dataset.id);
+                    await saveUsersToGist(currentUsers);
                     await refreshTable();
                     clearForm();
-                    showToast("🗑️ User deleted");
                 }
             });
         });
     }
-
-    function populateFormForEdit(user) {
-        document.getElementById("editId").value = user.id;
-        document.getElementById("name").value = user.name || "";
-        document.getElementById("modern_email").value = user.modern_email || "";
-        document.getElementById("profile_pic").value = user.profile_pic || "";
-        document.getElementById("position").value = user.position || "";
-        document.getElementById("department").value = user.department || "";
-        document.getElementById("sprite_image").value = user.sprite_image || "";
-        document.getElementById("formTitle").innerHTML = '<i class="fas fa-user-edit"></i> Edit User';
-        document.getElementById("submitBtn").innerHTML = '<i class="fas fa-pen"></i> Update User';
+    
+    function populateForm(user) {
+        document.getElementById('editId').value = user.id;
+        document.getElementById('name').value = user.name;
+        document.getElementById('modern_email').value = user.modern_email;
+        document.getElementById('profile_pic').value = user.profile_pic || '';
+        document.getElementById('position').value = user.position || '';
+        document.getElementById('department').value = user.department || '';
+        document.getElementById('sprite_image').value = user.sprite_image || '';
+        if (user.profile_pic) document.getElementById('profilePreview').innerHTML = `<img src="${user.profile_pic}" class="preview-img">`;
+        if (user.sprite_image) document.getElementById('spritePreview').innerHTML = `<img src="${user.sprite_image}" class="preview-img">`;
+        document.getElementById('formTitle').innerHTML = '<i class="fas fa-user-edit"></i> Edit User';
+        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-pen"></i> Update User';
     }
-
+    
     function clearForm() {
-        document.getElementById("editId").value = "";
-        document.getElementById("userForm").reset();
-        document.getElementById("formTitle").innerHTML = '<i class="fas fa-user-plus"></i> Add New User';
-        document.getElementById("submitBtn").innerHTML = '<i class="fas fa-save"></i> Save User';
+        document.getElementById('userForm').reset();
+        document.getElementById('editId').value = '';
+        document.getElementById('profile_pic').value = '';
+        document.getElementById('sprite_image').value = '';
+        document.getElementById('profilePreview').innerHTML = '';
+        document.getElementById('spritePreview').innerHTML = '';
+        document.getElementById('formTitle').innerHTML = '<i class="fas fa-user-plus"></i> Add New User';
+        document.getElementById('submitBtn').innerHTML = '<i class="fas fa-save"></i> Save User';
     }
-
+    
     async function handleSubmit(e) {
         e.preventDefault();
-        const editId = document.getElementById("editId").value;
-        const newUser = {
-            name: document.getElementById("name").value.trim(),
-            modern_email: document.getElementById("modern_email").value.trim(),
-            profile_pic: document.getElementById("profile_pic").value.trim(),
-            position: document.getElementById("position").value.trim(),
-            department: document.getElementById("department").value.trim(),
-            sprite_image: document.getElementById("sprite_image").value.trim(),
+        const editId = document.getElementById('editId').value;
+        const userData = {
+            name: document.getElementById('name').value,
+            modern_email: document.getElementById('modern_email').value,
+            profile_pic: document.getElementById('profile_pic').value,
+            position: document.getElementById('position').value,
+            department: document.getElementById('department').value,
+            sprite_image: document.getElementById('sprite_image').value,
         };
         
-        if (!newUser.name || !newUser.modern_email) {
-            showToast("Name and Email are required", true);
+        if (!userData.name || !userData.modern_email) {
+            showToast('Name and email required', true);
             return;
         }
         
-        let updatedUsers = [...currentUsers];
         if (editId) {
-            const index = updatedUsers.findIndex(u => u.id === editId);
-            if (index !== -1) {
-                updatedUsers[index] = { ...updatedUsers[index], ...newUser, id: editId };
-            }
+            const index = currentUsers.findIndex(u => u.id === editId);
+            if (index !== -1) currentUsers[index] = { ...currentUsers[index], ...userData, id: editId };
         } else {
-            const newId = crypto.randomUUID ? crypto.randomUUID() : Date.now() + "_" + Math.random().toString(36);
-            updatedUsers.push({ ...newUser, id: newId });
+            userData.id = Date.now() + "_" + Math.random().toString(36);
+            currentUsers.push(userData);
         }
         
-        await saveUsersToGist(updatedUsers);
+        await saveUsersToGist(currentUsers);
         await refreshTable();
         clearForm();
-        showToast(editId ? "✏️ User updated" : "✨ New user added");
+        showToast(editId ? 'User updated' : 'User added');
     }
-
-    function escapeHtml(str) { 
-        if(!str) return ''; 
-        return str.replace(/[&<>]/g, function(m){
-            if(m==='&') return '&amp;';
-            if(m==='<') return '&lt;';
-            if(m==='>') return '&gt;';
-            return m;
-        });
-    }
-
+    
+    function escapeHtml(str) { if(!str) return ''; return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+    
     let toastTimeout;
     function showToast(msg, isError = false) {
         const existing = document.querySelector(".toast-msg");
@@ -603,32 +654,33 @@
         const div = document.createElement("div");
         div.className = "toast-msg";
         div.style.background = isError ? "#bc4742" : "#2a6f8f";
-        div.innerHTML = `<i class="fas ${isError ? 'fa-circle-exclamation' : 'fa-check-circle'}"></i> ${msg}`;
+        div.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i> ${msg}`;
         document.body.appendChild(div);
         if(toastTimeout) clearTimeout(toastTimeout);
-        toastTimeout = setTimeout(() => { div.style.opacity = "0"; setTimeout(() => div.remove(), 300); }, 2800);
+        toastTimeout = setTimeout(() => div.remove(), 3000);
     }
-
+    
     // Initialize
     window.addEventListener("DOMContentLoaded", async () => {
-        const token = getGitHubToken();
-        if (!token) {
-            document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ GitHub token required. Refresh page and provide a valid token with 'gist' scope.</td></tr>`;
-            return;
-        }
+        GITHUB_TOKEN = getGitHubToken();
+        if (!GITHUB_TOKEN) return;
         
-        try {
-            await getOrCreateGist();
-            await refreshTable();
-        } catch(err) {
-            document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" class="empty-row">❗ Gist setup error: ${err.message}. Ensure token has 'gist' scope.</td></tr>`;
-            showToast("Gist initialization failed. Check token permissions.", true);
-        }
+        await setupImageRepo();
+        await getOrCreateGist();
+        await refreshTable();
         
-        document.getElementById("userForm").addEventListener("submit", handleSubmit);
-        document.getElementById("cancelEditBtn").addEventListener("click", clearForm);
-        document.getElementById("refreshTableBtn").addEventListener("click", refreshTable);
-        document.getElementById("resetGistBtn").addEventListener("click", resetToSample);
+        document.getElementById('userForm').addEventListener('submit', handleSubmit);
+        document.getElementById('cancelEditBtn').addEventListener('click', clearForm);
+        document.getElementById('refreshTableBtn').addEventListener('click', refreshTable);
+        document.getElementById('resetGistBtn').addEventListener('click', async () => {
+            if (confirm('Reset to sample data?')) {
+                const sampleResponse = await fetch('./modern_user_data.json');
+                const sampleData = await sampleResponse.json();
+                const sampleUsers = (sampleData.users || []).map(u => ({ ...u, id: Date.now() + "_" + Math.random() }));
+                await saveUsersToGist(sampleUsers);
+                await refreshTable();
+            }
+        });
     });
 </script>
 </body>
