@@ -16,21 +16,25 @@ body{
 }
 
 #ui{
-  position: fixed;
-    inset: 0;
-    z-index: 9999;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 23, 42, .96);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-    gap: 15px;
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  width:100%;
+  height:100%;
+  background:rgba(15,23,42,.96);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  gap:15px;
 }
+
+.logoWrap{text-align:center}
+.logoWrap img{max-width:220px;height:auto}
 
 #uiInner{
   width:380px;
+  max-width:calc(100vw - 30px);
   background:rgba(0,0,0,.72);
   padding:24px;
   border-radius:18px;
@@ -52,6 +56,11 @@ body{
   border-radius:10px;
 }
 
+#ui input{
+  background:#fff;
+  color:#0f172a;
+}
+
 #ui button{
   background:#2563eb;
   color:white;
@@ -67,6 +76,28 @@ body{
   line-height:1.4;
   text-align:center;
 }
+
+.userPreview{
+  display:none;
+  align-items:center;
+  gap:10px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  padding:10px;
+  border-radius:12px;
+  margin-bottom:10px;
+}
+
+.userPreview img{
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  object-fit:cover;
+  background:#020617;
+}
+
+.userPreview strong{display:block;font-size:14px}
+.userPreview span{display:block;font-size:12px;color:#cbd5e1;margin-top:2px}
 
 #scene{
   position:relative;
@@ -169,6 +200,7 @@ body{
 
 .modalBox{
   width:420px;
+  max-width:calc(100vw - 24px);
   background:#111827;
   border:1px solid rgba(255,255,255,.16);
   border-radius:18px;
@@ -176,7 +208,9 @@ body{
   box-shadow:0 20px 60px rgba(0,0,0,.45);
 }
 
-.modalBox.wide{width:760px}
+.modalBox.wide{
+  width:800px;
+}
 
 .modalBox h2{
   font-size:19px;
@@ -189,6 +223,33 @@ body{
   line-height:1.5;
   margin-bottom:12px;
 }
+
+.profileHeader,
+.requestUserCard{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:12px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:12px;
+  padding:10px;
+}
+
+.profileHeader img,
+.requestUserCard img{
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  object-fit:cover;
+  background:#020617;
+  border:2px solid rgba(255,255,255,.14);
+}
+
+.profileHeader strong,
+.requestUserCard strong{display:block;font-size:14px}
+.profileHeader span,
+.requestUserCard span{display:block;font-size:12px;color:#cbd5e1;margin-top:2px}
 
 .previewVideo,
 .remoteVideo{
@@ -207,7 +268,7 @@ body{
 
 .callGrid{
   display:grid;
-  grid-template-columns:1fr 210px;
+  grid-template-columns:1fr 230px;
   gap:12px;
   margin-bottom:12px;
 }
@@ -283,11 +344,27 @@ body{
 }
 
 .chatMsg{
-  margin-bottom:8px;
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
   line-height:1.35;
 }
 
+.chatMsg img{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  object-fit:cover;
+  background:#1f2937;
+  flex:none;
+}
+
+.chatMsg .bubble{
+  flex:1;
+}
+
 .chatMsg b{color:#93c5fd}
+.chatMsg.system{display:block;color:#cbd5e1;font-style:italic}
 
 .chatInputRow{
   display:flex;
@@ -302,6 +379,12 @@ body{
   background:#1f2937;
   color:white;
 }
+
+@media(max-width:760px){
+  .modalBox.wide{width:calc(100vw - 20px)}
+  .callGrid{grid-template-columns:1fr}
+  .remoteVideo{height:260px}
+}
 </style>
 </head>
 
@@ -311,27 +394,35 @@ body{
 <audio id="joinBellAudio" src="https://romeoasis2023.github.io/moderntown/bell_ring.mp3" preload="auto"></audio>
 
 <div id="ui">
-  <div style="text-align: center;">
-  <img src="https://romeoasis2023.github.io/moderntown/logomt.png">
+  <div class="logoWrap">
+    <img src="https://romeoasis2023.github.io/moderntown/logomt.png" alt="Modern Town" />
   </div>
-  <div id="uiInner">   
+
+  <div id="uiInner">
     <h1>Virtual Office</h1>
 
     <input id="roomInput" type="hidden" value="demo-room" />
 
-    <input id="nameInput" type="text" placeholder="Enter your name" />
+    <input id="emailInput" type="email" placeholder="Enter your Modern email" autocomplete="email" />
 
-    <input id="spriteUpload" type="file" accept="image/png,image/webp,image/jpeg" />
+    <div id="userPreview" class="userPreview">
+      <img id="userPreviewPic" alt="Profile" />
+      <div>
+        <strong id="userPreviewName"></strong>
+        <span id="userPreviewMeta"></span>
+      </div>
+    </div>
 
     <button id="joinBtn">Join Room</button>
 
-    <div id="status">Not connected</div>
+    <div id="status">Enter your Modern email to continue.</div>
   </div>
 </div>
 
 <div id="help">
-  URL name: <b>?name=romeo</b><br>
-  Upload sprite: <b>96x128px</b><br>
+  Login uses <b>modern_email</b> from JSON<br>
+  URL still becomes <b>?name=JSON name</b><br>
+  Sprite uses <b>sprite_image</b><br>
   W A S D = Move Sprite<br>
   💬 appears only when near another player (80px)<br>
   1-on-1 call only
@@ -342,6 +433,15 @@ body{
 <div id="requestModal" class="modal">
   <div class="modalBox">
     <h2 id="requestTitle">Video Call</h2>
+
+    <div class="requestUserCard">
+      <img id="requestProfilePic" alt="Caller profile" />
+      <div>
+        <strong id="requestUserName">Peer</strong>
+        <span id="requestUserMeta">Video call request</span>
+      </div>
+    </div>
+
     <p id="requestText">Call request</p>
 
     <video id="requestPreview" class="previewVideo" autoplay playsinline muted></video>
@@ -357,7 +457,13 @@ body{
 
 <div id="callModal" class="modal">
   <div class="modalBox wide">
-    <h2 id="callTitle">Video Chat</h2>
+    <div class="profileHeader">
+      <img id="callProfilePic" alt="Peer profile" />
+      <div>
+        <h2 id="callTitle">Video Chat</h2>
+        <span id="callUserMeta"></span>
+      </div>
+    </div>
 
     <div class="callGrid">
       <div>
@@ -388,13 +494,19 @@ body{
 <script type="module">
 import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
 
+const USERS_JSON_URL = 'https://gist.githubusercontent.com/RomeoAsis2023/dcb6239ab41d40f39852e97a60ccf504/raw/4ba1fe9fcc6cb8f957e89369e2a1c94eaaf8a551/modern_user_data.json'
+const FALLBACK_PROFILE_PIC = 'https://placehold.co/120x120/111827/ffffff?text=User'
+
 const scene = document.getElementById('scene')
 const ui = document.getElementById('ui')
 const statusEl = document.getElementById('status')
 const joinBtn = document.getElementById('joinBtn')
 const roomInput = document.getElementById('roomInput')
-const nameInput = document.getElementById('nameInput')
-const spriteUpload = document.getElementById('spriteUpload')
+const emailInput = document.getElementById('emailInput')
+const userPreview = document.getElementById('userPreview')
+const userPreviewPic = document.getElementById('userPreviewPic')
+const userPreviewName = document.getElementById('userPreviewName')
+const userPreviewMeta = document.getElementById('userPreviewMeta')
 const ringtoneAudio = document.getElementById('ringtoneAudio')
 const joinBellAudio = document.getElementById('joinBellAudio')
 
@@ -405,9 +517,14 @@ const requestPreview = document.getElementById('requestPreview')
 const requestActions = document.getElementById('requestActions')
 const requestVideoBtn = document.getElementById('requestVideoBtn')
 const requestMicBtn = document.getElementById('requestMicBtn')
+const requestProfilePic = document.getElementById('requestProfilePic')
+const requestUserName = document.getElementById('requestUserName')
+const requestUserMeta = document.getElementById('requestUserMeta')
 
 const callModal = document.getElementById('callModal')
 const callTitle = document.getElementById('callTitle')
+const callProfilePic = document.getElementById('callProfilePic')
+const callUserMeta = document.getElementById('callUserMeta')
 const remoteVideo = document.getElementById('remoteVideo')
 const localPreview = document.getElementById('localPreview')
 const callVideoBtn = document.getElementById('callVideoBtn')
@@ -419,12 +536,6 @@ const chatInput = document.getElementById('chatInput')
 const sendChatBtn = document.getElementById('sendChatBtn')
 
 const urlParams = new URLSearchParams(window.location.search)
-
-let playerName = sanitizeName(urlParams.get('name')) || ''
-
-if(playerName){
-  nameInput.value = playerName
-}
 
 const FRAME_W = 32
 const FRAME_H = 32
@@ -450,6 +561,13 @@ let activeCallPeer = null
 let pendingOutgoingCallPeer = null
 let pendingIncomingCallPeer = null
 
+let playerName = sanitizeName(urlParams.get('name')) || ''
+let localProfilePic = ''
+let localPositionTitle = ''
+let localDepartment = ''
+let localModernEmail = ''
+let currentUser = null
+
 const connectedPeers = new Set()
 const peerStates = {}
 const players = {}
@@ -460,6 +578,10 @@ let localState = {
   video:true,
   mic:true,
   sprite:createDefaultSprite(),
+  profilePic:'',
+  position:'',
+  department:'',
+  modernEmail:'',
   direction:'down',
   frame:1,
   moving:false
@@ -492,50 +614,122 @@ function playJoinBell(){
   joinBellAudio.play().catch(() => {})
 }
 
-spriteUpload.addEventListener('change', e => {
-  const file = e.target.files[0]
-  if(!file) return
-
-  const img = new Image()
-  const url = URL.createObjectURL(file)
-
-  img.onload = () => {
-    if(img.width !== SHEET_W || img.height !== SHEET_H){
-      alert('Please upload exact 96x128px sprite sheet.')
-      spriteUpload.value = ''
-      URL.revokeObjectURL(url)
-      return
-    }
-
-    const reader = new FileReader()
-
-    reader.onload = ev => {
-      localState.sprite = ev.target.result
-
-      if(players.local){
-        players.local.querySelector('.sprite').style.backgroundImage = `url(${localState.sprite})`
-      }
-
-      broadcastState()
-    }
-
-    reader.readAsDataURL(file)
-    URL.revokeObjectURL(url)
+async function fetchModernUsers(){
+  const response = await fetch(USERS_JSON_URL, {cache:'no-store'})
+  if(!response.ok){
+    throw new Error('Unable to load Modern user data.')
   }
 
-  img.src = url
+  const data = await response.json()
+
+  if(Array.isArray(data)) return data
+  if(Array.isArray(data.users)) return data.users
+
+  return []
+}
+
+async function findUserByEmail(email){
+  const users = await fetchModernUsers()
+  const normalizedEmail = String(email || '').trim().toLowerCase()
+
+  return users.find(user =>
+    String(user.modern_email || '').trim().toLowerCase() === normalizedEmail
+  ) || null
+}
+
+function getPeerMeta(peerId){
+  return peerStates[peerId] || {}
+}
+
+function getUserMetaLine(user){
+  const parts = []
+  if(user?.position) parts.push(user.position)
+  if(user?.department) parts.push(user.department)
+  return parts.join(' · ')
+}
+
+function setPreviewUser(user){
+  if(!user){
+    userPreview.style.display = 'none'
+    return
+  }
+
+  userPreviewPic.src = user.profile_pic || FALLBACK_PROFILE_PIC
+  userPreviewName.textContent = user.name || 'Modern User'
+  userPreviewMeta.textContent = getUserMetaLine(user) || user.modern_email || ''
+  userPreview.style.display = 'flex'
+}
+
+emailInput.addEventListener('change', async () => {
+  const email = emailInput.value.trim()
+  if(!email){
+    setPreviewUser(null)
+    return
+  }
+
+  try{
+    statusEl.textContent = 'Checking Modern email...'
+    const user = await findUserByEmail(email)
+    currentUser = user
+
+    if(user){
+      setPreviewUser(user)
+      statusEl.textContent = 'Found ' + user.name + '. Ready to join.'
+    }else{
+      setPreviewUser(null)
+      statusEl.textContent = 'No Modern user found for that email.'
+    }
+  }catch(error){
+    console.error(error)
+    setPreviewUser(null)
+    statusEl.textContent = 'Could not load Modern user data.'
+  }
 })
 
 joinBtn.onclick = async () => {
-  playerName =
-    sanitizeName(nameInput.value) ||
-    'Guest-' + Math.random().toString(36).substring(2,6)
+  const email = emailInput.value.trim()
+
+  if(!email){
+    alert('Please enter your Modern email.')
+    return
+  }
+
+  joinBtn.disabled = true
+  statusEl.textContent = 'Loading Modern user data...'
+
+  try{
+    currentUser = currentUser || await findUserByEmail(email)
+  }catch(error){
+    console.error(error)
+    alert('Unable to fetch Modern user data. Please try again.')
+    joinBtn.disabled = false
+    statusEl.textContent = 'Could not load Modern user data.'
+    return
+  }
+
+  if(!currentUser){
+    alert('No user found with that Modern email.')
+    joinBtn.disabled = false
+    statusEl.textContent = 'No Modern user found for that email.'
+    return
+  }
+
+  playerName = sanitizeName(currentUser.name) || 'Guest-' + Math.random().toString(36).substring(2,6)
+  localProfilePic = currentUser.profile_pic || ''
+  localPositionTitle = currentUser.position || ''
+  localDepartment = currentUser.department || ''
+  localModernEmail = currentUser.modern_email || email
+
+  localState.sprite = currentUser.sprite_image || createDefaultSprite()
+  localState.profilePic = localProfilePic
+  localState.position = localPositionTitle
+  localState.department = localDepartment
+  localState.modernEmail = localModernEmail
 
   const url = new URL(window.location.href)
   url.searchParams.set('name', playerName)
   history.replaceState({}, '', url)
 
-  joinBtn.disabled = true
   roomName = roomInput.value.trim() || 'demo-room'
 
   try{
@@ -546,6 +740,7 @@ joinBtn.onclick = async () => {
   }catch(error){
     alert('Camera and microphone permission are required.')
     joinBtn.disabled = false
+    statusEl.textContent = 'Camera and microphone permission are required.'
     return
   }
 
@@ -650,7 +845,7 @@ joinBtn.onclick = async () => {
     }
 
     if(data.type === 'video-chat-message'){
-      addChatMessage(data.fromName || 'Peer', data.message || '', false)
+      addChatMessage(data.fromName || 'Peer', data.message || '', false, data.profilePic || getPeerMeta(peerId).profilePic || '')
       return
     }
 
@@ -798,10 +993,14 @@ function showOutgoingRequest(peerId){
   pendingOutgoingCallPeer = peerId
   broadcastState()
 
-  const name = peerStates[peerId]?.name || 'Peer'
+  const peer = getPeerMeta(peerId)
+  const name = peer.name || 'Peer'
 
   requestTitle.textContent = 'Start Video Call'
   requestText.textContent = 'Do you want to video call ' + name + '?'
+  requestUserName.textContent = name
+  requestUserMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Video call request'
+  requestProfilePic.src = peer.profilePic || FALLBACK_PROFILE_PIC
 
   requestActions.innerHTML = `
     <button class="callBtn" id="callNowBtn">Call</button>
@@ -840,8 +1039,14 @@ function showOutgoingRequest(peerId){
 function showIncomingRequest(peerId, fromName){
   playRingtone()
 
+  const peer = getPeerMeta(peerId)
+  const displayName = peer.name || fromName || 'Someone'
+
   requestTitle.textContent = 'Incoming Video Call'
-  requestText.textContent = fromName + ' wants to video call you.'
+  requestText.textContent = displayName + ' wants to video call you.'
+  requestUserName.textContent = displayName
+  requestUserMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Incoming video call'
+  requestProfilePic.src = peer.profilePic || FALLBACK_PROFILE_PIC
 
   requestActions.innerHTML = `
     <button class="acceptBtn" id="acceptCallBtn">Accept</button>
@@ -891,14 +1096,17 @@ function closeRequestModal(){
 }
 
 function openCallModal(peerId){
-  const name = peerStates[peerId]?.name || 'Peer'
+  const peer = getPeerMeta(peerId)
+  const name = peer.name || 'Peer'
 
   activeCallPeer = peerId
   callTitle.textContent = 'Video Chat with ' + name
+  callProfilePic.src = peer.profilePic || FALLBACK_PROFILE_PIC
+  callUserMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ')
   localPreview.srcObject = localStream
   chatBox.innerHTML = ''
 
-  addChatMessage('System', 'Call connected. You can now chat P2P.', false)
+  addChatMessage('System', 'Call connected. You can now chat P2P.', false, '')
 
   callModal.style.display = 'flex'
 }
@@ -937,22 +1145,36 @@ function sendChatMessage(){
   const message = chatInput.value.trim()
   if(!message || !activeCallPeer) return
 
-  addChatMessage(playerName, message, true)
+  addChatMessage(playerName, message, true, localProfilePic)
 
   sendToPeer(activeCallPeer,{
     type:'video-chat-message',
     room:roomName,
     fromName:playerName,
+    profilePic:localProfilePic,
     message
   })
 
   chatInput.value = ''
 }
 
-function addChatMessage(name, message, isMe){
+function addChatMessage(name, message, isMe, profilePic){
   const div = document.createElement('div')
   div.className = 'chatMsg'
-  div.innerHTML = `<b>${escapeHTML(isMe ? 'You' : name)}:</b> ${escapeHTML(message)}`
+
+  if(name === 'System'){
+    div.classList.add('system')
+    div.textContent = message
+    chatBox.appendChild(div)
+    chatBox.scrollTop = chatBox.scrollHeight
+    return
+  }
+
+  const imgSrc = profilePic || FALLBACK_PROFILE_PIC
+  div.innerHTML = `
+    <img src="${escapeHTML(imgSrc)}" alt="${escapeHTML(name)}" />
+    <div class="bubble"><b>${escapeHTML(isMe ? 'You' : name)}:</b> ${escapeHTML(message)}</div>
+  `
   chatBox.appendChild(div)
   chatBox.scrollTop = chatBox.scrollHeight
 }
@@ -1289,6 +1511,10 @@ function broadcastState(targetPeerId = null){
       x:myPosition.x,
       y:myPosition.y,
       name:playerName,
+      profilePic:localProfilePic,
+      position:localPositionTitle,
+      department:localDepartment,
+      modernEmail:localModernEmail,
       busy:isBusy()
     }
   }
@@ -1345,12 +1571,12 @@ function sanitizeName(name){
 
   return String(name)
     .trim()
-    .slice(0,24)
+    .slice(0,40)
     .replace(/[<>]/g,'')
 }
 
 function escapeHTML(str){
-  return String(str).replace(/[&<>'"]/g, char => ({
+  return String(str || '').replace(/[&<>'"]/g, char => ({
     '&':'&amp;',
     '<':'&lt;',
     '>':'&gt;',
