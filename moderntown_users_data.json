@@ -1,0 +1,517 @@
+{
+  "users": [
+    {
+      "name": "Adam",
+      "modern_email": "adam@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/adam.jpg",
+      "position": "Chief Executive Officer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/profile_pic/adam.jpg",
+      "id": "1"
+    },
+    {
+      "name": "Aditya",
+      "modern_email": "aditya@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/aditya.jpg",
+      "position": "Senior Data Engineer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/profile_pic/aditya.jpg",
+      "id": "2"
+    },
+    {
+      "name": "AJ",
+      "modern_email": "allan.madrigal@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/aj.jpg",
+      "position": "Ecommerce & CRO",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/profile_pic/aj.jpg",
+      "id": "3"
+    },
+    {
+      "name": "Allyssa",
+      "modern_email": "alyssa@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/alyssa.jpg",
+      "position": "Jr. Brand Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/profile_pic/alyssa.jpg",
+      "id": "4"
+    },
+    {
+      "name": "Anthony",
+      "modern_email": "anthony@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/anthony.jpg",
+      "position": "AI Solutions Architect",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/profile_pic/anthony.jpg",
+      "id": "5"
+    },
+    {
+      "name": "Aslan",
+      "modern_email": "aslan@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/aslan.jpg",
+      "position": "Chief Product Officer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/profile_pic/aslan.jpg",
+      "id": "6"
+    },
+    {
+      "name": "Bhea",
+      "modern_email": "bhea.mallari@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/bhea.jpg",
+      "position": "Ad Creative",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/profile_pic/bhea.jpg",
+      "id": "7"
+    },
+    {
+      "name": "Brendan",
+      "modern_email": "brendan@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/brendan.jpg",
+      "position": "Brand Operations",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/brendan.jpg",
+      "id": "8"
+    },
+    {
+      "name": "Buddy",
+      "modern_email": "buddy@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/buddy.jpg",
+      "position": "Ad Creative",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/buddy.jpg",
+      "id": "9"
+    },
+    {
+      "name": "Calvin",
+      "modern_email": "calvin@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/calvin.jpg",
+      "position": "Web Design Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/calvin.jpg",
+      "id": "10"
+    },
+    {
+      "name": "Carolina",
+      "modern_email": "carolina@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/carolina.jpg",
+      "position": "Growth Strategist",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/carolina.jpg",
+      "id": "11"
+    },
+    {
+      "name": "CJ",
+      "modern_email": "cj@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/cj.jpg",
+      "position": "Growth Director",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/cj.jpg",
+      "id": "12"
+    },
+    {
+      "name": "Colin",
+      "modern_email": "colin@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/colin.jpg",
+      "position": "Marketing Director",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/colin.jpg",
+      "id": "13"
+    },
+    {
+      "name": "Courtney",
+      "modern_email": "courtney@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/courtney.jpg",
+      "position": "Sr. Brand Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/courtney.jpg",
+      "id": "14"
+    },
+    {
+      "name": "Daniel",
+      "modern_email": "danny@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/daniel.jpg",
+      "position": "Director of Ecommerce",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/daniel.jpg",
+      "id": "15"
+    },
+    {
+      "name": "Dean",
+      "modern_email": "dean@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/dean.jpg",
+      "position": "Lifecycle",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/dean.jpg",
+      "id": "16"
+    },
+    {
+      "name": "Denver",
+      "modern_email": "denver.casenares@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/denver.jpg",
+      "position": "Adult",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/denver.jpg",
+      "id": "17"
+    },
+    {
+      "name": "Desiree",
+      "modern_email": "desiree@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/desiree.jpg",
+      "position": "Lifecycle",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/desiree.jpg",
+      "id": "18"
+    },
+    {
+      "name": "Diane",
+      "modern_email": "diane.batis@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/diane.jpg",
+      "position": "Influencer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/diane.jpg",
+      "id": "19"
+    },
+    {
+      "name": "Emma",
+      "modern_email": "emma@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/emma.jpg",
+      "position": "Growth Strategist",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/emma.jpg",
+      "id": "20"
+    },
+    {
+      "name": "Errica",
+      "modern_email": "errica@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/errica.jpg",
+      "position": "Influencer Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/errica.jpg",
+      "id": "21"
+    },
+    {
+      "name": "Ervin",
+      "modern_email": "ervin.carretas@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/ervin.jpg",
+      "position": "Ecommerce & CRO",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/ervin.jpg",
+      "id": "22"
+    },
+    {
+      "name": "Espie",
+      "modern_email": "espie@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/espie.jpg",
+      "position": "Ad Creative",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/espie.jpg",
+      "id": "23"
+    },
+    {
+      "name": "Evan",
+      "modern_email": "evan.villagracia@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/evan.jpg",
+      "position": "Ecommerce & CRO",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/evan.jpg",
+      "id": "24"
+    },
+    {
+      "name": "Francis",
+      "modern_email": "francis.manlangit@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/francis.jpg",
+      "position": "Ad Creative",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/francis.jpg",
+      "id": "25"
+    },
+    {
+      "name": "Frank",
+      "modern_email": "frank@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/frank.jpg",
+      "position": "Influencer Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/frank.jpg",
+      "id": "26"
+    },
+    {
+      "name": "Gabriel",
+      "modern_email": "gabriel.roechlning@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/gabriel.jpg",
+      "position": "Shopify Developer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/gabriel.jpg",
+      "id": "27"
+    },
+    {
+      "name": "Gustavo",
+      "modern_email": "gustavo@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/gustavo.jpg",
+      "position": "Ecommerce & Lifecycle Engineer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/gustavo.jpg",
+      "id": "28"
+    },
+    {
+      "name": "Harrison",
+      "modern_email": "harrison@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/harrison.jpg",
+      "position": "Director of Adult",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/harrison.jpg",
+      "id": "29"
+    },
+    {
+      "name": "Ibby",
+      "modern_email": "ibby.bonao@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/ibby.jpg",
+      "position": "Influencer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/ibby.jpg",
+      "id": "30"
+    },
+    {
+      "name": "Isaac",
+      "modern_email": "isaac@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/isaac.jpg",
+      "position": "Amazon Marketplace",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/isaac.jpg",
+      "id": "31"
+    },
+    {
+      "name": "Jamila",
+      "modern_email": "jamila.salvador@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/jamila.jpg",
+      "position": "Ad Creative",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/jamila.jpg",
+      "id": "32"
+    },
+    {
+      "name": "Joao",
+      "modern_email": "joao.mattos@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/joao.jpg",
+      "position": "Tracking Specialist",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/joao.jpg",
+      "id": "33"
+    },
+    {
+      "name": "John",
+      "modern_email": "john.mayuga@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/john.jpg",
+      "position": "Shopify Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/john.jpg",
+      "id": "34"
+    },
+    {
+      "name": "Jon",
+      "modern_email": "jon@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/jon.jpg",
+      "position": "Ad Creative Director",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/jon.jpg",
+      "id": "35"
+    },
+    {
+      "name": "Jordan",
+      "modern_email": "jordan@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/jordan.jpg",
+      "position": "Chief Strategy Officer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/jordan.jpg",
+      "id": "36"
+    },
+    {
+      "name": "Joy",
+      "modern_email": "joy.villa@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/joy.jpg",
+      "position": "Influencer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/joy.jpg",
+      "id": "37"
+    },
+    {
+      "name": "Jules",
+      "modern_email": "jules@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/jules.jpg",
+      "position": "Director of Brand Operations",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/jules.jpg",
+      "id": "38"
+    },
+    {
+      "name": "jure",
+      "modern_email": "jure.figar@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/jure.jpg",
+      "position": "Growth",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/jure.jpg",
+      "id": "39"
+    },
+    {
+      "name": "Kiefer",
+      "modern_email": "kiefer@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/kiefer.jpg",
+      "position": "Marketplace Director",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/kiefer.jpg",
+      "id": "40"
+    },
+    {
+      "name": "Kris",
+      "modern_email": "kris@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/kris.jpg",
+      "position": "VP of Accounting",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/kris.jpg",
+      "id": "41"
+    },
+    {
+      "name": "Kristen",
+      "modern_email": "kristen@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/kristen.jpg",
+      "position": "Lifecycle Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/kristen.jpg",
+      "id": "42"
+    },
+    {
+      "name": "Lauren",
+      "modern_email": "lauren@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/lauren.jpg",
+      "position": "",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/lauren.jpg",
+      "id": "43"
+    },
+    {
+      "name": "Lina",
+      "modern_email": "lina@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/lina.jpg",
+      "position": "Media Buyer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/lina.jpg",
+      "id": "44"
+    },
+    {
+      "name": "Linda",
+      "modern_email": "linda@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/linda.jpg",
+      "position": "Influencer Director",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/linda.jpg",
+      "id": "45"
+    },
+    {
+      "name": "Luke",
+      "modern_email": "luke@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/luke.jpg",
+      "position": "Lead Frontend Developer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/luke.jpg",
+      "id": "46"
+    },
+    {
+      "name": "Maddy",
+      "modern_email": "maddy@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/maddy.jpg",
+      "position": "Growth",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/maddy.jpg",
+      "id": "47"
+    },
+    {
+      "name": "Matt",
+      "modern_email": "matt@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/matt.jpg",
+      "position": "CRO Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/matt.jpg",
+      "id": "48"
+    },
+    {
+      "name": "Philip",
+      "modern_email": "philip@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/philip.jpg",
+      "position": "Director of Paid Social",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/philip.jpg",
+      "id": "49"
+    },
+    {
+      "name": "Renan",
+      "modern_email": "renan@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/renan.jpg",
+      "position": "Lifecycle",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/renan.jpg",
+      "id": "50"
+    },
+    {
+      "name": "Romeo",
+      "modern_email": "romeo.asis@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/romeo.jpg",
+      "position": "Sr. Shopify Developer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/romeo.jpg",
+      "id": "51"
+    },
+    {
+      "name": "Sean",
+      "modern_email": "sean@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/sean.jpg",
+      "position": "Business Development Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/sean.jpg",
+      "id": "52"
+    },
+    {
+      "name": "Tony",
+      "modern_email": "tony@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/tony.jpg",
+      "position": "Lifecycle Director",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/tony.jpg",
+      "id": "53"
+    },
+    {
+      "name": "Tristan",
+      "modern_email": "tristan@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/tristan.jpg",
+      "position": "Founding Engineer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/tristan.jpg",
+      "id": "54"
+    },
+    {
+      "name": "Ursula",
+      "modern_email": "ursula@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/ursula.jpg",
+      "position": "Brand Manager",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/ursula.jpg",
+      "id": "55"
+    },
+    {
+      "name": "Yemi",
+      "modern_email": "yemi.ogunmodede@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/yemi.jpg",
+      "position": "Adult",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/yemi.jpg",
+      "id": "56"
+    },
+    {
+      "name": "Zen",
+      "modern_email": "zen.delara@modern.ai",
+      "profile_pic": "https://romeoasis2023.github.io/moderntown/profile_pic/zen.jpg",
+      "position": "Influencer",
+      "department": "Modern AI",
+      "sprite_image": "https://romeoasis2023.github.io/moderntown/avatars/zen.jpg",
+      "id": "57"
+    }
+  ]
+}
