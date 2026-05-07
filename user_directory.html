@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modern | User Directory</title>
+    <title>Modern Town | User Directory</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -246,6 +246,18 @@
             font-size: 0.7rem;
             margin-left: 10px;
         }
+        .fallback-avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 100px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
         @media (max-width: 780px) {
             body { padding: 1rem; }
             .dashboard { flex-direction: column; }
@@ -352,6 +364,18 @@
     let GITHUB_TOKEN = null;
     const GIST_FILENAME = "modern_user_data.json";
     
+    // Generate initials-based fallback avatar (no external service needed!)
+    function getInitialsAvatar(name) {
+        if (!name || name === '—') return 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42"%3E%3Crect width="42" height="42" fill="%23667eea"/%3E%3Ctext x="21" y="28" text-anchor="middle" fill="white" font-size="18" font-weight="bold"%3E?%3C/text%3E%3C/svg%3E';
+        
+        const initials = name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+        const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#fa709a', '#fee140', '#30cfd0', '#a8edea', '#fed6e3'];
+        const colorIndex = name.length % colors.length;
+        const color = colors[colorIndex];
+        
+        return `data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42"%3E%3Crect width="42" height="42" fill="${color}"/%3E%3Ctext x="21" y="28" text-anchor="middle" fill="white" font-size="18" font-weight="bold"%3E${initials}%3C/text%3E%3C/svg%3E`;
+    }
+    
     // Helper: Get GitHub Token
     function getGitHubToken() {
         let token = localStorage.getItem("github_token");
@@ -393,7 +417,6 @@
                 REPO_NAME = repo;
                 localStorage.setItem("image_repo", JSON.stringify({ owner: username, repo: repo }));
                 
-                // Try to create repo if it doesn't exist
                 try {
                     await githubFetch(`/repos/${username}/${repo}`, { method: 'GET' });
                     showToast(`✅ Using existing repository: ${repo}`);
@@ -438,19 +461,6 @@
         return response.json();
     }
     
-    // Convert image to CDN URL (GitHub raw → jsDelivr CDN)
-    function getCDNUrl(githubRawUrl) {
-        // Convert: https://raw.githubusercontent.com/user/repo/branch/path
-        // To:      https://cdn.jsdelivr.net/gh/user/repo/path
-        if (!githubRawUrl) return null;
-        const match = githubRawUrl.match(/raw\.githubusercontent\.com\/([^\/]+)\/([^\/]+)\/([^\/]+)\/(.+)/);
-        if (match) {
-            const [, owner, repo, branch, path] = match;
-            return `https://cdn.jsdelivr.net/gh/${owner}/${repo}/${path}`;
-        }
-        return githubRawUrl;
-    }
-    
     // Upload image to GitHub and return CDN URL
     async function uploadImageToGitHub(file, folder) {
         const reader = new FileReader();
@@ -464,14 +474,12 @@
                 const path = `${folder}/${filename}`;
                 
                 try {
-                    // Check if file exists
                     let sha = null;
                     try {
                         const existing = await githubFetch(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`);
                         if (existing.sha) sha = existing.sha;
                     } catch(e) {}
                     
-                    // Upload to GitHub
                     await githubFetch(`/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`, {
                         method: 'PUT',
                         body: JSON.stringify({
@@ -482,7 +490,6 @@
                         })
                     });
                     
-                    // Generate CDN URL
                     const cdnUrl = `https://cdn.jsdelivr.net/gh/${REPO_OWNER}/${REPO_NAME}/${path}`;
                     resolve(cdnUrl);
                 } catch(error) {
@@ -609,20 +616,25 @@
             tbody.innerHTML = `<tr><td colspan="7" class="empty-row">📭 No users. Add one or click Reset!</td></tr>`;
             return;
         }
-        tbody.innerHTML = users.map(user => `
+        tbody.innerHTML = users.map(user => {
+            // Use CDN URL if available, otherwise generate SVG initials
+            const avatarSrc = user.profile_pic && user.profile_pic !== '' ? user.profile_pic : getInitialsAvatar(user.name);
+            const spriteStyle = user.sprite_image && user.sprite_image !== '' ? `background-image: url('${escapeHtml(user.sprite_image)}');` : 'background-color: #eef2fa;';
+            
+            return `
             <tr>
-                <td><img class="avatar-preview" src="${escapeHtml(user.profile_pic || 'https://via.placeholder.com/42')}" onerror="this.src='https://via.placeholder.com/42'"></td>
+                <td><img class="avatar-preview" src="${escapeHtml(avatarSrc)}" onerror="this.src='${getInitialsAvatar(user.name)}'"></td>
                 <td><strong>${escapeHtml(user.name)}</strong></td>
                 <td>${escapeHtml(user.modern_email)}</td>
                 <td>${escapeHtml(user.position || '—')}</td>
                 <td>${escapeHtml(user.department || '—')}</td>
-                <td><div class="sprite-preview" style="background-image: url('${escapeHtml(user.sprite_image || '')}'); background-size: contain;"></div></td>
+                <td><div class="sprite-preview" style="${spriteStyle} background-size: contain; background-repeat: no-repeat; background-position: center;"></div></td>
                 <td class="action-icons">
                     <button class="edit-btn" data-id="${user.id}"><i class="fas fa-pen"></i></button>
                     <button class="delete-btn" data-id="${user.id}"><i class="fas fa-trash-alt"></i></button>
                 </td>
             </tr>
-        `).join('');
+        `}).join('');
         
         document.querySelectorAll('.edit-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -700,7 +712,7 @@
     }
     
     async function resetToSample() {
-        if (!confirm('Reset to sample data? This will load the 6 sample users from modern_user_data.json')) return;
+        if (!confirm('Reset to sample data? This will load the sample users from modern_user_data.json')) return;
         try {
             const response = await fetch('./modern_user_data.json');
             if (!response.ok) throw new Error('modern_user_data.json not found');
