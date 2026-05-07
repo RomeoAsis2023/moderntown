@@ -529,6 +529,7 @@ const peerStates = {}
 const players = {}
 const peerConnections = {}
 const pendingIce = {}
+const peerDisconnectTimers = {}
 
 let localState = {
   video:true,
@@ -1232,7 +1233,12 @@ function createPeerConnection(peerId){
   }
 
   pc.ontrack = event => {
-    const stream = event.streams[0]
+    let stream = event.streams && event.streams[0]
+
+    if(!stream){
+      stream = remoteVideo.srcObject || new MediaStream()
+      stream.addTrack(event.track)
+    }
 
     if(stream){
       remoteVideo.srcObject = stream
@@ -1242,12 +1248,36 @@ function createPeerConnection(peerId){
   }
 
   pc.onconnectionstatechange = () => {
-    if(pc.connectionState === 'connected'){
+    const state = pc.connectionState
+
+    if(state === 'connected'){
+      clearPeerDisconnectTimer(peerId)
       statusEl.textContent = 'Video connected with ' + (peerStates[peerId]?.name || peerId)
     }
 
-    if(['closed','failed','disconnected'].includes(pc.connectionState)){
-      endCall(peerId, false)
+    if(state === 'disconnected'){
+      statusEl.textContent = 'Reconnecting video with ' + (peerStates[peerId]?.name || peerId) + '...'
+      schedulePeerDisconnect(peerId)
+    }
+
+    if(state === 'failed' || state === 'closed'){
+      schedulePeerDisconnect(peerId, 1200)
+    }
+  }
+
+  pc.oniceconnectionstatechange = () => {
+    const iceState = pc.iceConnectionState
+
+    if(iceState === 'connected' || iceState === 'completed'){
+      clearPeerDisconnectTimer(peerId)
+    }
+
+    if(iceState === 'disconnected'){
+      schedulePeerDisconnect(peerId)
+    }
+
+    if(iceState === 'failed' || iceState === 'closed'){
+      schedulePeerDisconnect(peerId, 1200)
     }
   }
 
@@ -1322,8 +1352,35 @@ async function flushPendingIce(peerId){
   }
 }
 
+function clearPeerDisconnectTimer(peerId){
+  if(peerDisconnectTimers[peerId]){
+    clearTimeout(peerDisconnectTimers[peerId])
+    delete peerDisconnectTimers[peerId]
+  }
+}
+
+function schedulePeerDisconnect(peerId, delay = 8000){
+  if(peerDisconnectTimers[peerId]) return
+
+  peerDisconnectTimers[peerId] = setTimeout(() => {
+    delete peerDisconnectTimers[peerId]
+
+    const pc = peerConnections[peerId]
+
+    if(!pc) return
+
+    const connectionBad = ['disconnected','failed','closed'].includes(pc.connectionState)
+    const iceBad = ['disconnected','failed','closed'].includes(pc.iceConnectionState)
+
+    if(connectionBad || iceBad){
+      endCall(peerId, false)
+    }
+  }, delay)
+}
+
 function endCall(peerId, notify){
   stopRingtone()
+  clearPeerDisconnectTimer(peerId)
 
   if(notify){
     sendToPeer(peerId,{
@@ -1338,6 +1395,7 @@ function endCall(peerId, notify){
   }
 
   delete pendingIce[peerId]
+  delete peerDisconnectTimers[peerId]
 
   activeCallPeer = null
   pendingOutgoingCallPeer = null
@@ -1491,6 +1549,7 @@ function sendToPeer(peerId, payload){
 }
 
 function removePeer(peerId){
+  clearPeerDisconnectTimer(peerId)
   connectedPeers.delete(peerId)
 
   if(peerConnections[peerId]){
@@ -1505,6 +1564,7 @@ function removePeer(peerId){
 
   delete peerStates[peerId]
   delete pendingIce[peerId]
+  delete peerDisconnectTimers[peerId]
 
   if(activeCallPeer === peerId){
     activeCallPeer = null
