@@ -20,14 +20,6 @@
             color: #1a2c3e;
         }
 
-        body{
-          background: #111; 
-        }
-        
-        .brand h1{
-          color: #fff !important;
-        }
-
         .container {
             max-width: 1440px;
             margin: 0 auto;
@@ -57,7 +49,7 @@
             color: #3a6b8f;
             margin-top: 0.2rem;
         }
-        .gist-status {
+        .status-bar {
             background: white;
             padding: 0.4rem 1rem;
             border-radius: 60px;
@@ -67,9 +59,15 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            flex-wrap: wrap;
         }
-        .gist-status i {
-            font-size: 1rem;
+        .storage-badge {
+            background: #d4edda;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            color: #155724;
         }
 
         .dashboard {
@@ -177,6 +175,13 @@
             padding: 6px 14px;
             font-size: 0.75rem;
         }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
         .action-icons {
             display: flex;
             gap: 10px;
@@ -249,27 +254,33 @@
             body { padding: 1rem; }
             .dashboard { flex-direction: column; }
         }
-        .btn-reset-gist {
-            background: #f0eef2;
-            margin-left: 8px;
+        .config-panel {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
         }
-        .spinner {
+        .config-input {
+            width: 100%;
+            padding: 8px 12px;
+            margin-top: 5px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.85rem;
+        }
+        .status-indicator {
             display: inline-block;
-            width: 14px;
-            height: 14px;
-            border: 2px solid white;
+            width: 10px;
+            height: 10px;
             border-radius: 50%;
-            border-top-color: transparent;
-            animation: spin 0.6s linear infinite;
+            margin-right: 6px;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .gist-link {
-            text-decoration: none;
-            color: #1a5d7a;
-            font-weight: 500;
+        .status-connected {
+            background: #28a745;
+            box-shadow: 0 0 5px #28a745;
         }
-        .gist-link:hover {
-            text-decoration: underline;
+        .status-disconnected {
+            background: #dc3545;
         }
     </style>
 </head>
@@ -277,11 +288,15 @@
 <div class="container">
     <div class="brand">
         <div class="title">
-            <h1>Modern Town · User Directory</h1>           
+            <h1>Modern Town · User Directory</h1>
+            <p>💾 Permanently stored in your GitHub Repository</p>
         </div>
-        <div class="gist-status">
-            <i class="fab fa-github"></i> <span id="gistLabel">⚡ Gist storage</span>
-            <button id="resetGistBtn" class="btn btn-sm btn-reset-gist" title="Reset to sample data"><i class="fas fa-sync-alt"></i> reset</button>
+        <div class="status-bar">
+            <i class="fab fa-github"></i> 
+            <span id="connectionStatus"><span class="status-indicator status-disconnected"></span> Not Configured</span>
+            <button id="configBtn" class="btn btn-sm" style="background:#e8f0fe;"><i class="fas fa-cog"></i> Configure Repo</button>
+            <button id="exportBtn" class="btn btn-sm btn-success"><i class="fas fa-download"></i> Export JSON</button>
+            <button id="refreshDataBtn" class="btn btn-sm btn-secondary"><i class="fas fa-sync-alt"></i> Refresh</button>
         </div>
     </div>
 
@@ -326,8 +341,7 @@
 
         <div class="table-card">
             <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; margin-bottom: 1rem;">
-                <h2><i class="fas fa-table-list"></i> Directory</h2>
-                <button id="refreshTableBtn" class="btn btn-sm btn-secondary"><i class="fas fa-rotate-right"></i> Refresh</button>
+                <h2><i class="fas fa-table-list"></i> Directory <span id="userCount" style="font-size:0.8rem; background:#eef2f7; padding:2px 8px; border-radius:20px;">0 users</span></h2>
             </div>
             <div style="overflow-x: auto;">
                 <table id="userTable">
@@ -335,7 +349,7 @@
                         <tr><th>Avatar</th><th>Name</th><th>Email</th><th>Position</th><th>Dept</th><th>Sprite</th><th>Actions</th></tr>
                     </thead>
                     <tbody id="tableBody">
-                        <tr><td colspan="7" class="empty-row">Loading data from Gist...</td></tr>
+                        <tr><td colspan="7" class="empty-row">Configure GitHub repo to load data...</td></tr>
                     </tbody>
                 </table>
             </div>
@@ -343,166 +357,197 @@
     </div>
 </div>
 
+<div id="configModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:2000; align-items:center; justify-content:center;">
+    <div style="background:white; padding:30px; border-radius:20px; max-width:500px; margin:20px;">
+        <h3>Configure GitHub Repository</h3>
+        <div class="form-group">
+            <label>GitHub Username</label>
+            <input type="text" id="configUsername" placeholder="your-username" class="config-input">
+        </div>
+        <div class="form-group">
+            <label>Repository Name</label>
+            <input type="text" id="configRepo" placeholder="your-repo" class="config-input">
+        </div>
+        <div class="form-group">
+            <label>GitHub Token (with repo scope)</label>
+            <input type="password" id="configToken" placeholder="ghp_xxxxxxxx" class="config-input">
+        </div>
+        <div class="form-group">
+            <label>File path (optional, default: users.json)</label>
+            <input type="text" id="configFilePath" placeholder="users.json" class="config-input" value="modern_town_users.json">
+        </div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button id="saveConfigBtn" class="btn btn-primary">Save & Connect</button>
+            <button id="closeConfigBtn" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+</div>
+
 <script>
-    // GIST CONFIGURATION
-    let GIST_ID = null;
-    const GIST_FILENAME = "modern_user_data.json";
+    // GitHub Repo Storage Configuration
+    let repoConfig = {
+        username: '',
+        repo: '',
+        token: '',
+        filePath: 'modern_town_users.json'
+    };
     
-    // Helper functions
-    function getGitHubToken() {
-        let token = localStorage.getItem("github_gist_token");
-        if (!token) {
-            token = prompt("🔐 GitHub Personal Access Token Required\n\nCreate a token at: https://github.com/settings/tokens\nRequired scope: 'gist'\n\nEnter your token:", "");
-            if (token && token.trim()) {
-                localStorage.setItem("github_gist_token", token.trim());
-                return token.trim();
-            } else {
-                alert("⚠️ A GitHub token with 'gist' scope is required to use this application.");
-                return null;
-            }
-        }
-        return token;
-    }
-
-    async function githubFetch(endpoint, options = {}) {
-        const token = getGitHubToken();
-        if (!token) throw new Error("No GitHub token provided");
-        const headers = {
-            "Authorization": `token ${token}`,
-            "Accept": "application/vnd.github.v3+json",
-            "Content-Type": "application/json",
-        };
-        const response = await fetch(`https://api.github.com${endpoint}`, { ...options, headers });
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`GitHub API error ${response.status}: ${errText.substring(0, 150)}`);
-        }
-        return response.json();
-    }
-
-    async function getOrCreateGist() {
-        const storedGistId = localStorage.getItem("gist_directory_id");
-        if (storedGistId) {
+    let currentUsers = [];
+    
+    // Load config from localStorage
+    function loadConfig() {
+        const saved = localStorage.getItem('github_repo_config');
+        if (saved) {
             try {
-                const gist = await githubFetch(`/gists/${storedGistId}`);
-                if (gist && gist.id && gist.files[GIST_FILENAME]) {
-                    GIST_ID = storedGistId;
-                    return GIST_ID;
+                const config = JSON.parse(saved);
+                repoConfig = { ...repoConfig, ...config };
+                if (repoConfig.username && repoConfig.repo && repoConfig.token) {
+                    document.getElementById('connectionStatus').innerHTML = '<span class="status-indicator status-connected"></span> Connected to ' + repoConfig.username + '/' + repoConfig.repo;
                 }
-            } catch(e) { 
-                console.warn("Stored gist invalid, creating new one", e);
-                localStorage.removeItem("gist_directory_id"); 
-            }
+            } catch(e) {}
+        }
+    }
+    
+    // Save config
+    function saveConfig() {
+        localStorage.setItem('github_repo_config', JSON.stringify(repoConfig));
+        if (repoConfig.username && repoConfig.repo && repoConfig.token) {
+            document.getElementById('connectionStatus').innerHTML = '<span class="status-indicator status-connected"></span> Connected to ' + repoConfig.username + '/' + repoConfig.repo;
+            showToast('✅ Configuration saved! Loading data...');
+            loadUsersFromRepo();
+        } else {
+            document.getElementById('connectionStatus').innerHTML = '<span class="status-indicator status-disconnected"></span> Not Configured';
+        }
+    }
+    
+    // Read file from GitHub repo
+    async function loadUsersFromRepo() {
+        if (!repoConfig.token || !repoConfig.username || !repoConfig.repo) {
+            document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" class="empty-row">⚙️ Click "Configure Repo" to set up GitHub storage</td></tr>`;
+            return [];
         }
         
-        // Create new gist with minimal structure (no sample data in HTML)
-        const emptyStructure = { users: [] };
-        const defaultContent = JSON.stringify(emptyStructure, null, 2);
-        const files = { [GIST_FILENAME]: { content: defaultContent } };
-        const newGist = await githubFetch(`/gists`, { 
-            method: "POST", 
-            body: JSON.stringify({ 
-                description: "User Directory CRUD - modern_user_data.json", 
-                public: false, 
-                files 
-            }) 
-        });
-        GIST_ID = newGist.id;
-        localStorage.setItem("gist_directory_id", GIST_ID);
-        return GIST_ID;
-    }
-
-    async function loadUsersFromGist() {
-        if (!GIST_ID) await getOrCreateGist();
         try {
-            const gist = await githubFetch(`/gists/${GIST_ID}`);
-            const file = gist.files[GIST_FILENAME];
-            if (!file || !file.content) return [];
-            const data = JSON.parse(file.content);
-            // Support both direct array and {users: []} structure
-            let usersArray = Array.isArray(data) ? data : (data.users || []);
-            return usersArray.map(u => ({ 
-                ...u, 
-                id: u.id || crypto.randomUUID?.() || Date.now() + "_" + Math.random().toString(36)
-            }));
-        } catch(e) {
-            console.error("Load failed", e);
+            const url = `https://api.github.com/repos/${repoConfig.username}/${repoConfig.repo}/contents/${repoConfig.filePath}`;
+            const response = await fetch(url, {
+                headers: {
+                    'Authorization': `token ${repoConfig.token}`,
+                    'Accept': 'application/vnd.github.v3+json'
+                }
+            });
+            
+            if (response.status === 404) {
+                // File doesn't exist yet, create empty data
+                const defaultUsers = getSampleUsers();
+                await saveUsersToRepo(defaultUsers);
+                currentUsers = defaultUsers;
+                renderTable(currentUsers);
+                showToast('📁 Created new users file in repo');
+                return currentUsers;
+            }
+            
+            if (!response.ok) throw new Error('Failed to fetch');
+            
+            const data = await response.json();
+            const content = atob(data.content);
+            const users = JSON.parse(content);
+            currentUsers = users.users || users;
+            renderTable(currentUsers);
+            showToast(`✅ Loaded ${currentUsers.length} users from GitHub`);
+            return currentUsers;
+        } catch(err) {
+            console.error('Load error:', err);
+            showToast('❌ Failed to load from repo: ' + err.message, true);
             return [];
         }
     }
-
-    async function saveUsersToGist(usersArray) {
-        if (!GIST_ID) await getOrCreateGist();
-        // Store as object with users property for clarity
-        const dataToStore = { users: usersArray };
-        const content = JSON.stringify(dataToStore, null, 2);
-        const patchData = { files: { [GIST_FILENAME]: { content } } };
-        await githubFetch(`/gists/${GIST_ID}`, { method: "PATCH", body: JSON.stringify(patchData) });
-        showToast("✅ Data synced to GitHub Gist");
-    }
-
-    async function resetToSample() {
-        if (!confirm("⚠️ RESET will load sample data from modern_user_data.json file.\nContinue?")) return;
-        
-        // Fetch the sample JSON file from the same directory
-        try {
-            const response = await fetch('./modern_user_data.json');
-            if (!response.ok) throw new Error('Could not load modern_user_data.json');
-            const sampleData = await response.json();
-            let sampleUsers = sampleData.users || [];
-            
-            // Ensure all users have IDs
-            sampleUsers = sampleUsers.map(u => ({ 
-                ...u, 
-                id: u.id || crypto.randomUUID?.() || Date.now() + "_" + Math.random().toString(36)
-            }));
-            
-            await saveUsersToGist(sampleUsers);
-            await refreshTable();
-            clearForm();
-            showToast("🔥 Loaded sample data from modern_user_data.json");
-        } catch (err) {
-            console.error(err);
-            showToast("❌ Could not load modern_user_data.json. Make sure the file exists in the same directory.", true);
-        }
-    }
-
-    // UI State
-    let currentUsers = [];
     
-    async function refreshTable() {
-        try {
-            currentUsers = await loadUsersFromGist();
-            renderTable(currentUsers);
-            updateGistDisplay();
-        } catch(err) {
-            console.error(err);
-            document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ Error loading: ${err.message}. Check token & network.</td></tr>`;
-            showToast("❌ Failed to load gist data", true);
+    // Save users to GitHub repo
+    async function saveUsersToRepo(users) {
+        if (!repoConfig.token || !repoConfig.username || !repoConfig.repo) {
+            showToast('⚠️ Please configure GitHub repo first', true);
+            return false;
         }
-    }
-
-    function updateGistDisplay() {
-        const statusDiv = document.querySelector(".gist-status");
-        const existingLink = statusDiv.querySelector('.gist-link');
-        if (existingLink) existingLink.remove();
         
-        if (GIST_ID) {
-            const gistLink = document.createElement("a");
-            gistLink.href = `https://gist.github.com/${GIST_ID}`;
-            gistLink.target = "_blank";
-            gistLink.className = "gist-link";
-            gistLink.innerHTML = `<i class="fab fa-github"></i> gist/${GIST_ID.substring(0,8)}`;
-            statusDiv.appendChild(gistLink);
+        try {
+            // First, get current file SHA if exists
+            const url = `https://api.github.com/repos/${repoConfig.username}/${repoConfig.repo}/contents/${repoConfig.filePath}`;
+            let sha = null;
+            
+            try {
+                const getResponse = await fetch(url, {
+                    headers: {
+                        'Authorization': `token ${repoConfig.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                if (getResponse.ok) {
+                    const data = await getResponse.json();
+                    sha = data.sha;
+                }
+            } catch(e) {}
+            
+            const dataToStore = { users: users, lastUpdated: new Date().toISOString() };
+            const content = btoa(unescape(encodeURIComponent(JSON.stringify(dataToStore, null, 2))));
+            
+            const putResponse = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${repoConfig.token}`,
+                    'Accept': 'application/vnd.github.v3+json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: sha ? 'Update users data' : 'Create users data file',
+                    content: content,
+                    sha: sha
+                })
+            });
+            
+            if (!putResponse.ok) throw new Error('Failed to save');
+            
+            showToast('💾 Data saved to GitHub repo permanently');
+            return true;
+        } catch(err) {
+            console.error('Save error:', err);
+            showToast('❌ Failed to save to repo: ' + err.message, true);
+            return false;
         }
     }
-
+    
+    function getSampleUsers() {
+        return [
+            {
+                id: "1",
+                name: "Eleanor Chen",
+                modern_email: "eleanor@creativelabs.com",
+                profile_pic: "https://randomuser.me/api/portraits/women/68.jpg",
+                position: "Creative Director",
+                department: "Design",
+                sprite_image: "https://cdn-icons-png.flaticon.com/512/1995/1995572.png"
+            },
+            {
+                id: "2",
+                name: "Marcus Rodriguez",
+                modern_email: "marcus@techwave.io",
+                profile_pic: "https://randomuser.me/api/portraits/men/32.jpg",
+                position: "Senior Developer",
+                department: "Engineering",
+                sprite_image: "https://cdn-icons-png.flaticon.com/512/3135/3135715.png"
+            }
+        ];
+    }
+    
     function renderTable(users) {
         const tbody = document.getElementById("tableBody");
+        const userCount = document.getElementById("userCount");
+        userCount.textContent = `${users.length} user${users.length !== 1 ? 's' : ''}`;
+        
         if (!users.length) {
-            tbody.innerHTML = `<tr><td colspan="7" class="empty-row">📭 No users found. Click "Reset" to load sample data or add new users.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="7" class="empty-row">📭 No users. Add your first user above!</td></tr>`;
             return;
         }
+        
         tbody.innerHTML = users.map(user => `
             <tr data-id="${user.id}">
                 <td><img class="avatar-preview" src="${escapeHtml(user.profile_pic || 'https://via.placeholder.com/42?text=?' )}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(user.name||'U')}&background=9aa9bb&color=fff'"></td>
@@ -518,8 +563,12 @@
             </tr>
         `).join('');
         
+        attachEventHandlers(users);
+    }
+    
+    function attachEventHandlers(users) {
         document.querySelectorAll('.edit-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', () => {
                 const id = btn.getAttribute('data-id');
                 const user = currentUsers.find(u => u.id === id);
                 if (user) populateFormForEdit(user);
@@ -527,19 +576,19 @@
         });
         
         document.querySelectorAll('.delete-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+            btn.addEventListener('click', async () => {
                 const id = btn.getAttribute('data-id');
-                if (confirm("Delete this user permanently?")) {
-                    const updated = currentUsers.filter(u => u.id !== id);
-                    await saveUsersToGist(updated);
-                    await refreshTable();
+                if (confirm("Delete this user permanently from GitHub repo?")) {
+                    currentUsers = currentUsers.filter(u => u.id !== id);
+                    await saveUsersToRepo(currentUsers);
+                    renderTable(currentUsers);
                     clearForm();
                     showToast("🗑️ User deleted");
                 }
             });
         });
     }
-
+    
     function populateFormForEdit(user) {
         document.getElementById("editId").value = user.id;
         document.getElementById("name").value = user.name || "";
@@ -551,14 +600,14 @@
         document.getElementById("formTitle").innerHTML = '<i class="fas fa-user-edit"></i> Edit User';
         document.getElementById("submitBtn").innerHTML = '<i class="fas fa-pen"></i> Update User';
     }
-
+    
     function clearForm() {
         document.getElementById("editId").value = "";
         document.getElementById("userForm").reset();
         document.getElementById("formTitle").innerHTML = '<i class="fas fa-user-plus"></i> Add New User';
         document.getElementById("submitBtn").innerHTML = '<i class="fas fa-save"></i> Save User';
     }
-
+    
     async function handleSubmit(e) {
         e.preventDefault();
         const editId = document.getElementById("editId").value;
@@ -576,23 +625,36 @@
             return;
         }
         
-        let updatedUsers = [...currentUsers];
         if (editId) {
-            const index = updatedUsers.findIndex(u => u.id === editId);
+            const index = currentUsers.findIndex(u => u.id === editId);
             if (index !== -1) {
-                updatedUsers[index] = { ...updatedUsers[index], ...newUser, id: editId };
+                currentUsers[index] = { ...currentUsers[index], ...newUser, id: editId };
             }
         } else {
             const newId = crypto.randomUUID ? crypto.randomUUID() : Date.now() + "_" + Math.random().toString(36);
-            updatedUsers.push({ ...newUser, id: newId });
+            currentUsers.push({ ...newUser, id: newId });
         }
         
-        await saveUsersToGist(updatedUsers);
-        await refreshTable();
+        await saveUsersToRepo(currentUsers);
+        renderTable(currentUsers);
         clearForm();
         showToast(editId ? "✏️ User updated" : "✨ New user added");
     }
-
+    
+    function exportToJSON() {
+        const dataStr = JSON.stringify(currentUsers, null, 2);
+        const blob = new Blob([dataStr], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `users_${new Date().toISOString().slice(0,19)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast("📁 Users exported to JSON");
+    }
+    
     function escapeHtml(str) { 
         if(!str) return ''; 
         return str.replace(/[&<>]/g, function(m){
@@ -602,40 +664,58 @@
             return m;
         });
     }
-
+    
     let toastTimeout;
     function showToast(msg, isError = false) {
         const existing = document.querySelector(".toast-msg");
         if(existing) existing.remove();
         const div = document.createElement("div");
         div.className = "toast-msg";
-        div.style.background = isError ? "#bc4742" : "#2a6f8f";
-        div.innerHTML = `<i class="fas ${isError ? 'fa-circle-exclamation' : 'fa-check-circle'}"></i> ${msg}`;
+        div.style.background = isError ? "#dc3545" : "#28a745";
+        div.innerHTML = `<i class="fas ${isError ? 'fa-exclamation-triangle' : 'fa-check-circle'}"></i> ${msg}`;
         document.body.appendChild(div);
         if(toastTimeout) clearTimeout(toastTimeout);
-        toastTimeout = setTimeout(() => { div.style.opacity = "0"; setTimeout(() => div.remove(), 300); }, 2800);
+        toastTimeout = setTimeout(() => { div.style.opacity = "0"; setTimeout(() => div.remove(), 300); }, 3000);
     }
-
+    
+    // Modal handling
+    function showConfigModal() {
+        document.getElementById("configUsername").value = repoConfig.username;
+        document.getElementById("configRepo").value = repoConfig.repo;
+        document.getElementById("configToken").value = repoConfig.token;
+        document.getElementById("configFilePath").value = repoConfig.filePath;
+        document.getElementById("configModal").style.display = "flex";
+    }
+    
+    function hideConfigModal() {
+        document.getElementById("configModal").style.display = "none";
+    }
+    
+    function saveConfigModal() {
+        repoConfig.username = document.getElementById("configUsername").value.trim();
+        repoConfig.repo = document.getElementById("configRepo").value.trim();
+        repoConfig.token = document.getElementById("configToken").value.trim();
+        repoConfig.filePath = document.getElementById("configFilePath").value.trim() || "modern_town_users.json";
+        saveConfig();
+        hideConfigModal();
+        loadUsersFromRepo();
+    }
+    
     // Initialize
-    window.addEventListener("DOMContentLoaded", async () => {
-        const token = getGitHubToken();
-        if (!token) {
-            document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" class="empty-row">⚠️ GitHub token required. Refresh page and provide a valid token with 'gist' scope.</td></tr>`;
-            return;
-        }
-        
-        try {
-            await getOrCreateGist();
-            await refreshTable();
-        } catch(err) {
-            document.getElementById("tableBody").innerHTML = `<tr><td colspan="7" class="empty-row">❗ Gist setup error: ${err.message}. Ensure token has 'gist' scope.</td></tr>`;
-            showToast("Gist initialization failed. Check token permissions.", true);
-        }
+    window.addEventListener("DOMContentLoaded", () => {
+        loadConfig();
         
         document.getElementById("userForm").addEventListener("submit", handleSubmit);
         document.getElementById("cancelEditBtn").addEventListener("click", clearForm);
-        document.getElementById("refreshTableBtn").addEventListener("click", refreshTable);
-        document.getElementById("resetGistBtn").addEventListener("click", resetToSample);
+        document.getElementById("configBtn").addEventListener("click", showConfigModal);
+        document.getElementById("saveConfigBtn").addEventListener("click", saveConfigModal);
+        document.getElementById("closeConfigBtn").addEventListener("click", hideConfigModal);
+        document.getElementById("exportBtn").addEventListener("click", exportToJSON);
+        document.getElementById("refreshDataBtn").addEventListener("click", () => loadUsersFromRepo());
+        
+        if (repoConfig.token && repoConfig.username && repoConfig.repo) {
+            loadUsersFromRepo();
+        }
     });
 </script>
 </body>
