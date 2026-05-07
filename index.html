@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Modern Town Virtual office</title>
+<title>Modern Town Virtual Office</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -29,12 +29,8 @@ body{
   gap:15px;
 }
 
-.logoWrap{text-align:center}
-.logoWrap img{max-width:220px;height:auto}
-
 #uiInner{
   width:380px;
-  max-width:calc(100vw - 30px);
   background:rgba(0,0,0,.72);
   padding:24px;
   border-radius:18px;
@@ -48,17 +44,13 @@ body{
 }
 
 #ui input,
+#ui select,
 #ui button{
   width:100%;
   padding:12px;
   margin-bottom:10px;
   border:none;
   border-radius:10px;
-}
-
-#ui input{
-  background:#fff;
-  color:#0f172a;
 }
 
 #ui button{
@@ -76,28 +68,6 @@ body{
   line-height:1.4;
   text-align:center;
 }
-
-.userPreview{
-  display:none;
-  align-items:center;
-  gap:10px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.12);
-  padding:10px;
-  border-radius:12px;
-  margin-bottom:10px;
-}
-
-.userPreview img{
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  object-fit:cover;
-  background:#020617;
-}
-
-.userPreview strong{display:block;font-size:14px}
-.userPreview span{display:block;font-size:12px;color:#cbd5e1;margin-top:2px}
 
 #scene{
   position:relative;
@@ -200,7 +170,6 @@ body{
 
 .modalBox{
   width:420px;
-  max-width:calc(100vw - 24px);
   background:#111827;
   border:1px solid rgba(255,255,255,.16);
   border-radius:18px;
@@ -208,9 +177,7 @@ body{
   box-shadow:0 20px 60px rgba(0,0,0,.45);
 }
 
-.modalBox.wide{
-  width:800px;
-}
+.modalBox.wide{width:760px}
 
 .modalBox h2{
   font-size:19px;
@@ -223,33 +190,6 @@ body{
   line-height:1.5;
   margin-bottom:12px;
 }
-
-.profileHeader,
-.requestUserCard{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:12px;
-  background:rgba(255,255,255,.06);
-  border:1px solid rgba(255,255,255,.1);
-  border-radius:12px;
-  padding:10px;
-}
-
-.profileHeader img,
-.requestUserCard img{
-  width:48px;
-  height:48px;
-  border-radius:50%;
-  object-fit:cover;
-  background:#020617;
-  border:2px solid rgba(255,255,255,.14);
-}
-
-.profileHeader strong,
-.requestUserCard strong{display:block;font-size:14px}
-.profileHeader span,
-.requestUserCard span{display:block;font-size:12px;color:#cbd5e1;margin-top:2px}
 
 .previewVideo,
 .remoteVideo{
@@ -266,9 +206,46 @@ body{
 
 .remoteVideo{height:360px}
 
+.callHeader,
+.requestUserInfo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:12px;
+}
+
+.callProfilePic,
+.requestProfilePic{
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  object-fit:cover;
+  border:2px solid rgba(255,255,255,.2);
+  background:#020617;
+}
+
+.callUserMeta,
+.requestUserMeta{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+
+.callUserName,
+.requestUserName{
+  font-weight:bold;
+  font-size:15px;
+}
+
+.callUserSub,
+.requestUserSub{
+  color:#94a3b8;
+  font-size:12px;
+}
+
 .callGrid{
   display:grid;
-  grid-template-columns:1fr 230px;
+  grid-template-columns:1fr 210px;
   gap:12px;
   margin-bottom:12px;
 }
@@ -344,27 +321,23 @@ body{
 }
 
 .chatMsg{
+  margin-bottom:8px;
+  line-height:1.35;
   display:flex;
   gap:8px;
-  margin-bottom:10px;
-  line-height:1.35;
+  align-items:flex-start;
 }
 
-.chatMsg img{
-  width:28px;
-  height:28px;
+.chatAvatar{
+  width:24px;
+  height:24px;
   border-radius:50%;
   object-fit:cover;
   background:#1f2937;
-  flex:none;
+  flex-shrink:0;
 }
 
-.chatMsg .bubble{
-  flex:1;
-}
-
-.chatMsg b{color:#93c5fd}
-.chatMsg.system{display:block;color:#cbd5e1;font-style:italic}
+.chatMsgBody b{color:#93c5fd}
 
 .chatInputRow{
   display:flex;
@@ -379,12 +352,6 @@ body{
   background:#1f2937;
   color:white;
 }
-
-@media(max-width:760px){
-  .modalBox.wide{width:calc(100vw - 20px)}
-  .callGrid{grid-template-columns:1fr}
-  .remoteVideo{height:260px}
-}
 </style>
 </head>
 
@@ -394,8 +361,8 @@ body{
 <audio id="joinBellAudio" src="https://romeoasis2023.github.io/moderntown/bell_ring.mp3" preload="auto"></audio>
 
 <div id="ui">
-  <div class="logoWrap">
-    <img src="https://romeoasis2023.github.io/moderntown/logomt.png" alt="Modern Town" />
+  <div style="text-align:center;">
+    <img src="https://romeoasis2023.github.io/moderntown/logomt.png" alt="Modern Town" style="max-width:220px;width:80%;height:auto;">
   </div>
 
   <div id="uiInner">
@@ -403,27 +370,20 @@ body{
 
     <input id="roomInput" type="hidden" value="demo-room" />
 
-    <input id="emailInput" type="email" placeholder="Enter your Modern email" autocomplete="email" />
-
-    <div id="userPreview" class="userPreview">
-      <img id="userPreviewPic" alt="Profile" />
-      <div>
-        <strong id="userPreviewName"></strong>
-        <span id="userPreviewMeta"></span>
-      </div>
-    </div>
+    <select id="emailSelect">
+      <option value="">Loading Modern users...</option>
+    </select>
 
     <button id="joinBtn">Join Room</button>
 
-    <div id="status">Enter your Modern email to continue.</div>
+    <div id="status">Not connected</div>
   </div>
 </div>
 
 <div id="help">
-  Login uses <b>modern_email</b> from JSON<br>
-  URL still becomes <b>?name=JSON name</b><br>
-  Sprite uses <b>sprite_image</b><br>
-  W A S D = Move Sprite<br>
+  Select your <b>modern_email</b><br>
+  Name, profile photo, and sprite load from JSON<br>
+  Arrow Keys = Move Sprite<br>
   💬 appears only when near another player (80px)<br>
   1-on-1 call only
 </div>
@@ -434,11 +394,11 @@ body{
   <div class="modalBox">
     <h2 id="requestTitle">Video Call</h2>
 
-    <div class="requestUserCard">
-      <img id="requestProfilePic" alt="Caller profile" />
-      <div>
-        <strong id="requestUserName">Peer</strong>
-        <span id="requestUserMeta">Video call request</span>
+    <div class="requestUserInfo">
+      <img id="requestProfilePic" class="requestProfilePic" alt="">
+      <div class="requestUserMeta">
+        <div id="requestUserName" class="requestUserName">User</div>
+        <div id="requestUserSub" class="requestUserSub">Incoming call</div>
       </div>
     </div>
 
@@ -457,13 +417,15 @@ body{
 
 <div id="callModal" class="modal">
   <div class="modalBox wide">
-    <div class="profileHeader">
-      <img id="callProfilePic" alt="Peer profile" />
-      <div>
-        <h2 id="callTitle">Video Chat</h2>
-        <span id="callUserMeta"></span>
+    <div class="callHeader">
+      <img id="callProfilePic" class="callProfilePic" alt="">
+      <div class="callUserMeta">
+        <div id="callUserName" class="callUserName">Video Chat</div>
+        <div id="callUserSub" class="callUserSub">P2P video chat</div>
       </div>
     </div>
+
+    <h2 id="callTitle">Video Chat</h2>
 
     <div class="callGrid">
       <div>
@@ -494,19 +456,15 @@ body{
 <script type="module">
 import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
 
-const USERS_JSON_URL = 'https://gist.githubusercontent.com/RomeoAsis2023/dcb6239ab41d40f39852e97a60ccf504/raw/490a6fbeee5aca69c964f86e38eeb2e60451171d/modern_user_data.json'
-const FALLBACK_PROFILE_PIC = 'https://placehold.co/120x120/111827/ffffff?text=User'
+const USERS_JSON_URL = 'https://gist.githubusercontent.com/RomeoAsis2023/dcb6239ab41d40f39852e97a60ccf504/raw/modern_user_data.json'
+const FALLBACK_AVATAR = 'https://placehold.co/100x100/111827/ffffff?text=User'
 
 const scene = document.getElementById('scene')
 const ui = document.getElementById('ui')
 const statusEl = document.getElementById('status')
 const joinBtn = document.getElementById('joinBtn')
 const roomInput = document.getElementById('roomInput')
-const emailInput = document.getElementById('emailInput')
-const userPreview = document.getElementById('userPreview')
-const userPreviewPic = document.getElementById('userPreviewPic')
-const userPreviewName = document.getElementById('userPreviewName')
-const userPreviewMeta = document.getElementById('userPreviewMeta')
+const emailSelect = document.getElementById('emailSelect')
 const ringtoneAudio = document.getElementById('ringtoneAudio')
 const joinBellAudio = document.getElementById('joinBellAudio')
 
@@ -519,12 +477,13 @@ const requestVideoBtn = document.getElementById('requestVideoBtn')
 const requestMicBtn = document.getElementById('requestMicBtn')
 const requestProfilePic = document.getElementById('requestProfilePic')
 const requestUserName = document.getElementById('requestUserName')
-const requestUserMeta = document.getElementById('requestUserMeta')
+const requestUserSub = document.getElementById('requestUserSub')
 
 const callModal = document.getElementById('callModal')
 const callTitle = document.getElementById('callTitle')
 const callProfilePic = document.getElementById('callProfilePic')
-const callUserMeta = document.getElementById('callUserMeta')
+const callUserName = document.getElementById('callUserName')
+const callUserSub = document.getElementById('callUserSub')
 const remoteVideo = document.getElementById('remoteVideo')
 const localPreview = document.getElementById('localPreview')
 const callVideoBtn = document.getElementById('callVideoBtn')
@@ -536,6 +495,10 @@ const chatInput = document.getElementById('chatInput')
 const sendChatBtn = document.getElementById('sendChatBtn')
 
 const urlParams = new URLSearchParams(window.location.search)
+
+let playerName = sanitizeName(urlParams.get('name')) || ''
+let localUser = null
+let modernUsers = []
 
 const FRAME_W = 32
 const FRAME_H = 32
@@ -561,13 +524,6 @@ let activeCallPeer = null
 let pendingOutgoingCallPeer = null
 let pendingIncomingCallPeer = null
 
-let playerName = sanitizeName(urlParams.get('name')) || ''
-let localProfilePic = ''
-let localPositionTitle = ''
-let localDepartment = ''
-let localModernEmail = ''
-let currentUser = null
-
 const connectedPeers = new Set()
 const peerStates = {}
 const players = {}
@@ -582,6 +538,7 @@ let localState = {
   position:'',
   department:'',
   modernEmail:'',
+  userId:'',
   direction:'down',
   frame:1,
   moving:false
@@ -614,28 +571,14 @@ function playJoinBell(){
   joinBellAudio.play().catch(() => {})
 }
 
-async function fetchModernUsers(){
-  const response = await fetch(USERS_JSON_URL, {cache:'no-store'})
+async function loadUsers(){
+  const response = await fetch(USERS_JSON_URL + '?t=' + Date.now(), {
+    cache:'no-store'
+  })
+
   if(!response.ok){
-    throw new Error('Unable to load Modern user data.')
+    throw new Error('Could not load Modern user data.')
   }
-
-  const data = await response.json()
-
-  if(Array.isArray(data)) return data
-  if(Array.isArray(data.users)) return data.users
-
-  return []
-}
-
-async function findUserByEmail(email){
-
-  const response = await fetch(
-    USERS_JSON_URL + '?t=' + Date.now(),
-    {
-      cache:'no-store'
-    }
-  )
 
   const data = await response.json()
 
@@ -643,110 +586,106 @@ async function findUserByEmail(email){
     throw new Error('Invalid JSON format. Missing users array.')
   }
 
-  return data.users.find(user =>
-    String(user.modern_email || '')
-      .trim()
-      .toLowerCase() ===
-    String(email || '')
-      .trim()
-      .toLowerCase()
+  modernUsers = data.users
+  return modernUsers
+}
+
+function populateEmailDropdown(users){
+  emailSelect.innerHTML = ''
+
+  const defaultOption = document.createElement('option')
+  defaultOption.value = ''
+  defaultOption.textContent = 'Select your Modern email'
+  emailSelect.appendChild(defaultOption)
+
+  users.forEach(user => {
+    const option = document.createElement('option')
+    option.value = String(user.modern_email || '').trim()
+    option.textContent = `${user.name || 'Modern User'} — ${user.modern_email || 'No email'}`
+    emailSelect.appendChild(option)
+  })
+
+  const urlName = sanitizeName(urlParams.get('name'))
+  if(urlName){
+    const matched = users.find(user => sanitizeName(user.name) === urlName)
+    if(matched && matched.modern_email){
+      emailSelect.value = matched.modern_email
+    }
+  }
+}
+
+async function initializeUserDropdown(){
+  try{
+    statusEl.textContent = 'Loading Modern users...'
+    const users = await loadUsers()
+    populateEmailDropdown(users)
+    statusEl.textContent = 'Select your Modern email to join.'
+  }catch(error){
+    console.error(error)
+    emailSelect.innerHTML = '<option value="">Could not load Modern users</option>'
+    statusEl.textContent = 'Could not load Modern users.'
+  }
+}
+
+function findUserByEmail(email){
+  const cleanEmail = String(email || '').trim().toLowerCase()
+
+  return modernUsers.find(user =>
+    String(user.modern_email || '').trim().toLowerCase() === cleanEmail
   )
 }
 
-function getPeerMeta(peerId){
-  return peerStates[peerId] || {}
-}
-
-function getUserMetaLine(user){
-  const parts = []
-  if(user?.position) parts.push(user.position)
-  if(user?.department) parts.push(user.department)
-  return parts.join(' · ')
-}
-
-function setPreviewUser(user){
-  if(!user){
-    userPreview.style.display = 'none'
-    return
-  }
-
-  userPreviewPic.src = user.profile_pic || FALLBACK_PROFILE_PIC
-  userPreviewName.textContent = user.name || 'Modern User'
-  userPreviewMeta.textContent = getUserMetaLine(user) || user.modern_email || ''
-  userPreview.style.display = 'flex'
-}
-
-emailInput.addEventListener('change', async () => {
-  const email = emailInput.value.trim()
-  if(!email){
-    setPreviewUser(null)
-    return
-  }
-
-  try{
-    statusEl.textContent = 'Checking Modern email...'
-    const user = await findUserByEmail(email)
-    currentUser = user
-
-    if(user){
-      setPreviewUser(user)
-      statusEl.textContent = 'Found ' + user.name + '. Ready to join.'
-    }else{
-      setPreviewUser(null)
-      statusEl.textContent = 'No Modern user found for that email.'
-    }
-  }catch(error){
-    console.error(error)
-    setPreviewUser(null)
-    statusEl.textContent = 'Could not load Modern user data.'
-  }
-})
+initializeUserDropdown()
 
 joinBtn.onclick = async () => {
-  const email = emailInput.value.trim()
+  const email = String(emailSelect.value || '').trim()
 
   if(!email){
-    alert('Please enter your Modern email.')
+    alert('Please select your Modern email.')
     return
   }
 
   joinBtn.disabled = true
-  statusEl.textContent = 'Loading Modern user data...'
+  statusEl.textContent = 'Checking Modern user...'
 
-  try{
-    currentUser = currentUser || await findUserByEmail(email)
-  }catch(error){
-    console.error(error)
-    alert('Unable to fetch Modern user data. Please try again.')
+  if(!modernUsers.length){
+    try{
+      await loadUsers()
+      populateEmailDropdown(modernUsers)
+      emailSelect.value = email
+    }catch(error){
+      console.error(error)
+      alert(error.message || 'Unable to load user data.')
+      joinBtn.disabled = false
+      statusEl.textContent = 'Not connected'
+      return
+    }
+  }
+
+  localUser = findUserByEmail(email)
+
+  if(!localUser){
+    alert('No Modern user found for that email.')
     joinBtn.disabled = false
-    statusEl.textContent = 'Could not load Modern user data.'
+    statusEl.textContent = 'Not connected'
     return
   }
 
-  if(!currentUser){
-    alert('No user found with that Modern email.')
-    joinBtn.disabled = false
-    statusEl.textContent = 'No Modern user found for that email.'
-    return
-  }
+  playerName = sanitizeName(localUser.name) || 'Modern User'
 
-  playerName = sanitizeName(currentUser.name) || 'Guest-' + Math.random().toString(36).substring(2,6)
-  localProfilePic = currentUser.profile_pic || ''
-  localPositionTitle = currentUser.position || ''
-  localDepartment = currentUser.department || ''
-  localModernEmail = currentUser.modern_email || email
-
-  localState.sprite = currentUser.sprite_image || createDefaultSprite()
-  localState.profilePic = localProfilePic
-  localState.position = localPositionTitle
-  localState.department = localDepartment
-  localState.modernEmail = localModernEmail
+  localState.sprite = localUser.sprite_image || createDefaultSprite()
+  localState.profilePic = localUser.profile_pic || ''
+  localState.position = localUser.position || ''
+  localState.department = localUser.department || ''
+  localState.modernEmail = localUser.modern_email || ''
+  localState.userId = localUser.id || ''
 
   const url = new URL(window.location.href)
   url.searchParams.set('name', playerName)
   history.replaceState({}, '', url)
 
   roomName = roomInput.value.trim() || 'demo-room'
+  statusEl.textContent = 'Opening camera and microphone...'
 
   try{
     localStream = await navigator.mediaDevices.getUserMedia({
@@ -756,7 +695,7 @@ joinBtn.onclick = async () => {
   }catch(error){
     alert('Camera and microphone permission are required.')
     joinBtn.disabled = false
-    statusEl.textContent = 'Camera and microphone permission are required.'
+    statusEl.textContent = 'Not connected'
     return
   }
 
@@ -861,7 +800,7 @@ joinBtn.onclick = async () => {
     }
 
     if(data.type === 'video-chat-message'){
-      addChatMessage(data.fromName || 'Peer', data.message || '', false, data.profilePic || getPeerMeta(peerId).profilePic || '')
+      addChatMessage(data.fromName || 'Peer', data.message || '', false, data.profilePic || peerStates[peerId]?.profilePic || '')
       return
     }
 
@@ -1009,14 +948,14 @@ function showOutgoingRequest(peerId){
   pendingOutgoingCallPeer = peerId
   broadcastState()
 
-  const peer = getPeerMeta(peerId)
+  const peer = peerStates[peerId] || {}
   const name = peer.name || 'Peer'
 
   requestTitle.textContent = 'Start Video Call'
   requestText.textContent = 'Do you want to video call ' + name + '?'
+  requestProfilePic.src = peer.profilePic || FALLBACK_AVATAR
   requestUserName.textContent = name
-  requestUserMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Video call request'
-  requestProfilePic.src = peer.profilePic || FALLBACK_PROFILE_PIC
+  requestUserSub.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Modern user'
 
   requestActions.innerHTML = `
     <button class="callBtn" id="callNowBtn">Call</button>
@@ -1055,14 +994,13 @@ function showOutgoingRequest(peerId){
 function showIncomingRequest(peerId, fromName){
   playRingtone()
 
-  const peer = getPeerMeta(peerId)
-  const displayName = peer.name || fromName || 'Someone'
+  const peer = peerStates[peerId] || {}
 
   requestTitle.textContent = 'Incoming Video Call'
-  requestText.textContent = displayName + ' wants to video call you.'
-  requestUserName.textContent = displayName
-  requestUserMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Incoming video call'
-  requestProfilePic.src = peer.profilePic || FALLBACK_PROFILE_PIC
+  requestText.textContent = fromName + ' wants to video call you.'
+  requestProfilePic.src = peer.profilePic || FALLBACK_AVATAR
+  requestUserName.textContent = peer.name || fromName
+  requestUserSub.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Incoming call'
 
   requestActions.innerHTML = `
     <button class="acceptBtn" id="acceptCallBtn">Accept</button>
@@ -1112,13 +1050,16 @@ function closeRequestModal(){
 }
 
 function openCallModal(peerId){
-  const peer = getPeerMeta(peerId)
+  const peer = peerStates[peerId] || {}
   const name = peer.name || 'Peer'
 
   activeCallPeer = peerId
+
   callTitle.textContent = 'Video Chat with ' + name
-  callProfilePic.src = peer.profilePic || FALLBACK_PROFILE_PIC
-  callUserMeta.textContent = [peer.position, peer.department].filter(Boolean).join(' · ')
+  callUserName.textContent = name
+  callUserSub.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'P2P video chat'
+  callProfilePic.src = peer.profilePic || FALLBACK_AVATAR
+
   localPreview.srcObject = localStream
   chatBox.innerHTML = ''
 
@@ -1161,13 +1102,13 @@ function sendChatMessage(){
   const message = chatInput.value.trim()
   if(!message || !activeCallPeer) return
 
-  addChatMessage(playerName, message, true, localProfilePic)
+  addChatMessage(playerName, message, true, localState.profilePic)
 
   sendToPeer(activeCallPeer,{
     type:'video-chat-message',
     room:roomName,
     fromName:playerName,
-    profilePic:localProfilePic,
+    profilePic:localState.profilePic,
     message
   })
 
@@ -1178,19 +1119,15 @@ function addChatMessage(name, message, isMe, profilePic){
   const div = document.createElement('div')
   div.className = 'chatMsg'
 
-  if(name === 'System'){
-    div.classList.add('system')
-    div.textContent = message
-    chatBox.appendChild(div)
-    chatBox.scrollTop = chatBox.scrollHeight
-    return
-  }
+  const avatar = profilePic || (isMe ? localState.profilePic : '') || FALLBACK_AVATAR
 
-  const imgSrc = profilePic || FALLBACK_PROFILE_PIC
   div.innerHTML = `
-    <img src="${escapeHTML(imgSrc)}" alt="${escapeHTML(name)}" />
-    <div class="bubble"><b>${escapeHTML(isMe ? 'You' : name)}:</b> ${escapeHTML(message)}</div>
+    <img class="chatAvatar" src="${escapeHTML(avatar)}" alt="">
+    <div class="chatMsgBody">
+      <b>${escapeHTML(isMe ? 'You' : name)}:</b> ${escapeHTML(message)}
+    </div>
   `
+
   chatBox.appendChild(div)
   chatBox.scrollTop = chatBox.scrollHeight
 }
@@ -1448,9 +1385,9 @@ function updateSpriteFrame(player, direction, frame){
 const keys = {}
 
 window.addEventListener('keydown', e => {
-  const key = e.key.toLowerCase()
+  const key = e.key
 
-  if(['w','a','s','d'].includes(key)){
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(key)){
     e.preventDefault()
   }
 
@@ -1458,7 +1395,7 @@ window.addEventListener('keydown', e => {
 })
 
 window.addEventListener('keyup', e => {
-  keys[e.key.toLowerCase()] = false
+  keys[e.key] = false
 })
 
 let lastMoveSend = 0
@@ -1467,25 +1404,25 @@ function movementLoop(timestamp = 0){
   const speed = 3
   let moved = false
 
-  if(keys.w){
+  if(keys.ArrowUp){
     myPosition.y -= speed
     localState.direction = 'up'
     moved = true
   }
 
-  if(keys.s){
+  if(keys.ArrowDown){
     myPosition.y += speed
     localState.direction = 'down'
     moved = true
   }
 
-  if(keys.a){
+  if(keys.ArrowLeft){
     myPosition.x -= speed
     localState.direction = 'left'
     moved = true
   }
 
-  if(keys.d){
+  if(keys.ArrowRight){
     myPosition.x += speed
     localState.direction = 'right'
     moved = true
@@ -1527,10 +1464,6 @@ function broadcastState(targetPeerId = null){
       x:myPosition.x,
       y:myPosition.y,
       name:playerName,
-      profilePic:localProfilePic,
-      position:localPositionTitle,
-      department:localDepartment,
-      modernEmail:localModernEmail,
       busy:isBusy()
     }
   }
@@ -1587,12 +1520,12 @@ function sanitizeName(name){
 
   return String(name)
     .trim()
-    .slice(0,40)
+    .slice(0,24)
     .replace(/[<>]/g,'')
 }
 
 function escapeHTML(str){
-  return String(str || '').replace(/[&<>'"]/g, char => ({
+  return String(str).replace(/[&<>'"]/g, char => ({
     '&':'&amp;',
     '<':'&lt;',
     '>':'&gt;',
