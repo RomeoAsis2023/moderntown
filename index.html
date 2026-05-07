@@ -385,6 +385,8 @@ body{
   Name, profile photo, and sprite load from JSON<br>
   Arrow Keys = Move Sprite<br>
   💬 appears only when near another player (80px)<br>
+  Arrow keys = Move Sprite<br>
+  Collision enabled: sprites cannot overlap<br>
   1-on-1 call only
 </div>
 
@@ -1525,36 +1527,99 @@ window.addEventListener('keyup', e => {
 
 let lastMoveSend = 0
 
+function getCollisionBoxFromPosition(x, y){
+  return {
+    x:x + 32,
+    y:y + 8,
+    w:64,
+    h:64
+  }
+}
+
+function boxesOverlap(a, b){
+  return (
+    a.x < b.x + b.w &&
+    a.x + a.w > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.h > b.y
+  )
+}
+
+function wouldCollide(nextX, nextY){
+  const myBox = getCollisionBoxFromPosition(nextX, nextY)
+
+  for(const peerId in players){
+    if(peerId === 'local') continue
+
+    const peerPlayer = players[peerId]
+    if(!peerPlayer) continue
+
+    const px = parseFloat(peerPlayer.style.left || 0)
+    const py = parseFloat(peerPlayer.style.top || 0)
+    const peerBox = getCollisionBoxFromPosition(px, py)
+
+    if(boxesOverlap(myBox, peerBox)){
+      return true
+    }
+  }
+
+  return false
+}
+
+function tryMoveTo(nextX, nextY){
+  nextX = Math.max(0, Math.min(window.innerWidth - 180, nextX))
+  nextY = Math.max(40, Math.min(window.innerHeight - 190, nextY))
+
+  if(!wouldCollide(nextX, nextY)){
+    myPosition.x = nextX
+    myPosition.y = nextY
+    return true
+  }
+
+  return false
+}
+
 function movementLoop(timestamp = 0){
   const speed = 3
   let moved = false
+  let nextX = myPosition.x
+  let nextY = myPosition.y
 
   if(keys.ArrowUp){
-    myPosition.y -= speed
+    nextY -= speed
     localState.direction = 'up'
     moved = true
   }
 
   if(keys.ArrowDown){
-    myPosition.y += speed
+    nextY += speed
     localState.direction = 'down'
     moved = true
   }
 
   if(keys.ArrowLeft){
-    myPosition.x -= speed
+    nextX -= speed
     localState.direction = 'left'
     moved = true
   }
 
   if(keys.ArrowRight){
-    myPosition.x += speed
+    nextX += speed
     localState.direction = 'right'
     moved = true
   }
 
-  myPosition.x = Math.max(0, Math.min(window.innerWidth - 180, myPosition.x))
-  myPosition.y = Math.max(40, Math.min(window.innerHeight - 190, myPosition.y))
+  if(moved){
+    const diagonalMove = nextX !== myPosition.x && nextY !== myPosition.y
+
+    if(diagonalMove){
+      const movedX = tryMoveTo(nextX, myPosition.y)
+      const movedY = tryMoveTo(myPosition.x, nextY)
+      moved = movedX || movedY
+    }else{
+      moved = tryMoveTo(nextX, nextY)
+    }
+  }
 
   localState.moving = moved
   localState.frame = moved ? localState.frame + 0.16 : 1
@@ -1700,6 +1765,3 @@ function createDefaultSprite(){
   return canvas.toDataURL('image/png')
 }
 </script>
-
-</body>
-</html>
