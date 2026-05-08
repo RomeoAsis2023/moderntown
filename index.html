@@ -434,6 +434,38 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
   border: solid 3px #fff;
   box-shadow: 8px 8px 15px rgba(0,0,0,.5);
 }
+
+#control_bar_mt{
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;  
+  flex-direction: row-reverse;
+}
+
+#control_bar_mt #bar_menu_left button{
+  background: #2563eb;
+  padding: 10px;
+  border: solid 1px #2563eb;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+#control_bar_mt #bar_menu_left button img{
+  width: 30px;
+  height: 20px;
+}
+
+#control_bar_mt #bar_menu_left{
+  display: flex;
+  gap: 10px;
+  position: relative;
+  z-index: 9999999;
+}
+
+#control_bar_mt #bar_menu_left button:hover{
+  background: #a855f7;
+  border-color: #a855f7;
+}	
 </style>
 </head>
 
@@ -472,10 +504,21 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
   1-on-1 call only
 </div>
 
+<div id="control_bar_mt">
+  <div id="bar_menu_left">
+  <button id="mic_btn"> <img src="https://romeoasis2023.github.io/moderntown/images/mic.svg"></button>
+    <button id="video_btn"> <img src="https://romeoasis2023.github.io/moderntown/images/video.svg"></button>    
+    <button id="vol_btn"> <img src="https://romeoasis2023.github.io/moderntown/images/volume-2.svg"></button>
+ </div>
+   <div id="bar_menu_right">
+  MENU RIGHT
+ </div>
+</div>
+	
 <div id="floater_footer_bar">
   <img src="https://romeoasis2023.github.io/moderntown/logomt.png">
 </div>
-<div id="control_bar_mt">Control here</div>
+
 
 <div id="scene">
   <span 
