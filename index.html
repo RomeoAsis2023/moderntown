@@ -3,30 +3,30 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Modern Town Virtual Office</title>
+<title>Modern Town Virtual office</title>
 
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 
 body{
-  background: rgba(0,0,0,.4);
+ background: rgba(0,0,0,.4);
   color: white;
   font-family: Arial,Helvetica,sans-serif;
   overflow: hidden;
 }
 
 #ui{
-  position:fixed;
-  inset:0;
-  z-index:9999;
-  width:100%;
-  height:100%;
-  background:rgba(15,23,42,.96);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  flex-direction:column;
-  gap:15px;
+  position: fixed;
+    inset: 0;
+    z-index: 9999;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, .96);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 15px;
 }
 
 #uiInner{
@@ -44,7 +44,6 @@ body{
 }
 
 #ui input,
-#ui select,
 #ui button{
   width:100%;
   padding:12px;
@@ -79,11 +78,28 @@ body{
   background-size: 32px 32px;
 }
 
+.sceneObject{
+  position:absolute;
+  user-select:none;
+  pointer-events:none;
+  z-index:1;
+}
+
+.sceneObject img{
+  width:100%;
+  height:100%;
+  display:block;
+  object-fit:contain;
+}
+
+.player{
+  z-index:5;
+}
+
 .player{
   position:absolute;
   width:96px;
   height:96px;
-  scale: .8;
 }
 
 .nameTag{
@@ -206,43 +222,6 @@ body{
 
 .remoteVideo{height:360px}
 
-.callHeader,
-.requestUserInfo{
-  display:flex;
-  align-items:center;
-  gap:10px;
-  margin-bottom:12px;
-}
-
-.callProfilePic,
-.requestProfilePic{
-  width:48px;
-  height:48px;
-  border-radius:50%;
-  object-fit:cover;
-  border:2px solid rgba(255,255,255,.2);
-  background:#020617;
-}
-
-.callUserMeta,
-.requestUserMeta{
-  display:flex;
-  flex-direction:column;
-  gap:3px;
-}
-
-.callUserName,
-.requestUserName{
-  font-weight:bold;
-  font-size:15px;
-}
-
-.callUserSub,
-.requestUserSub{
-  color:#94a3b8;
-  font-size:12px;
-}
-
 .callGrid{
   display:grid;
   grid-template-columns:1fr 210px;
@@ -323,21 +302,9 @@ body{
 .chatMsg{
   margin-bottom:8px;
   line-height:1.35;
-  display:flex;
-  gap:8px;
-  align-items:flex-start;
 }
 
-.chatAvatar{
-  width:24px;
-  height:24px;
-  border-radius:50%;
-  object-fit:cover;
-  background:#1f2937;
-  flex-shrink:0;
-}
-
-.chatMsgBody b{color:#93c5fd}
+.chatMsg b{color:#93c5fd}
 
 .chatInputRow{
   display:flex;
@@ -351,7 +318,6 @@ body{
   border-radius:10px;
   background:#1f2937;
   color:white;
-  max-width: 148px;
 }
 </style>
 </head>
@@ -362,18 +328,17 @@ body{
 <audio id="joinBellAudio" src="https://romeoasis2023.github.io/moderntown/bell_ring.mp3" preload="auto"></audio>
 
 <div id="ui">
-  <div style="text-align:center;">
-    <img src="https://romeoasis2023.github.io/moderntown/logomt.png" alt="Modern Town" style="max-width:220px;width:80%;height:auto;">
+  <div style="text-align: center;">
+  <img src="https://romeoasis2023.github.io/moderntown/logomt.png">
   </div>
-
-  <div id="uiInner">
+  <div id="uiInner">   
     <h1>Virtual Office</h1>
 
     <input id="roomInput" type="hidden" value="demo-room" />
 
-    <select id="emailSelect">
-      <option value="">Loading Modern users...</option>
-    </select>
+    <input id="nameInput" type="text" placeholder="Enter your name" />
+
+    <input id="spriteUpload" type="file" accept="image/png,image/webp,image/jpeg" />
 
     <button id="joinBtn">Join Room</button>
 
@@ -382,29 +347,27 @@ body{
 </div>
 
 <div id="help">
-  Select your <b>modern_email</b><br>
-  Name, profile photo, and sprite load from JSON<br>
-  Arrow Keys = Move Sprite<br>
+  URL name: <b>?name=romeo</b><br>
+  Upload sprite: <b>96x128px</b><br>
+  W A S D = Move Sprite<br>
   💬 appears only when near another player (80px)<br>
-  Arrow keys = Move Sprite<br>
-  Collision enabled: sprites cannot overlap<br>
   1-on-1 call only
 </div>
 
-<div id="scene"></div>
+<div id="scene">
+  <div
+    id="deskObject1"
+    class="sceneObject collidableObject"
+    data-collision="true"
+    style="left:520px;top:260px;width:128px;height:96px;"
+  >
+    <img src="./objects/sprites/desk_1.svg" alt="Desk">
+  </div>
+</div>
 
 <div id="requestModal" class="modal">
   <div class="modalBox">
     <h2 id="requestTitle">Video Call</h2>
-
-    <div class="requestUserInfo">
-      <img id="requestProfilePic" class="requestProfilePic" alt="">
-      <div class="requestUserMeta">
-        <div id="requestUserName" class="requestUserName">User</div>
-        <div id="requestUserSub" class="requestUserSub">Incoming call</div>
-      </div>
-    </div>
-
     <p id="requestText">Call request</p>
 
     <video id="requestPreview" class="previewVideo" autoplay playsinline muted></video>
@@ -420,14 +383,6 @@ body{
 
 <div id="callModal" class="modal">
   <div class="modalBox wide">
-    <div class="callHeader">
-      <img id="callProfilePic" class="callProfilePic" alt="">
-      <div class="callUserMeta">
-        <div id="callUserName" class="callUserName">Video Chat</div>
-        <div id="callUserSub" class="callUserSub">P2P video chat</div>
-      </div>
-    </div>
-
     <h2 id="callTitle">Video Chat</h2>
 
     <div class="callGrid">
@@ -456,21 +411,16 @@ body{
   </div>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/reconnecting-websocket/1.0.0/reconnecting-websocket.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/webconnect@0.0.12/dist/umd/webconnect.js"></script>
-
-<script>
-const createWebConnect = window.webconnect || window.WebConnect || (typeof webconnect !== 'undefined' ? webconnect : null)
-
-const USERS_JSON_URL = 'https://romeoasis2023.github.io/moderntown/moderntown_users_data.json'
-const FALLBACK_AVATAR = 'https://placehold.co/100x100/111827/ffffff?text=User'
+<script type="module">
+import webconnect from 'https://cdn.jsdelivr.net/npm/webconnect/dist/esm/webconnect.js'
 
 const scene = document.getElementById('scene')
 const ui = document.getElementById('ui')
 const statusEl = document.getElementById('status')
 const joinBtn = document.getElementById('joinBtn')
 const roomInput = document.getElementById('roomInput')
-const emailSelect = document.getElementById('emailSelect')
+const nameInput = document.getElementById('nameInput')
+const spriteUpload = document.getElementById('spriteUpload')
 const ringtoneAudio = document.getElementById('ringtoneAudio')
 const joinBellAudio = document.getElementById('joinBellAudio')
 
@@ -481,15 +431,9 @@ const requestPreview = document.getElementById('requestPreview')
 const requestActions = document.getElementById('requestActions')
 const requestVideoBtn = document.getElementById('requestVideoBtn')
 const requestMicBtn = document.getElementById('requestMicBtn')
-const requestProfilePic = document.getElementById('requestProfilePic')
-const requestUserName = document.getElementById('requestUserName')
-const requestUserSub = document.getElementById('requestUserSub')
 
 const callModal = document.getElementById('callModal')
 const callTitle = document.getElementById('callTitle')
-const callProfilePic = document.getElementById('callProfilePic')
-const callUserName = document.getElementById('callUserName')
-const callUserSub = document.getElementById('callUserSub')
 const remoteVideo = document.getElementById('remoteVideo')
 const localPreview = document.getElementById('localPreview')
 const callVideoBtn = document.getElementById('callVideoBtn')
@@ -503,8 +447,10 @@ const sendChatBtn = document.getElementById('sendChatBtn')
 const urlParams = new URLSearchParams(window.location.search)
 
 let playerName = sanitizeName(urlParams.get('name')) || ''
-let localUser = null
-let modernUsers = []
+
+if(playerName){
+  nameInput.value = playerName
+}
 
 const FRAME_W = 32
 const FRAME_H = 32
@@ -512,6 +458,9 @@ const SHEET_W = 96
 const SHEET_H = 128
 const COLS = 3
 const CHAT_DISTANCE = 80
+const SPAWN_GAP = 10
+const PLAYER_BODY_W = 36
+const PLAYER_BODY_H = 36
 
 const DIRECTION_ROW = {
   down:0,
@@ -535,18 +484,11 @@ const peerStates = {}
 const players = {}
 const peerConnections = {}
 const pendingIce = {}
-const peerDisconnectTimers = {}
-const remoteStreams = {}
 
 let localState = {
   video:true,
   mic:true,
   sprite:createDefaultSprite(),
-  profilePic:'',
-  position:'',
-  department:'',
-  modernEmail:'',
-  userId:'',
   direction:'down',
   frame:1,
   moving:false
@@ -556,6 +498,9 @@ let myPosition = {
   x:360,
   y:220
 }
+
+let spawnAdjusted = false
+let localHasMoved = false
 
 function isBusy(){
   return !!activeCallPeer || !!pendingOutgoingCallPeer || !!pendingIncomingCallPeer
@@ -579,121 +524,51 @@ function playJoinBell(){
   joinBellAudio.play().catch(() => {})
 }
 
-async function loadUsers(){
-  const response = await fetch(USERS_JSON_URL + '?t=' + Date.now(), {
-    cache:'no-store'
-  })
+spriteUpload.addEventListener('change', e => {
+  const file = e.target.files[0]
+  if(!file) return
 
-  if(!response.ok){
-    throw new Error('Could not load Modern user data.')
-  }
+  const img = new Image()
+  const url = URL.createObjectURL(file)
 
-  const data = await response.json()
-
-  if(!data.users || !Array.isArray(data.users)){
-    throw new Error('Invalid JSON format. Missing users array.')
-  }
-
-  modernUsers = data.users
-  return modernUsers
-}
-
-function populateEmailDropdown(users){
-  emailSelect.innerHTML = ''
-
-  const defaultOption = document.createElement('option')
-  defaultOption.value = ''
-  defaultOption.textContent = 'Select your Modern email'
-  emailSelect.appendChild(defaultOption)
-
-  users.forEach(user => {
-    const option = document.createElement('option')
-    option.value = String(user.modern_email || '').trim()
-    option.textContent = `${user.name || 'Modern User'} — ${user.modern_email || 'No email'}`
-    emailSelect.appendChild(option)
-  })
-
-  const urlName = sanitizeName(urlParams.get('name'))
-  if(urlName){
-    const matched = users.find(user => sanitizeName(user.name) === urlName)
-    if(matched && matched.modern_email){
-      emailSelect.value = matched.modern_email
-    }
-  }
-}
-
-async function initializeUserDropdown(){
-  try{
-    statusEl.textContent = 'Loading Modern users...'
-    const users = await loadUsers()
-    populateEmailDropdown(users)
-    statusEl.textContent = 'Select your Modern email to join.'
-  }catch(error){
-    console.error(error)
-    emailSelect.innerHTML = '<option value="">Could not load Modern users</option>'
-    statusEl.textContent = 'Could not load Modern users.'
-  }
-}
-
-function findUserByEmail(email){
-  const cleanEmail = String(email || '').trim().toLowerCase()
-
-  return modernUsers.find(user =>
-    String(user.modern_email || '').trim().toLowerCase() === cleanEmail
-  )
-}
-
-initializeUserDropdown()
-
-joinBtn.onclick = async () => {
-  const email = String(emailSelect.value || '').trim()
-
-  if(!email){
-    alert('Please select your Modern email.')
-    return
-  }
-
-  joinBtn.disabled = true
-  statusEl.textContent = 'Checking Modern user...'
-
-  if(!modernUsers.length){
-    try{
-      await loadUsers()
-      populateEmailDropdown(modernUsers)
-      emailSelect.value = email
-    }catch(error){
-      console.error(error)
-      alert(error.message || 'Unable to load user data.')
-      joinBtn.disabled = false
-      statusEl.textContent = 'Not connected'
+  img.onload = () => {
+    if(img.width !== SHEET_W || img.height !== SHEET_H){
+      alert('Please upload exact 96x128px sprite sheet.')
+      spriteUpload.value = ''
+      URL.revokeObjectURL(url)
       return
     }
+
+    const reader = new FileReader()
+
+    reader.onload = ev => {
+      localState.sprite = ev.target.result
+
+      if(players.local){
+        players.local.querySelector('.sprite').style.backgroundImage = `url(${localState.sprite})`
+      }
+
+      broadcastState()
+    }
+
+    reader.readAsDataURL(file)
+    URL.revokeObjectURL(url)
   }
 
-  localUser = findUserByEmail(email)
+  img.src = url
+})
 
-  if(!localUser){
-    alert('No Modern user found for that email.')
-    joinBtn.disabled = false
-    statusEl.textContent = 'Not connected'
-    return
-  }
-
-  playerName = sanitizeName(localUser.name) || 'Modern User'
-
-  localState.sprite = localUser.sprite_image || createDefaultSprite()
-  localState.profilePic = localUser.profile_pic || ''
-  localState.position = localUser.position || ''
-  localState.department = localUser.department || ''
-  localState.modernEmail = localUser.modern_email || ''
-  localState.userId = localUser.id || ''
+joinBtn.onclick = async () => {
+  playerName =
+    sanitizeName(nameInput.value) ||
+    'Guest-' + Math.random().toString(36).substring(2,6)
 
   const url = new URL(window.location.href)
   url.searchParams.set('name', playerName)
   history.replaceState({}, '', url)
 
+  joinBtn.disabled = true
   roomName = roomInput.value.trim() || 'demo-room'
-  statusEl.textContent = 'Opening camera and microphone...'
 
   try{
     localStream = await navigator.mediaDevices.getUserMedia({
@@ -703,7 +578,6 @@ joinBtn.onclick = async () => {
   }catch(error){
     alert('Camera and microphone permission are required.')
     joinBtn.disabled = false
-    statusEl.textContent = 'Not connected'
     return
   }
 
@@ -714,14 +588,7 @@ joinBtn.onclick = async () => {
 
   ui.style.display = 'none'
 
-  if(!createWebConnect){
-    alert('webConnect.js failed to load. Please check the CDN connection.')
-    joinBtn.disabled = false
-    statusEl.textContent = 'webConnect.js failed to load.'
-    return
-  }
-
-  connect = createWebConnect()
+  connect = webconnect()
 
   connect.getMyId(attribute => {
     myConnectId = attribute.connectId
@@ -757,6 +624,7 @@ joinBtn.onclick = async () => {
       }
 
       updateRemotePlayer(peerId)
+      maybeAdjustLocalSpawnNearPeer(peerId)
       return
     }
 
@@ -794,7 +662,7 @@ joinBtn.onclick = async () => {
 
       closeRequestModal()
       openCallModal(peerId)
-      await startCall(peerId, true)
+      await startCall(peerId, shouldInitiate(peerId))
       return
     }
 
@@ -815,7 +683,7 @@ joinBtn.onclick = async () => {
     }
 
     if(data.type === 'video-chat-message'){
-      addChatMessage(data.fromName || 'Peer', data.message || '', false, data.profilePic || peerStates[peerId]?.profilePic || '')
+      addChatMessage(data.fromName || 'Peer', data.message || '', false)
       return
     }
 
@@ -963,14 +831,10 @@ function showOutgoingRequest(peerId){
   pendingOutgoingCallPeer = peerId
   broadcastState()
 
-  const peer = peerStates[peerId] || {}
-  const name = peer.name || 'Peer'
+  const name = peerStates[peerId]?.name || 'Peer'
 
   requestTitle.textContent = 'Start Video Call'
   requestText.textContent = 'Do you want to video call ' + name + '?'
-  requestProfilePic.src = peer.profilePic || FALLBACK_AVATAR
-  requestUserName.textContent = name
-  requestUserSub.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Modern user'
 
   requestActions.innerHTML = `
     <button class="callBtn" id="callNowBtn">Call</button>
@@ -1009,13 +873,8 @@ function showOutgoingRequest(peerId){
 function showIncomingRequest(peerId, fromName){
   playRingtone()
 
-  const peer = peerStates[peerId] || {}
-
   requestTitle.textContent = 'Incoming Video Call'
   requestText.textContent = fromName + ' wants to video call you.'
-  requestProfilePic.src = peer.profilePic || FALLBACK_AVATAR
-  requestUserName.textContent = peer.name || fromName
-  requestUserSub.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'Incoming call'
 
   requestActions.innerHTML = `
     <button class="acceptBtn" id="acceptCallBtn">Accept</button>
@@ -1038,7 +897,7 @@ function showIncomingRequest(peerId, fromName){
     closeRequestModal()
     openCallModal(peerId)
 
-    await startCall(peerId, false)
+    await startCall(peerId, shouldInitiate(peerId))
   }
 
   document.getElementById('declineCallBtn').onclick = () => {
@@ -1065,20 +924,14 @@ function closeRequestModal(){
 }
 
 function openCallModal(peerId){
-  const peer = peerStates[peerId] || {}
-  const name = peer.name || 'Peer'
+  const name = peerStates[peerId]?.name || 'Peer'
 
   activeCallPeer = peerId
-
   callTitle.textContent = 'Video Chat with ' + name
-  callUserName.textContent = name
-  callUserSub.textContent = [peer.position, peer.department].filter(Boolean).join(' · ') || 'P2P video chat'
-  callProfilePic.src = peer.profilePic || FALLBACK_AVATAR
-
   localPreview.srcObject = localStream
   chatBox.innerHTML = ''
 
-  addChatMessage('System', 'Call connected. You can now chat P2P.', false, '')
+  addChatMessage('System', 'Call connected. You can now chat P2P.', false)
 
   callModal.style.display = 'flex'
 }
@@ -1117,32 +970,22 @@ function sendChatMessage(){
   const message = chatInput.value.trim()
   if(!message || !activeCallPeer) return
 
-  addChatMessage(playerName, message, true, localState.profilePic)
+  addChatMessage(playerName, message, true)
 
   sendToPeer(activeCallPeer,{
     type:'video-chat-message',
     room:roomName,
     fromName:playerName,
-    profilePic:localState.profilePic,
     message
   })
 
   chatInput.value = ''
 }
 
-function addChatMessage(name, message, isMe, profilePic){
+function addChatMessage(name, message, isMe){
   const div = document.createElement('div')
   div.className = 'chatMsg'
-
-  const avatar = profilePic || (isMe ? localState.profilePic : '') || FALLBACK_AVATAR
-
-  div.innerHTML = `
-    <img class="chatAvatar" src="${escapeHTML(avatar)}" alt="">
-    <div class="chatMsgBody">
-      <b>${escapeHTML(isMe ? 'You' : name)}:</b> ${escapeHTML(message)}
-    </div>
-  `
-
+  div.innerHTML = `<b>${escapeHTML(isMe ? 'You' : name)}:</b> ${escapeHTML(message)}`
   chatBox.appendChild(div)
   chatBox.scrollTop = chatBox.scrollHeight
 }
@@ -1201,37 +1044,18 @@ function shouldInitiate(peerId){
 }
 
 async function startCall(peerId, shouldCreateOffer){
-  let pc = peerConnections[peerId]
-
-  if(pc && pc.signalingState !== 'closed'){
-    if(shouldCreateOffer && pc.signalingState === 'stable'){
-      await createAndSendOffer(peerId, pc)
-    }
-    return pc
+  if(peerConnections[peerId]){
+    return peerConnections[peerId]
   }
 
-  pc = createPeerConnection(peerId)
+  const pc = createPeerConnection(peerId)
 
-  if(localStream){
-    localStream.getTracks().forEach(track => {
-      pc.addTrack(track, localStream)
-    })
-  }
+  localStream.getTracks().forEach(track => {
+    pc.addTrack(track, localStream)
+  })
 
   if(shouldCreateOffer){
-    await createAndSendOffer(peerId, pc)
-  }
-
-  return pc
-}
-
-async function createAndSendOffer(peerId, pc){
-  try{
-    const offer = await pc.createOffer({
-      offerToReceiveAudio:true,
-      offerToReceiveVideo:true
-    })
-
+    const offer = await pc.createOffer()
     await pc.setLocalDescription(offer)
 
     sendToPeer(peerId,{
@@ -1239,10 +1063,9 @@ async function createAndSendOffer(peerId, pc){
       room:roomName,
       offer:pc.localDescription
     })
-  }catch(error){
-    console.error('Create/send offer failed:', error)
-    statusEl.textContent = 'Could not start video offer. Check console.'
   }
+
+  return pc
 }
 
 function createPeerConnection(peerId){
@@ -1255,11 +1078,6 @@ function createPeerConnection(peerId){
 
   peerConnections[peerId] = pc
   pendingIce[peerId] = pendingIce[peerId] || []
-  remoteStreams[peerId] = remoteStreams[peerId] || new MediaStream()
-
-  if(activeCallPeer === peerId){
-    remoteVideo.srcObject = remoteStreams[peerId]
-  }
 
   pc.onicecandidate = event => {
     if(event.candidate){
@@ -1272,72 +1090,22 @@ function createPeerConnection(peerId){
   }
 
   pc.ontrack = event => {
-    const stream = remoteStreams[peerId] || new MediaStream()
-    remoteStreams[peerId] = stream
+    const stream = event.streams[0]
 
-    if(!stream.getTracks().some(track => track.id === event.track.id)){
-      stream.addTrack(event.track)
+    if(stream){
+      remoteVideo.srcObject = stream
+      remoteVideo.play().catch(() => {})
+      callModal.style.display = 'flex'
     }
-
-    remoteVideo.srcObject = stream
-    remoteVideo.autoplay = true
-    remoteVideo.playsInline = true
-    remoteVideo.muted = false
-    remoteVideo.play().catch(error => {
-      console.warn('Remote video autoplay blocked:', error)
-    })
-
-    callModal.style.display = 'flex'
-    statusEl.textContent = 'Receiving remote video from ' + (peerStates[peerId]?.name || peerId)
-  }
-
-  pc.onicecandidateerror = event => {
-    console.warn('ICE candidate error:', event)
   }
 
   pc.onconnectionstatechange = () => {
-    const state = pc.connectionState
-    console.log('PeerConnection state', peerId, state)
-
-    if(state === 'connected'){
-      clearPeerDisconnectTimer(peerId)
+    if(pc.connectionState === 'connected'){
       statusEl.textContent = 'Video connected with ' + (peerStates[peerId]?.name || peerId)
     }
 
-    if(state === 'connecting'){
-      statusEl.textContent = 'Connecting video with ' + (peerStates[peerId]?.name || peerId) + '...'
-    }
-
-    if(state === 'disconnected'){
-      statusEl.textContent = 'Video temporarily disconnected. Trying to reconnect...'
-      // Do not close the modal immediately. WebRTC often recovers from this state.
-      schedulePeerDisconnect(peerId, 20000)
-    }
-
-    if(state === 'failed'){
-      statusEl.textContent = 'Video ICE failed. Try ending and calling again, or use a TURN server for strict networks.'
-      // Keep the chat modal open so P2P text chat through webConnect can continue.
-    }
-
-    if(state === 'closed'){
-      clearPeerDisconnectTimer(peerId)
-    }
-  }
-
-  pc.oniceconnectionstatechange = () => {
-    const iceState = pc.iceConnectionState
-    console.log('ICE state', peerId, iceState)
-
-    if(iceState === 'connected' || iceState === 'completed'){
-      clearPeerDisconnectTimer(peerId)
-    }
-
-    if(iceState === 'disconnected'){
-      schedulePeerDisconnect(peerId, 20000)
-    }
-
-    if(iceState === 'failed'){
-      statusEl.textContent = 'ICE failed. Chat remains open; video may need TURN relay or a re-call.'
+    if(['closed','failed','disconnected'].includes(pc.connectionState)){
+      endCall(peerId, false)
     }
   }
 
@@ -1356,37 +1124,27 @@ async function handleOffer(peerId, offer){
 
   const pc = await startCall(peerId, false)
 
-  try{
-    await pc.setRemoteDescription(new RTCSessionDescription(offer))
-    await flushPendingIce(peerId)
+  await pc.setRemoteDescription(new RTCSessionDescription(offer))
+  await flushPendingIce(peerId)
 
-    const answer = await pc.createAnswer()
-    await pc.setLocalDescription(answer)
+  const answer = await pc.createAnswer()
+  await pc.setLocalDescription(answer)
 
-    sendToPeer(peerId,{
-      type:'webrtc-answer',
-      room:roomName,
-      answer:pc.localDescription
-    })
+  sendToPeer(peerId,{
+    type:'webrtc-answer',
+    room:roomName,
+    answer:pc.localDescription
+  })
 
-    broadcastState(peerId)
-  }catch(error){
-    console.error('Handle offer failed:', error)
-    statusEl.textContent = 'Could not answer video call. Check console.'
-  }
+  broadcastState(peerId)
 }
 
 async function handleAnswer(peerId, answer){
   const pc = peerConnections[peerId]
   if(!pc) return
 
-  try{
-    await pc.setRemoteDescription(new RTCSessionDescription(answer))
-    await flushPendingIce(peerId)
-  }catch(error){
-    console.error('Handle answer failed:', error)
-    statusEl.textContent = 'Could not complete video answer. Check console.'
-  }
+  await pc.setRemoteDescription(new RTCSessionDescription(answer))
+  await flushPendingIce(peerId)
 }
 
 async function handleIce(peerId, candidate){
@@ -1422,35 +1180,8 @@ async function flushPendingIce(peerId){
   }
 }
 
-function clearPeerDisconnectTimer(peerId){
-  if(peerDisconnectTimers[peerId]){
-    clearTimeout(peerDisconnectTimers[peerId])
-    delete peerDisconnectTimers[peerId]
-  }
-}
-
-function schedulePeerDisconnect(peerId, delay = 8000){
-  if(peerDisconnectTimers[peerId]) return
-
-  peerDisconnectTimers[peerId] = setTimeout(() => {
-    delete peerDisconnectTimers[peerId]
-
-    const pc = peerConnections[peerId]
-
-    if(!pc) return
-
-    const connectionBad = ['disconnected','failed','closed'].includes(pc.connectionState)
-    const iceBad = ['disconnected','failed','closed'].includes(pc.iceConnectionState)
-
-    if(connectionBad || iceBad){
-      statusEl.textContent = 'Video is still disconnected, but chat remains open. End and call again if needed.'
-    }
-  }, delay)
-}
-
 function endCall(peerId, notify){
   stopRingtone()
-  clearPeerDisconnectTimer(peerId)
 
   if(notify){
     sendToPeer(peerId,{
@@ -1465,7 +1196,6 @@ function endCall(peerId, notify){
   }
 
   delete pendingIce[peerId]
-  delete peerDisconnectTimers[peerId]
 
   activeCallPeer = null
   pendingOutgoingCallPeer = null
@@ -1529,13 +1259,11 @@ window.addEventListener('keyup', e => {
 let lastMoveSend = 0
 
 function getCollisionBoxFromPosition(x, y){
-  // Smaller body collision box so players can stand close without sticking.
-  // The visual sprite is 64x64 because it is scaled, but the body hitbox is smaller.
   return {
     x:x + 42,
     y:y + 28,
-    w:36,
-    h:36
+    w:PLAYER_BODY_W,
+    h:PLAYER_BODY_H
   }
 }
 
@@ -1546,6 +1274,22 @@ function boxesOverlap(a, b){
     a.y < b.y + b.h &&
     a.y + a.h > b.y
   )
+}
+
+function getCollidableObjectBoxes(){
+  return Array.from(document.querySelectorAll('.collidableObject')).map(obj => {
+    const x = parseFloat(obj.style.left || obj.offsetLeft || 0)
+    const y = parseFloat(obj.style.top || obj.offsetTop || 0)
+    const w = parseFloat(obj.style.width || obj.offsetWidth || 0)
+    const h = parseFloat(obj.style.height || obj.offsetHeight || 0)
+
+    return {
+      x:x + 8,
+      y:y + 8,
+      w:Math.max(0, w - 16),
+      h:Math.max(0, h - 16)
+    }
+  })
 }
 
 function wouldCollide(nextX, nextY){
@@ -1566,6 +1310,12 @@ function wouldCollide(nextX, nextY){
     }
   }
 
+  for(const objectBox of getCollidableObjectBoxes()){
+    if(boxesOverlap(myBox, objectBox)){
+      return true
+    }
+  }
+
   return false
 }
 
@@ -1575,6 +1325,54 @@ function clampPositionX(x){
 
 function clampPositionY(y){
   return Math.max(40, Math.min(window.innerHeight - 190, y))
+}
+
+function getSpawnPositionNearPlayer(peerId){
+  const peerPlayer = players[peerId]
+  if(!peerPlayer) return null
+
+  const px = parseFloat(peerPlayer.style.left || 0)
+  const py = parseFloat(peerPlayer.style.top || 0)
+  const spacing = 64 + SPAWN_GAP
+
+  const candidates = [
+    {x:px + spacing, y:py},
+    {x:px - spacing, y:py},
+    {x:px, y:py + spacing},
+    {x:px, y:py - spacing},
+    {x:px + spacing, y:py + spacing},
+    {x:px - spacing, y:py + spacing},
+    {x:px + spacing, y:py - spacing},
+    {x:px - spacing, y:py - spacing}
+  ]
+  .map(pos => ({
+    x:clampPositionX(pos.x + Math.floor(Math.random() * 21) - 10),
+    y:clampPositionY(pos.y + Math.floor(Math.random() * 21) - 10)
+  }))
+  .sort(() => Math.random() - 0.5)
+
+  for(const pos of candidates){
+    if(!wouldCollide(pos.x, pos.y)){
+      return pos
+    }
+  }
+
+  return null
+}
+
+function maybeAdjustLocalSpawnNearPeer(peerId){
+  if(spawnAdjusted || localHasMoved || !players.local || !players[peerId]) return
+
+  const pos = getSpawnPositionNearPlayer(peerId)
+  if(!pos) return
+
+  myPosition.x = pos.x
+  myPosition.y = pos.y
+  spawnAdjusted = true
+
+  players.local.style.left = myPosition.x + 'px'
+  players.local.style.top = myPosition.y + 'px'
+  broadcastState()
 }
 
 function movementLoop(timestamp = 0){
@@ -1612,8 +1410,6 @@ function movementLoop(timestamp = 0){
   nextY = clampPositionY(nextY)
 
   if(wantedMove){
-    // Resolve X and Y separately. This prevents players from getting stuck
-    // when they are too close and allows sliding away from another sprite.
     if(nextX !== myPosition.x && !wouldCollide(nextX, myPosition.y)){
       myPosition.x = nextX
       actuallyMoved = true
@@ -1626,6 +1422,10 @@ function movementLoop(timestamp = 0){
   }
 
   const moved = actuallyMoved
+
+  if(moved){
+    localHasMoved = true
+  }
 
   localState.moving = moved
   localState.frame = moved ? localState.frame + 0.16 : 1
@@ -1687,7 +1487,6 @@ function sendToPeer(peerId, payload){
 }
 
 function removePeer(peerId){
-  clearPeerDisconnectTimer(peerId)
   connectedPeers.delete(peerId)
 
   if(peerConnections[peerId]){
@@ -1702,7 +1501,6 @@ function removePeer(peerId){
 
   delete peerStates[peerId]
   delete pendingIce[peerId]
-  delete peerDisconnectTimers[peerId]
 
   if(activeCallPeer === peerId){
     activeCallPeer = null
