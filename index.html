@@ -77,6 +77,7 @@ body{
   background: linear-gradient(rgba(255,255,255,.04) 1px,#f2f2f278 1px), linear-gradient(90deg,rgba(255,255,255,.04) 1px,#c5bfb7b2 1px);
     background-size: auto, auto;
   background-size: 32px 32px;
+  padding-left: 60px;
 }
 
  .sceneObject{
@@ -415,9 +416,28 @@ body{
     id="topWall"
     class="sceneObject collisionObject"
     data-collision-padding="20"
-    style="height: 20px; border: solid 2px #111; width: 100%; display: block;"
+    style="height: 10px; border: solid 2px #111; width: 91%; display: block;margin-top: 55px;background: #fff;"
   >    
   </span>
+   <span 
+    id="leftWall"
+    class="sceneObject collisionObject"
+    data-collision-padding="20"
+    style="height: 10px; border: solid 2px #111; width: 91%; display: block;margin-top: 65px;background: #fff;"
+  >   
+      <span 
+    id="rightWall"
+    class="sceneObject collisionObject"
+    data-collision-padding="20"
+    style="height: 10px; border: solid 2px #111; width: 91%; display: block;margin-top: 75px;background: #fff;"
+  > 
+  </span>
+      <span 
+    id="bottomWall"
+    class="sceneObject collisionObject"
+    data-collision-padding="20"
+    style="height: 10px; border: solid 2px #111; width: 91%; display: block;margin-top: 85px;background: #fff;"
+  > 
   <img
     id="deskObject"
     class="sceneObject collisionObject"
