@@ -362,6 +362,13 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
   align-items:flex-start;
 }
 
+.buttonContainer {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 10px;
+}	
+
 .chatAvatar{
   width:24px;
   height:24px;
@@ -603,10 +610,10 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
 
       <div class="sidePanel">
         <video id="localPreview" class="localPreview" autoplay playsinline muted></video>
-
-        <button id="callVideoBtn" class="iconBtn">
-		  <img src="https://romeoasis2023.github.io/moderntown/images/video.svg">
-		</button>
+        <div class="buttonContainer">
+			<button id="callVideoBtn" class="iconBtn">
+		      <img src="https://romeoasis2023.github.io/moderntown/images/video.svg">
+		    </button>
 		
 		<button id="callMicBtn" class="iconBtn">
 		  <img src="https://romeoasis2023.github.io/moderntown/images/mic.svg">
@@ -619,6 +626,7 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
 		<button id="callEndBtn" class="iconBtn off" style="font-weight: bold;">
 		 ✕
 		</button>
+		</div>
 
         <div id="chatBox" class="chatBox"></div>
 
