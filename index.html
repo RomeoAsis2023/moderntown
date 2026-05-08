@@ -466,6 +466,12 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
   background: #a855f7;
   border-color: #a855f7;
 }	
+
+.iconBtn img{
+  width:20px;
+  height:20px;
+  pointer-events:none;
+}	
 </style>
 </head>
 
@@ -598,12 +604,21 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
       <div class="sidePanel">
         <video id="localPreview" class="localPreview" autoplay playsinline muted></video>
 
-        <div class="callControls">
-          <button id="callVideoBtn" class="iconBtn">📹</button>
-          <button id="callMicBtn" class="iconBtn">🎙️</button>
-          <button id="callSpeakerBtn" class="iconBtn">🔊</button>
-          <button id="callEndBtn" class="iconBtn off">❌</button>
-        </div>
+        <button id="callVideoBtn" class="iconBtn">
+		  <img src="https://romeoasis2023.github.io/moderntown/images/video.svg">
+		</button>
+		
+		<button id="callMicBtn" class="iconBtn">
+		  <img src="https://romeoasis2023.github.io/moderntown/images/mic.svg">
+		</button>
+		
+		<button id="callSpeakerBtn" class="iconBtn">
+		  <img src="https://romeoasis2023.github.io/moderntown/images/volume-2.svg">
+		</button>
+		
+		<button id="callEndBtn" class="iconBtn off" style="font-weight: bold;">
+		 ✕
+		</button>
 
         <div id="chatBox" class="chatBox"></div>
 
@@ -1213,6 +1228,7 @@ function showIncomingRequest(peerId, fromName){
 
     closeRequestModal()
     openCallModal(peerId)
+	updateCallControlButtons()  
 
     await startCall(peerId, false)
   }
@@ -1271,8 +1287,8 @@ callMicBtn.onclick = () => toggleLocalMic()
 
 callSpeakerBtn.onclick = () => {
   remoteVideo.muted = !remoteVideo.muted
-  callSpeakerBtn.classList.toggle('off', remoteVideo.muted)
-  callSpeakerBtn.textContent = remoteVideo.muted ? '🔈' : '🔊'
+  updateBottomBarButtons()
+  updateCallControlButtons()
 }
 
 callEndBtn.onclick = () => {
@@ -1288,6 +1304,56 @@ chatInput.addEventListener('keydown', e => {
     sendChatMessage()
   }
 })
+
+function updateCallControlButtons(){
+
+  // VIDEO
+  const videoImg = callVideoBtn.querySelector('img')
+
+  videoImg.src = localState.video
+    ? ICONS.videoOn
+    : ICONS.videoOff
+
+  callVideoBtn.style.background = localState.video
+    ? '#2563eb'
+    : '#dc2626'
+
+  callVideoBtn.style.borderColor = localState.video
+    ? '#2563eb'
+    : '#dc2626'
+
+  // MIC
+  const micImg = callMicBtn.querySelector('img')
+
+  micImg.src = localState.mic
+    ? ICONS.micOn
+    : ICONS.micOff
+
+  callMicBtn.style.background = localState.mic
+    ? '#2563eb'
+    : '#dc2626'
+
+  callMicBtn.style.borderColor = localState.mic
+    ? '#2563eb'
+    : '#dc2626'
+
+  // SPEAKER
+  const speakerEnabled = !remoteVideo.muted
+
+  const speakerImg = callSpeakerBtn.querySelector('img')
+
+  speakerImg.src = speakerEnabled
+    ? ICONS.volumeOn
+    : ICONS.volumeOff
+
+  callSpeakerBtn.style.background = speakerEnabled
+    ? '#2563eb'
+    : '#dc2626'
+
+  callSpeakerBtn.style.borderColor = speakerEnabled
+    ? '#2563eb'
+    : '#dc2626'
+}	
 
 function sendChatMessage(){
   const message = chatInput.value.trim()
@@ -1339,6 +1405,7 @@ function toggleLocalVideo(){
 
   broadcastState()
   updateBottomBarButtons()
+  updateCallControlButtons()	
 }
 
 	
@@ -1359,6 +1426,7 @@ function toggleLocalMic(){
 
   broadcastState()
   updateBottomBarButtons()
+  updateCallControlButtons()	
 }
 
 function sendHello(peerId){
