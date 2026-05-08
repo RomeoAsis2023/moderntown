@@ -693,6 +693,7 @@ const createWebConnect = window.webconnect || window.WebConnect || (typeof webco
 const USERS_JSON_URL = 'https://romeoasis2023.github.io/moderntown/moderntown_users_data.json'
 const FALLBACK_AVATAR = 'https://placehold.co/100x100/111827/ffffff?text=User'
 
+const peerCountEl = document.querySelector('#connected_peer_count .countpeer')	
 const scene = document.getElementById('scene')
 const ui = document.getElementById('ui')
 const statusEl = document.getElementById('status')
@@ -940,7 +941,7 @@ joinBtn.onclick = async () => {
 
   requestPreview.srcObject = localStream
   localPreview.srcObject = localStream
-
+updatePeerCount()
 	 updateBottomBarButtons()
 
   createPlayer('local', playerName, true)
@@ -1442,6 +1443,14 @@ function addChatMessage(name, message, isMe, profilePic){
   chatBox.scrollTop = chatBox.scrollHeight
 }
 
+
+function updatePeerCount(){
+  if(!peerCountEl) return
+
+  // +1 includes the current/local user
+  peerCountEl.textContent = String(connectedPeers.size + 1)
+}	
+
 function toggleLocalVideo(){
   if(!localStream) return
 
@@ -1489,6 +1498,7 @@ async function acceptPeer(peerId){
 
   connectedPeers.add(peerId)
 
+  updatePeerCount()
   playJoinBell()
 
   statusEl.textContent = peerId + ' joined room'
@@ -1986,6 +1996,7 @@ function sendToPeer(peerId, payload){
 function removePeer(peerId){
   clearPeerDisconnectTimer(peerId)
   connectedPeers.delete(peerId)
+	updatePeerCount()
 
   if(peerConnections[peerId]){
     peerConnections[peerId].close()
