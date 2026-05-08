@@ -583,8 +583,13 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
     <video id="requestPreview" class="previewVideo" autoplay playsinline muted></video>
 
     <div class="modalControls">
-      <button id="requestVideoBtn" class="iconBtn">📹</button>
-      <button id="requestMicBtn" class="iconBtn">🎙️</button>
+      <button id="requestVideoBtn" class="iconBtn">
+  <img src="https://romeoasis2023.github.io/moderntown/images/video.svg">
+</button>
+
+<button id="requestMicBtn" class="iconBtn">
+  <img src="https://romeoasis2023.github.io/moderntown/images/mic.svg">
+</button>
     </div>
 
     <div id="requestActions" class="modalActions"></div>
@@ -1406,14 +1411,11 @@ function toggleLocalVideo(){
     track.enabled = localState.video
   })
 
-  ;[requestVideoBtn, callVideoBtn].forEach(btn => {
-    btn.classList.toggle('off', !localState.video)
-    btn.textContent = localState.video ? '📹' : '📷'
-  })
+  updateBottomBarButtons()
+  updateCallControlButtons()
+  updateRequestControlButtons()
 
   broadcastState()
-  updateBottomBarButtons()
-  updateCallControlButtons()	
 }
 
 	
@@ -1427,14 +1429,11 @@ function toggleLocalMic(){
     track.enabled = localState.mic
   })
 
-  ;[requestMicBtn, callMicBtn].forEach(btn => {
-    btn.classList.toggle('off', !localState.mic)
-    btn.textContent = localState.mic ? '🎙️' : '🔇'
-  })
+  updateBottomBarButtons()
+  updateCallControlButtons()
+  updateRequestControlButtons()
 
   broadcastState()
-  updateBottomBarButtons()
-  updateCallControlButtons()	
 }
 
 function sendHello(peerId){
