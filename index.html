@@ -479,6 +479,40 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
   height:20px;
   pointer-events:none;
 }	
+
+.digi_clock{
+  display: flex;
+  gap: 10px;
+  font-weight: bold;
+  align-items: center;
+}
+
+
+#control_bar_mt #bar_menu_right{
+  display: flex;
+   align-items: center;
+  gap: 20px;
+  align-content: center;
+}
+
+#control_bar_mt #bar_menu_right #connected_peer_count{
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+#control_bar_mt #bar_menu_right #connected_peer_count .countpeer{
+  font-weight: bold;
+}
+
+#control_bar_mt #connected_peer_count img{
+  filter: brightness(0) saturate(100%) invert(72%) sepia(47%) saturate(6882%) hue-rotate(79deg) brightness(122%) contrast(109%);
+}
+
+.digi_clock img{
+  filter: brightness(0) saturate(100%) invert(65%) sepia(89%) saturate(3094%) hue-rotate(233deg) brightness(99%) contrast(100%);
+}
+	
 </style>
 </head>
 
@@ -519,12 +553,18 @@ background: radial-gradient(circle,rgba(172, 75, 255, 1) 56%, rgba(0, 212, 255, 
 
 <div id="control_bar_mt">
   <div id="bar_menu_left">
-  <button id="mic_btn"> <img src="https://romeoasis2023.github.io/moderntown/images/mic.svg"></button>
-    <button id="video_btn"> <img src="https://romeoasis2023.github.io/moderntown/images/video.svg"></button>    
-    <button id="vol_btn"> <img src="https://romeoasis2023.github.io/moderntown/images/volume-2.svg"></button>
+  <button id="mic_btn" style="background: rgb(37, 99, 235); border-color: rgb(37, 99, 235);"> <img src="https://romeoasis2023.github.io/moderntown/images/mic.svg"></button>
+    <button id="video_btn" style="background: rgb(37, 99, 235); border-color: rgb(37, 99, 235);"> <img src="https://romeoasis2023.github.io/moderntown/images/video.svg"></button>    
+    <button id="vol_btn" style="background: rgb(37, 99, 235); border-color: rgb(37, 99, 235);"> <img src="https://romeoasis2023.github.io/moderntown/images/volume-2.svg"></button>
  </div>
    <div id="bar_menu_right">
-  MENU RIGHT
+ <div class="digi_clock"> 
+<img width="20" src="https://romeoasis2023.github.io/moderntown/images/clock.svg">  
+<div id="clock">04:25:49 AM</div>
+</div>
+  <div id="connected_peer_count">
+    <img width="20" src="https://romeoasis2023.github.io/moderntown/images/wifi.svg"> <span class="countpeer">20</span> <span>connected</span>
+  </div>
  </div>
 </div>
 	
@@ -2197,6 +2237,38 @@ function createDefaultSprite(){
   return canvas.toDataURL('image/png')
 }
 </script>
+ <script>
+   function updateClock() {
+  const now = new Date();
+  
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const seconds = String(now.getSeconds()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  
+  // Convert to 12-hour format
+  hours = hours % 12;
+  hours = hours ? hours : 12; // hour '0' should be '12'
+  const formattedHours = String(hours).padStart(2, '0');
+  
+  const timeString = `${formattedHours}:${minutes}:${seconds} ${ampm}`;
+  
+  // Display it - you can output anywhere, e.g., to an element
+  const clockElement = document.getElementById('clock');
+  if (clockElement) {
+    clockElement.textContent = timeString;
+  }
+  
+  // Also log to console (optional)
+  console.clear();
+  console.log(timeString);
+}
 
+// Update every second
+setInterval(updateClock, 1000);
+
+// Initial call to show immediately
+updateClock();
+ </script>
 </body>
 </html>
