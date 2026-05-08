@@ -810,7 +810,7 @@ initializeUserDropdown()
 
 joinBtn.onclick = async () => {
   const email = String(emailSelect.value || '').trim()
-
+ 
   if(!email){
     alert('Please select your Modern email.')
     return
@@ -872,6 +872,8 @@ joinBtn.onclick = async () => {
 
   requestPreview.srcObject = localStream
   localPreview.srcObject = localStream
+
+	 updateBottomBarButtons()
 
   createPlayer('local', playerName, true)
 
@@ -1322,6 +1324,8 @@ function addChatMessage(name, message, isMe, profilePic){
 }
 
 function toggleLocalVideo(){
+  if(!localStream) return
+
   localState.video = !localState.video
 
   localStream.getVideoTracks().forEach(track => {
@@ -1334,9 +1338,14 @@ function toggleLocalVideo(){
   })
 
   broadcastState()
+  updateBottomBarButtons()
 }
 
+	
+
 function toggleLocalMic(){
+  if(!localStream) return
+
   localState.mic = !localState.mic
 
   localStream.getAudioTracks().forEach(track => {
@@ -1349,6 +1358,7 @@ function toggleLocalMic(){
   })
 
   broadcastState()
+  updateBottomBarButtons()
 }
 
 function sendHello(peerId){
@@ -1991,6 +2001,87 @@ function getRandomSpawnPosition(){
     h: rect.height - padding * 2
   }
 }
+
+
+const micBtnBar = document.getElementById('mic_btn')
+const videoBtnBar = document.getElementById('video_btn')
+const volBtnBar = document.getElementById('vol_btn')
+
+const ICONS = {
+  micOn:'https://romeoasis2023.github.io/moderntown/images/mic.svg',
+  micOff:'https://romeoasis2023.github.io/moderntown/images/mic-off.svg',
+
+  videoOn:'https://romeoasis2023.github.io/moderntown/images/video.svg',
+  videoOff:'https://romeoasis2023.github.io/moderntown/images/video-off.svg',
+
+  volumeOn:'https://romeoasis2023.github.io/moderntown/images/volume-2.svg',
+  volumeOff:'https://romeoasis2023.github.io/moderntown/images/volume-x.svg'
+}
+
+function updateBottomBarButtons(){
+  // MIC
+  const micImg = micBtnBar.querySelector('img')
+
+  micImg.src = localState.mic
+    ? ICONS.micOn
+    : ICONS.micOff
+
+  micBtnBar.style.background = localState.mic
+    ? '#2563eb'
+    : '#dc2626'
+
+  micBtnBar.style.borderColor = localState.mic
+    ? '#2563eb'
+    : '#dc2626'
+
+  // VIDEO
+  const videoImg = videoBtnBar.querySelector('img')
+
+  videoImg.src = localState.video
+    ? ICONS.videoOn
+    : ICONS.videoOff
+
+  videoBtnBar.style.background = localState.video
+    ? '#2563eb'
+    : '#dc2626'
+
+  videoBtnBar.style.borderColor = localState.video
+    ? '#2563eb'
+    : '#dc2626'
+
+  // SPEAKER
+  const volImg = volBtnBar.querySelector('img')
+
+  const speakerEnabled = !remoteVideo.muted
+
+  volImg.src = speakerEnabled
+    ? ICONS.volumeOn
+    : ICONS.volumeOff
+
+  volBtnBar.style.background = speakerEnabled
+    ? '#2563eb'
+    : '#dc2626'
+
+  volBtnBar.style.borderColor = speakerEnabled
+    ? '#2563eb'
+    : '#dc2626'
+}
+
+	micBtnBar.onclick = () => {
+  if(!localStream) return
+  toggleLocalMic()
+}
+
+videoBtnBar.onclick = () => {
+  if(!localStream) return
+  toggleLocalVideo()
+}
+
+volBtnBar.onclick = () => {
+  remoteVideo.muted = !remoteVideo.muted
+  updateBottomBarButtons()
+}
+	
 
 function createDefaultSprite(){
   const canvas = document.createElement('canvas')
