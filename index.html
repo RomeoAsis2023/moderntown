@@ -621,6 +621,9 @@ let myPosition = {
   y:220
 }
 
+let localHasMoved = false
+let spawnResolvedFromPeers = false
+
 function isBusy(){
   return !!activeCallPeer || !!pendingOutgoingCallPeer || !!pendingIncomingCallPeer
 }
@@ -821,6 +824,17 @@ joinBtn.onclick = async () => {
       }
 
       updateRemotePlayer(peerId)
+	  if(!spawnResolvedFromPeers && players.local && !localHasMoved){
+	  const spawn = getRandomSpawnPosition()
+	  myPosition.x = spawn.x
+	  myPosition.y = spawn.y
+
+	  players.local.style.left = myPosition.x + 'px'
+	  players.local.style.top = myPosition.y + 'px'
+
+	  spawnResolvedFromPeers = true
+	  broadcastState()
+	}
       return
     }
 
@@ -1612,26 +1626,6 @@ function boxesOverlap(a, b){
   )
 }
 
-function wouldCollide(nextX, nextY){
-  const myBox = getCollisionBoxFromPosition(nextX, nextY)
-
-  for(const peerId in players){
-    if(peerId === 'local') continue
-
-    const peerPlayer = players[peerId]
-    if(!peerPlayer) continue
-
-    const px = parseFloat(peerPlayer.style.left || 0)
-    const py = parseFloat(peerPlayer.style.top || 0)
-    const peerBox = getCollisionBoxFromPosition(px, py)
-
-    if(boxesOverlap(myBox, peerBox)){
-      return true
-    }
-  }
-
-  return false
-}
 
 function clampPositionX(x){
   return Math.max(0, Math.min(window.innerWidth - 180, x))
@@ -1648,69 +1642,87 @@ function movementLoop(timestamp = 0){
   let nextX = myPosition.x
   let nextY = myPosition.y
 
-  if(keys.ArrowUp){
-    nextY -= speed
-    localState.direction = 'up'
-    wantedMove = true
-  }
-
-  if(keys.ArrowDown){
-    nextY += speed
-    localState.direction = 'down'
-    wantedMove = true
-  }
-
-  if(keys.ArrowLeft){
-    nextX -= speed
-    localState.direction = 'left'
-    wantedMove = true
-  }
-
-  if(keys.ArrowRight){
-    nextX += speed
-    localState.direction = 'right'
-    wantedMove = true
-  }
+  if(keys.ArrowUp){ nextY -= speed; localState.direction = 'up'; wantedMove = true }
+  if(keys.ArrowDown){ nextY += speed; localState.direction = 'down'; wantedMove = true }
+  if(keys.ArrowLeft){ nextX -= speed; localState.direction = 'left'; wantedMove = true }
+  if(keys.ArrowRight){ nextX += speed; localState.direction = 'right'; wantedMove = true }
 
   nextX = clampPositionX(nextX)
   nextY = clampPositionY(nextY)
 
   if(wantedMove){
-    // Resolve X and Y separately. This prevents players from getting stuck
-    // when they are too close and allows sliding away from another sprite.
-    if(nextX !== myPosition.x && !wouldCollide(nextX, myPosition.y)){
+    if(nextX !== myPosition.x && canMoveTo(nextX, myPosition.y)){
       myPosition.x = nextX
       actuallyMoved = true
     }
 
-    if(nextY !== myPosition.y && !wouldCollide(myPosition.x, nextY)){
+    if(nextY !== myPosition.y && canMoveTo(myPosition.x, nextY)){
       myPosition.y = nextY
       actuallyMoved = true
     }
+
+    if(actuallyMoved){
+      localHasMoved = true
+    }
   }
 
-  const moved = actuallyMoved
-
-  localState.moving = moved
-  localState.frame = moved ? localState.frame + 0.16 : 1
+  localState.moving = actuallyMoved
+  localState.frame = actuallyMoved ? localState.frame + 0.16 : 1
 
   const myPlayer = players.local
-
   if(myPlayer){
     myPlayer.style.left = myPosition.x + 'px'
     myPlayer.style.top = myPosition.y + 'px'
-
     updateSpriteFrame(myPlayer, localState.direction, localState.frame)
   }
 
   updateNearbyChatBubbles()
 
-  if(moved && timestamp - lastMoveSend > 60){
+  if(actuallyMoved && timestamp - lastMoveSend > 60){
     broadcastState()
     lastMoveSend = timestamp
   }
 
   requestAnimationFrame(movementLoop)
+}
+function canMoveTo(nextX, nextY){
+  if(!wouldCollide(nextX, nextY)) return true
+
+  const currentOverlap = getCollisionSeverity(myPosition.x, myPosition.y)
+  const nextOverlap = getCollisionSeverity(nextX, nextY)
+
+  return nextOverlap < currentOverlap
+}
+
+function getCollisionSeverity(x, y){
+  const myBox = getCollisionBoxFromPosition(x, y)
+  let total = 0
+
+  for(const peerId in players){
+    if(peerId === 'local') continue
+
+    const peerPlayer = players[peerId]
+    if(!peerPlayer) continue
+
+    const px = parseFloat(peerPlayer.style.left || 0)
+    const py = parseFloat(peerPlayer.style.top || 0)
+    const peerBox = getCollisionBoxFromPosition(px, py)
+
+    total += getOverlapArea(myBox, peerBox)
+  }
+
+  document.querySelectorAll('.collisionObject').forEach(obj => {
+    total += getOverlapArea(myBox, getObjectCollisionBox(obj))
+  })
+
+  return total
+}
+
+function getOverlapArea(a, b){
+  const xOverlap = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x))
+  const yOverlap = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y))
+
+  return xOverlap * yOverlap
 }
 
 function broadcastState(targetPeerId = null){
@@ -1797,7 +1809,7 @@ function escapeHTML(str){
 }
 
 
-  function wouldCollide(nextX, nextY){
+function wouldCollide(nextX, nextY){
   const myBox = getCollisionBoxFromPosition(nextX, nextY)
 
   for(const peerId in players){
@@ -1828,14 +1840,11 @@ function escapeHTML(str){
   return false
 }
 
-  function getRandomSpawnPosition(){
+function getRandomSpawnPosition(){
   const peerIds = Object.keys(players).filter(id => id !== 'local')
 
   if(!peerIds.length){
-    return {
-      x:360,
-      y:220
-    }
+    return { x:360, y:220 }
   }
 
   const randomPeerId = peerIds[Math.floor(Math.random() * peerIds.length)]
@@ -1845,22 +1854,33 @@ function escapeHTML(str){
   const py = parseFloat(peer.style.top || 220)
 
   const gap = 10
+  const step = 96 + gap
+
   const options = [
-    {x:px + 96 + gap, y:py},
-    {x:px - 96 - gap, y:py},
-    {x:px, y:py + 96 + gap},
-    {x:px, y:py - 96 - gap}
+    {x:px + step, y:py},
+    {x:px - step, y:py},
+    {x:px, y:py + step},
+    {x:px, y:py - step},
+    {x:px + step, y:py + step},
+    {x:px - step, y:py + step},
+    {x:px + step, y:py - step},
+    {x:px - step, y:py - step}
   ]
+  .map(pos => ({
+    x:clampPositionX(pos.x),
+    y:clampPositionY(pos.y)
+  }))
 
-  const valid = options.filter(pos =>
-    !wouldCollide(pos.x, pos.y)
-  )
+  const valid = options.filter(pos => {
+    return getCollisionSeverity(pos.x, pos.y) === 0
+  })
 
-  return valid.length
-    ? valid[Math.floor(Math.random() * valid.length)]
-    : {x:360,y:220}
+  if(valid.length){
+    return valid[Math.floor(Math.random() * valid.length)]
+  }
+
+  return { x:360, y:220 }
 }
-
 
   function getObjectCollisionBox(obj){
   const sceneRect = scene.getBoundingClientRect()
