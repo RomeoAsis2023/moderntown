@@ -385,7 +385,39 @@ body{
  margin: 64px 0 0 1290px !important;
 }
 
+#floater_footer_bar{
+  padding-left: 600px;
+  position: fixed;
+  z-index: 99;
+  bottom: 60px;
+  animation: fluffyBounce 5s linear infinite;
+}
 
+  @keyframes fluffyBounce {
+           0% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-18px);
+            }
+            100% {
+                transform: translateY(0px);
+            }
+ }
+
+#control_bar_mt{
+  width: 1360px;
+  position: fixed;
+  z-index:88;
+  bottom: 60px;
+  background: #2f1873;
+  background: linear-gradient(90deg,rgba(47, 24, 115, 1) 37%, rgba(17, 13, 27, 1) 100%);
+  margin-left: 30px;
+  height: 90px;
+  border-radius: 12px;
+  border: solid 3px #fff;
+  box-shadow: 8px 8px 15px rgba(0,0,0,.5);
+}
 </style>
 </head>
 
@@ -423,6 +455,11 @@ body{
   Collision enabled: sprites cannot overlap<br>
   1-on-1 call only
 </div>
+
+<div id="floater_footer_bar">
+  <img src="https://romeoasis2023.github.io/moderntown/logomt.png">
+</div>
+<div id="control_bar_mt">Control here</div>
 
 <div id="scene">
   <span 
