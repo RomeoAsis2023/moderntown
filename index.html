@@ -79,11 +79,16 @@ body{
   background-size: 32px 32px;
 }
 
+  #deskObject {
+  margin-top: 80px;
+  margin-left: 280px;
+}
+
 .player{
   position:absolute;
   width:96px;
   height:96px;
-  scale: .8;
+  scale: .5;
 }
 
 .nameTag{
@@ -1732,6 +1737,75 @@ function escapeHTML(str){
     "'":'&#039;',
     '"':'&quot;'
   }[char]))
+}
+
+
+  function wouldCollide(nextX, nextY){
+  const myBox = getCollisionBoxFromPosition(nextX, nextY)
+
+  for(const peerId in players){
+    if(peerId === 'local') continue
+
+    const peerPlayer = players[peerId]
+    if(!peerPlayer) continue
+
+    const px = parseFloat(peerPlayer.style.left || 0)
+    const py = parseFloat(peerPlayer.style.top || 0)
+    const peerBox = getCollisionBoxFromPosition(px, py)
+
+    if(boxesOverlap(myBox, peerBox)) return true
+  }
+
+  document.querySelectorAll('.collisionObject').forEach(obj => {
+    const rect = obj.getBoundingClientRect()
+    const sceneRect = scene.getBoundingClientRect()
+
+    const objectBox = {
+      x: rect.left - sceneRect.left,
+      y: rect.top - sceneRect.top,
+      w: rect.width,
+      h: rect.height
+    }
+
+    if(boxesOverlap(myBox, objectBox)){
+      return true
+    }
+  })
+
+  return false
+}
+
+  function getRandomSpawnPosition(){
+  const peerIds = Object.keys(players).filter(id => id !== 'local')
+
+  if(!peerIds.length){
+    return {
+      x:360,
+      y:220
+    }
+  }
+
+  const randomPeerId = peerIds[Math.floor(Math.random() * peerIds.length)]
+  const peer = players[randomPeerId]
+
+  const px = parseFloat(peer.style.left || 360)
+  const py = parseFloat(peer.style.top || 220)
+
+  const gap = 10
+  const options = [
+    {x:px + 96 + gap, y:py},
+    {x:px - 96 - gap, y:py},
+    {x:px, y:py + 96 + gap},
+    {x:px, y:py - 96 - gap}
+  ]
+
+  const valid = options.filter(pos =>
+    !wouldCollide(pos.x, pos.y)
+  )
+
+  return valid.length
+    ? valid[Math.floor(Math.random() * valid.length)]
+    : {x:360,y:220}
 }
 
 function createDefaultSprite(){
